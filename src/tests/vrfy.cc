@@ -33,7 +33,7 @@
 #include <string.h>
 #include <errno.h>
 
-#define TTSCP_PORT	8778
+#define TTSCP_PORT	8789
 
 const char *COMMENT_LINES = "#;\n\r";
 const char *WHITESPACE = " \t\r";
@@ -51,6 +51,10 @@ char *chandle[10];
 char *dhandle[10];
 
 const char *testname = "";
+
+
+#define MUCH_SPACE	 16000
+#define EVEN_MORE_SPACE 128000
 
 
 int connect_socket(unsigned int, int);
@@ -88,13 +92,13 @@ int get_result(int c)
 
 	while (sgets(scratch, SCRATCH_SPACE, ctrld[c])) {
 		scratch[SCRATCH_SPACE] = 0;
-		printf("Received on %d: %s\n", c, scratch);
+//		printf("[%-28s] Received on %d: %s\n", testname, c, scratch);
 		mess = scratch+strspn(scratch, "0123456789x ");
 		switch(*scratch) {
 			case '1': continue;
 			case '2': return 2;
 			case '3': break;
-			case '4': if (*mess && strcmp(mess, "user break")) printf("%s\n", mess);
+			case '4': if (*mess && strcmp(mess, "interrupted")) printf("%s\n", mess);
 				  return 4;
 			case '6': if (!strncmp(scratch, "600 ", 4)) {
 //					exit(0);
@@ -122,13 +126,18 @@ void spk_strm(int c, int d)
 	sputs("\r\n", ctrld[c]);
 }
 
-void spk_appl(int c, int d, const char *data)
+void spk_appl(int c, int d, const char *data, int data_len)
 {
 	sputs("appl ", ctrld[c]);
-	sprintf(scratch, "%d", (int)strlen(data));
+	sprintf(scratch, "%d", data_len);
 	sputs(scratch, ctrld[c]);
 	sputs("\r\n", ctrld[c]);
-	sputs(data, datad[d]);
+	ywrite(datad[d], data, data_len);
+}
+
+void spk_appl(int c, int d, const char *data)
+{
+	spk_appl(c, d, data, (int)strlen(data));
 }
 
 void spk_intr(int c, int broken)
@@ -151,7 +160,6 @@ void syn2_test()
 
 void intr_test()
 {
-	testname="intr test";
 	spk_strm(0,0);
 	spk_appl(0,0, "Jenom jednu sekundu mohu breptat. Touto dobou jest nastati tichu. Jen omyl by mohl stanovit jinak. Brejk je asi rozbitej. \
 Brejk je asi rozbitej. \
@@ -205,17 +213,16 @@ retry:	sleep(1);
 
 void long_strm_test()
 {
-	testname = "command length overflow test";
-	char *buffer = (char *)malloc(16384);
+	char *buffer = (char *)malloc(MUCH_SPACE + 1024);
 	strcpy(buffer, "strm $");
 	strcat(buffer, dhandle[1]);
 	int b = strlen(buffer);
-	for (int i=0; i < 16000; i++) {
+	for (int i=0; i < MUCH_SPACE; i++) {
 		buffer[b+i] = ":raw:print"[i % 10];
 	}
-	strcat (buffer + 16000, ":$");
-	strcat (buffer + 16000, dhandle[1]);
-	strcat (buffer + 16000, "\r\n");
+	strcat (buffer + MUCH_SPACE, ":$");
+	strcat (buffer + MUCH_SPACE, dhandle[1]);
+	strcat (buffer + MUCH_SPACE, "\r\n");
 	sputs(buffer, ctrld[1]);
 
 	spk_appl(1,1,"Identita");
@@ -224,8 +231,109 @@ void long_strm_test()
 	if (get_result(1) > 2) shriek("Could not apply long stream to trivial data");
 }
 
+void long_data_test()
+{
+	char *buffer = (char *)malloc(EVEN_MORE_SPACE + 1024);
+	strcpy(buffer, "strm $");
+	strcat(buffer, dhandle[1]);
+	strcat(buffer, ":raw:rules:print:$");
+	strcat (buffer, dhandle[1]);
+	strcat (buffer, "\r\n");
+	sputs(buffer, ctrld[1]);
+
+	memset(buffer, 'A', EVEN_MORE_SPACE);
+	buffer[EVEN_MORE_SPACE] = 0;
+	spk_appl(1,1,buffer);
+
+	if (get_result(1) > 2) shriek("Could not set up the stream");
+	if (get_result(1) > 2) shriek("Could not apply trivial stream to long data");
+}
+
+char *much_data()
+{
+	char *buffer = (char *)malloc(MUCH_SPACE + 1024);
+	read(datad[1], buffer, MUCH_SPACE);
+	strcpy(buffer, "strm $");
+	strcat(buffer, dhandle[1]);
+	strcat(buffer, ":raw:rules:print:$");
+	strcat (buffer, dhandle[1]);
+	strcat (buffer, "\r\n");
+	sputs(buffer, ctrld[1]);
+
+	return buffer;
+}
+
+void random_data_test()
+{
+	char *buffer = much_data();
+
+	for (int i = 0; i < MUCH_SPACE; i++)
+		buffer[i] = rand() % 256;
+	buffer[MUCH_SPACE] = 0;
+	spk_appl(1,1,buffer, MUCH_SPACE);
+
+	if (get_result(1) > 2) shriek("Could not set up the stream");
+	if (get_result(1) > 2) shriek("Could not apply stream to random data");
+}
+
+void hard_zero_data_test()
+{
+	char *buffer = much_data();
+
+	for (int i = 0; i < MUCH_SPACE; i++)
+		buffer[i] = 0;
+	buffer[MUCH_SPACE] = 0;
+	spk_appl(1,1,buffer, MUCH_SPACE);
+
+	if (get_result(1) > 2) shriek("Could not set up the stream");
+	if (get_result(1) > 2) shriek("Could not apply stream to hard zero data");
+}
+
+void soft_zero_data_test()
+{
+	char *buffer = much_data();
+
+	for (int i = 0; i < MUCH_SPACE; i++)
+		buffer[i] = '0';
+	buffer[MUCH_SPACE] = 0;
+	spk_appl(1,1,buffer, MUCH_SPACE);
+
+	if (get_result(1) > 2) shriek("Could not set up the stream");
+	if (get_result(1) > 2) shriek("Could not apply stream to soft zero data");
+}
+
+void invoke(void (*test)(), const char *name)
+{
+	testname = name;
+	printf("%s...\n", name);
+	test();
+	testname = "";
+}
+
+#define strfy(x) #x
+#define stringify(x) strfy(x)
+
+char * const exec_argv[] = {
+	"epos",
+	"--forking=off",
+	"--listen_port=" stringify(TTSCP_PORT) ,
+	NULL
+};
+char * const exec_envp[] = {
+	NULL
+};
+
+int epos_pid = 0;
+int patience = 40;
+
 void init()
 {
+	/* ignore the test result if Epos is not running:    */
+	if (just_connect_socket(0, TTSCP_PORT) == -1) {
+		if ((epos_pid = fork())) do usleep(250000); while (just_connect_socket(0, TTSCP_PORT) == -1 && --patience);
+		else execve("../epos", exec_argv, exec_envp);
+	}
+
 	ctrld[6] = connect_socket(0, TTSCP_PORT);
 	chandle[6] = get_handle(ctrld[6]);
 	for (int i=0; i<5; i++) {
@@ -253,10 +361,13 @@ int main(int argc, char **argv)
 //	sputs("intr\r\n", ctrld);
 
 	syn2_test();
-//	sleep(2);
-	intr_test();
-//	sleep(2);
-	long_strm_test();
+	invoke(intr_test, "intr test");
+	invoke(long_strm_test, "command length overflow test");
+//	invoke(long_data_test, "data length overflow test");
+	invoke(hard_zero_data_test, "hard zero data test");
+//	invoke(soft_zero_data_test, "soft zero data test");
+	invoke(random_data_test, "random data test");
+	testname = "closing everything";
 
 	for (int i=0; i<5; i++) {
 		sputs("delh ", ctrld[i]);
@@ -269,7 +380,8 @@ int main(int argc, char **argv)
 	}
 	sputs("done\r\n", ctrld[6]);
 	close(ctrld[6]);
-	printf("Tests successfully passed.\n");
+//	printf("Tests successfully passed.\n");
+	if (epos_pid) kill(epos_pid, SIGHUP);
 	return 0;
 }
 
