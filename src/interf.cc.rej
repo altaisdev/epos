@@ -1,0 +1,24 @@
+*** 655,663 ****
+  
+  	// one a_protocol may be lost here, see agent.cc
+  
+- 	cfg->shutdown();
+  
+  	shutdown_file_cache();
+  }
+  
+  void epos_done()
+--- 661,673 ----
+  
+  	// one a_protocol may be lost here, see agent.cc
+  
++ //	cow_catharsis(cfg);
++ 
++ 	cfg->shutdown();	//...FIXME: might need proto_cfg->shutdown; othrws shutdown never called
+  
+  	shutdown_file_cache();
++ 	
++ 	free_all_options();
+  }
+  
+  void epos_done()

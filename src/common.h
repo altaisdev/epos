@@ -27,7 +27,7 @@
 
 #define MAINTAINER  "Jirka Hanika"
 #define MAIL        "geo@cuni.cz"
-#define VERSION     "2.4.42"
+#define VERSION     "2.4.43a"
 
 #include "config.h"
 
@@ -80,7 +80,6 @@ char *strdup(const char *);
 #define TTSCP_PORT	8778
 
 
-enum SYMTABLE {ST_ROOT, ST_RAW, ST_EMPTY};
 enum SUBST_METHOD {M_EXACT=0, M_END=1, M_BEGIN=2, M_BEGIN_OR_END=3, M_SUBSTR=4, M_PROPER=7, M_LEFT=8, M_RIGHT=16, M_ONCE=32};
 enum REPARENT {M_DELETE, M_RIGHTWARDS, M_LEFTWARDS};
 enum FIT_IDX {Q_FREQ, Q_INTENS, Q_TIME};

@@ -70,15 +70,15 @@ void *tcpsyn_appl(int bytes, int ctrld, int datad, int *size)
 	sputs(scratch, ctrld);
 	sputs("\r\n", ctrld);
 	do {
-		sgets(scratch, cfg->scratch, ctrld);
+		sgets(scratch, scfg->scratch, ctrld);
 		if (!strncmp("122 ", scratch, 4)) {
-			sgets(scratch, cfg->scratch, ctrld);
+			sgets(scratch, scfg->scratch, ctrld);
 			sscanf(scratch, " %d", &bytes);
 			if (bs != bytes) rec = rec ? (char *)xrealloc(rec, bytes)
 						   : (char *)xmalloc(bytes);
 		}
 		if (!strncmp("123 ", scratch, 4)) {
-			sgets(scratch, cfg->scratch, ctrld);
+			sgets(scratch, scfg->scratch, ctrld);
 			sscanf(scratch, " %d", &bytes);
 			sum += bytes;
 			if (sum > bs) rec = rec ? (char *)xrealloc(rec, sum)
@@ -120,7 +120,7 @@ static int tcpsyn_connect_socket(unsigned int ipaddr, int port)
 	timeval tv; tv.tv_sec = cfg->deadlk_timeout; tv.tv_usec = ZERO_DEADLK_TIMEOUT;
 	if (select(sd+1, &fds, NULL, NULL, &tv) < 1) shriek(476, "Timed out - tcpsyn deadlock");
 
-	sgets(scratch, cfg->scratch, sd);
+	sgets(scratch, scfg->scratch, sd);
 	if (strncmp(scratch, "TTSCP spoken here", 18)) {
 		scratch[15] = 0;
 		shriek(474, "Protocol not recognized");
@@ -128,13 +128,13 @@ static int tcpsyn_connect_socket(unsigned int ipaddr, int port)
 	return sd;
 }
 
-static inline void tcpsyn_chk_cmd(int cd, char *tag, char *par)
+static inline void tcpsyn_chk_cmd(int cd, const char *tag, const char *par)
 {
 	int err = sync_finish_command(cd);
 	if (err) shriek(475, fmt("Remote returned %d for %s %s", err, tag, par));
 }
 
-static inline void tcpsyn_send_cmd(int cd, char *tag, char *par)
+static inline void tcpsyn_send_cmd(int cd, const char *tag, const char *par)
 {
 	sputs(tag, cd);
 	sputs(" ", cd);

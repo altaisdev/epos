@@ -659,7 +659,7 @@ with code 5xx or higher. It may also quit at any time just after
 sending a "done" command to the server; the server will however
 confirm that command with a reply of 600 before disconnecting,
 and this is the only 6xx response code defined at the moment.
-<P>Replies of 8xx except 800 are reserved for cases of severe server
+<P>Replies of 8xx except 80x are reserved for cases of severe server
 misconfiguration, or detected programming bugs. Their meanings
 are very implementation dependent (implementations are encouraged
 not to issue them except in emergency). If such a reply is ever
@@ -773,6 +773,7 @@ of errors (internal errors).
 <CENTER><TABLE BORDER><TR><TD>
 <BR>
 600     </TD><TD> session ended normally</TD></TR><TR><TD>
+601     </TD><TD> server reinitializing as requested</TD></TR><TR><TD>
 800     </TD><TD> server shutting down as requested by client</TD></TR><TR><TD>
 801     </TD><TD> error explicitly reported in config files</TD></TR><TR><TD>
 811     </TD><TD> rules file syntax</TD></TR><TR><TD>

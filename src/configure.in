@@ -41,6 +41,7 @@ AC_HAVE_HEADERS(wait.h)
 AC_HAVE_HEADERS(unistd.h)
 AC_HAVE_HEADERS(unix.h)
 AC_HAVE_HEADERS(signal.h)
+AC_HAVE_HEADERS(syslog.h)
 AC_HAVE_HEADERS(sys/soundcard.h)
 AC_HAVE_HEADERS(sys/audio.h)
 AC_HAVE_HEADERS(sys/stat.h)
@@ -56,8 +57,10 @@ AC_HAVE_HEADERS(linux/kd.h)
 AC_HAVE_HEADERS(sys/kernel.h)
 AC_HAVE_HEADERS(sys/name.h)
 AC_HAVE_FUNCS(strerror strdup fork getegid strcasecmp stricmp gethostname qnx_name_attach)
-AC_INLINE
-AC_CONST
+
+dnl   AC_CONST is unusable, rejects correct C++ implms (error if uninit'd const
+dnl   and breaks __attribute__((const)) in g++
+dnl   AC_INLINE is hopefully unnecessary for C++
 
 AC_CACHE_CHECK("for glibc regex error codes",
    epos_cv_symb_regeend,

@@ -1656,7 +1656,7 @@ else
 fi
 done
 
-for ac_hdr in sys/soundcard.h
+for ac_hdr in syslog.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -1696,7 +1696,7 @@ else
 fi
 done
 
-for ac_hdr in sys/audio.h
+for ac_hdr in sys/soundcard.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -1736,7 +1736,7 @@ else
 fi
 done
 
-for ac_hdr in sys/stat.h
+for ac_hdr in sys/audio.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -1776,7 +1776,7 @@ else
 fi
 done
 
-for ac_hdr in sys/ioctl.h
+for ac_hdr in sys/stat.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -1816,7 +1816,7 @@ else
 fi
 done
 
-for ac_hdr in sys/socket.h
+for ac_hdr in sys/ioctl.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -1856,7 +1856,7 @@ else
 fi
 done
 
-for ac_hdr in sys/select.h
+for ac_hdr in sys/socket.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -1896,7 +1896,7 @@ else
 fi
 done
 
-for ac_hdr in sys/time.h
+for ac_hdr in sys/select.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -1936,7 +1936,7 @@ else
 fi
 done
 
-for ac_hdr in sys/types.h
+for ac_hdr in sys/time.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -1976,7 +1976,7 @@ else
 fi
 done
 
-for ac_hdr in sys/termios.h
+for ac_hdr in sys/types.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -2016,7 +2016,7 @@ else
 fi
 done
 
-for ac_hdr in netdb.h
+for ac_hdr in sys/termios.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -2056,7 +2056,7 @@ else
 fi
 done
 
-for ac_hdr in netinet/in.h
+for ac_hdr in netdb.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -2096,7 +2096,7 @@ else
 fi
 done
 
-for ac_hdr in linux/kd.h
+for ac_hdr in netinet/in.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -2136,7 +2136,7 @@ else
 fi
 done
 
-for ac_hdr in sys/kernel.h
+for ac_hdr in linux/kd.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -2176,7 +2176,7 @@ else
 fi
 done
 
-for ac_hdr in sys/name.h
+for ac_hdr in sys/kernel.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -2216,15 +2216,55 @@ else
 fi
 done
 
+for ac_hdr in sys/name.h
+do
+ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
+echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
+echo "configure:2224: checking for $ac_hdr" >&5
+if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2229 "configure"
+#include "confdefs.h"
+#include <$ac_hdr>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:2234: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=yes"
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=no"
+fi
+rm -f conftest*
+fi
+if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_hdr=HAVE_`echo $ac_hdr | sed 'y%abcdefghijklmnopqrstuvwxyz./-%ABCDEFGHIJKLMNOPQRSTUVWXYZ___%'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_hdr 1
+EOF
+ 
+else
+  echo "$ac_t""no" 1>&6
+fi
+done
+
 for ac_func in strerror strdup fork getegid strcasecmp stricmp gethostname qnx_name_attach
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
-echo "configure:2223: checking for $ac_func" >&5
+echo "configure:2263: checking for $ac_func" >&5
 if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2228 "configure"
+#line 2268 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char $ac_func(); below.  */
@@ -2250,7 +2290,7 @@ $ac_func();
 
 ; return 0; }
 EOF
-if { (eval echo configure:2254: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2294: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_$ac_func=yes"
 else
@@ -2274,129 +2314,15 @@ else
 fi
 done
 
-echo $ac_n "checking for inline""... $ac_c" 1>&6
-echo "configure:2279: checking for inline" >&5
-if eval "test \"`echo '$''{'ac_cv_c_inline'+set}'`\" = set"; then
-  echo $ac_n "(cached) $ac_c" 1>&6
-else
-  ac_cv_c_inline=no
-for ac_kw in inline __inline__ __inline; do
-  cat > conftest.$ac_ext <<EOF
-#line 2286 "configure"
-#include "confdefs.h"
-
-int main() {
-} $ac_kw foo() {
-; return 0; }
-EOF
-if { (eval echo configure:2293: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
-  rm -rf conftest*
-  ac_cv_c_inline=$ac_kw; break
-else
-  echo "configure: failed program was:" >&5
-  cat conftest.$ac_ext >&5
-fi
-rm -f conftest*
-done
-
-fi
-
-echo "$ac_t""$ac_cv_c_inline" 1>&6
-case "$ac_cv_c_inline" in
-  inline | yes) ;;
-  no) cat >> confdefs.h <<\EOF
-#define inline 
-EOF
- ;;
-  *)  cat >> confdefs.h <<EOF
-#define inline $ac_cv_c_inline
-EOF
- ;;
-esac
-
-echo $ac_n "checking for working const""... $ac_c" 1>&6
-echo "configure:2319: checking for working const" >&5
-if eval "test \"`echo '$''{'ac_cv_c_const'+set}'`\" = set"; then
-  echo $ac_n "(cached) $ac_c" 1>&6
-else
-  cat > conftest.$ac_ext <<EOF
-#line 2324 "configure"
-#include "confdefs.h"
-
-int main() {
-
-/* Ultrix mips cc rejects this.  */
-typedef int charset[2]; const charset x;
-/* SunOS 4.1.1 cc rejects this.  */
-char const *const *ccp;
-char **p;
-/* NEC SVR4.0.2 mips cc rejects this.  */
-struct point {int x, y;};
-static struct point const zero = {0,0};
-/* AIX XL C 1.02.0.0 rejects this.
-   It does not let you subtract one const X* pointer from another in an arm
-   of an if-expression whose if-part is not a constant expression */
-const char *g = "string";
-ccp = &g + (g ? g-g : 0);
-/* HPUX 7.0 cc rejects these. */
-++ccp;
-p = (char**) ccp;
-ccp = (char const *const *) p;
-{ /* SCO 3.2v4 cc rejects this.  */
-  char *t;
-  char const *s = 0 ? (char *) 0 : (char const *) 0;
-
-  *t++ = 0;
-}
-{ /* Someone thinks the Sun supposedly-ANSI compiler will reject this.  */
-  int x[] = {25, 17};
-  const int *foo = &x[0];
-  ++foo;
-}
-{ /* Sun SC1.0 ANSI compiler rejects this -- but not the above. */
-  typedef const int *iptr;
-  iptr p = 0;
-  ++p;
-}
-{ /* AIX XL C 1.02.0.0 rejects this saying
-     "k.c", line 2.27: 1506-025 (S) Operand must be a modifiable lvalue. */
-  struct s { int j; const int *ap[3]; };
-  struct s *b; b->j = 5;
-}
-{ /* ULTRIX-32 V3.1 (Rev 9) vcc rejects this */
-  const int foo = 10;
-}
-
-; return 0; }
-EOF
-if { (eval echo configure:2373: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
-  rm -rf conftest*
-  ac_cv_c_const=yes
-else
-  echo "configure: failed program was:" >&5
-  cat conftest.$ac_ext >&5
-  rm -rf conftest*
-  ac_cv_c_const=no
-fi
-rm -f conftest*
-fi
-
-echo "$ac_t""$ac_cv_c_const" 1>&6
-if test $ac_cv_c_const = no; then
-  cat >> confdefs.h <<\EOF
-#define const 
-EOF
-
-fi
 
 
 echo $ac_n "checking "for glibc regex error codes"""... $ac_c" 1>&6
-echo "configure:2395: checking "for glibc regex error codes"" >&5
+echo "configure:2321: checking "for glibc regex error codes"" >&5
 if eval "test \"`echo '$''{'epos_cv_symb_regeend'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2400 "configure"
+#line 2326 "configure"
 #include "confdefs.h"
 #include <sys/types.h>
 	#ifdef HAVE_RX_H
@@ -2414,7 +2340,7 @@ int result = REG_EEND;
 	return 0;
 ; return 0; }
 EOF
-if { (eval echo configure:2418: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2344: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   epos_cv_symb_regeend=yes
 else
@@ -2436,12 +2362,12 @@ EOF
 fi
 
 echo $ac_n "checking "for regmatch_t.rm_so"""... $ac_c" 1>&6
-echo "configure:2440: checking "for regmatch_t.rm_so"" >&5
+echo "configure:2366: checking "for regmatch_t.rm_so"" >&5
 if eval "test \"`echo '$''{'epos_cv_struct_rm_so'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2445 "configure"
+#line 2371 "configure"
 #include "confdefs.h"
 #include <sys/types.h>
 	#ifdef HAVE_RX_H
@@ -2460,7 +2386,7 @@ regmatch_t rt;
 	return 0;
 ; return 0; }
 EOF
-if { (eval echo configure:2464: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2390: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   epos_cv_struct_rm_so=yes
 else
@@ -2483,19 +2409,19 @@ fi
 
 
 echo $ac_n "checking "for terminate"""... $ac_c" 1>&6
-echo "configure:2487: checking "for terminate"" >&5
+echo "configure:2413: checking "for terminate"" >&5
 if eval "test \"`echo '$''{'epos_cv_fn_terminate'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2492 "configure"
+#line 2418 "configure"
 #include "confdefs.h"
 
 int main() {
 throw new int; exit(1); terminate()
 ; return 0; }
 EOF
-if { (eval echo configure:2499: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2425: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   epos_cv_fn_terminate=yes
 else
@@ -2517,19 +2443,19 @@ EOF
 fi
 
 echo $ac_n "checking "for built-in bool"""... $ac_c" 1>&6
-echo "configure:2521: checking "for built-in bool"" >&5
+echo "configure:2447: checking "for built-in bool"" >&5
 if eval "test \"`echo '$''{'epos_cv_type_bool'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2526 "configure"
+#line 2452 "configure"
 #include "confdefs.h"
 
 int main() {
 bool b
 ; return 0; }
 EOF
-if { (eval echo configure:2533: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2459: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   epos_cv_type_bool=yes
 else
@@ -2551,19 +2477,19 @@ EOF
 fi
 
 echo $ac_n "checking "for explicit template instatiations"""... $ac_c" 1>&6
-echo "configure:2555: checking "for explicit template instatiations"" >&5
+echo "configure:2481: checking "for explicit template instatiations"" >&5
 if eval "test \"`echo '$''{'epos_cv_c_templ_inst'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2560 "configure"
+#line 2486 "configure"
 #include "confdefs.h"
 template <class any_type> class some_type{}; template class some_type<int>;
 int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:2567: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2493: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   epos_cv_c_templ_inst=yes
 else
@@ -2585,12 +2511,12 @@ EOF
 fi
 
 echo $ac_n "checking "for socklen_t"""... $ac_c" 1>&6
-echo "configure:2589: checking "for socklen_t"" >&5
+echo "configure:2515: checking "for socklen_t"" >&5
 if eval "test \"`echo '$''{'epos_cv_type_socklen'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2594 "configure"
+#line 2520 "configure"
 #include "confdefs.h"
 #ifdef HAVE_SYS_SOCKET_H
 	#include <sys/socket.h>
@@ -2601,7 +2527,7 @@ int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:2605: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2531: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   epos_cv_type_socklen=yes
 else
@@ -2638,7 +2564,7 @@ broken_enum_bitfields_test='\
 	'
 
 echo $ac_n "checking "for broken enum bitfields"""... $ac_c" 1>&6
-echo "configure:2642: checking "for broken enum bitfields"" >&5
+echo "configure:2568: checking "for broken enum bitfields"" >&5
 if eval "test \"`echo '$''{'epos_cv_c_broken_enum_bitfields'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -2646,14 +2572,14 @@ else
   epos_cv_c_broken_enum_bitfields=yes
 else
   cat > conftest.$ac_ext <<EOF
-#line 2650 "configure"
+#line 2576 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
 extern "C" void exit(int);
 #endif
 $broken_enum_bitfields_test
 EOF
-if { (eval echo configure:2657: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2583: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   epos_cv_c_broken_enum_bitfields=no
 else

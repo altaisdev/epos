@@ -97,10 +97,11 @@ block_rule::block_rule() : rule(NULL)
 
 block_rule::~block_rule()
 {
-	for(current_rule = 0; current_rule < n_rules; current_rule++) {
-		if (rulist[current_rule] != rulist[current_rule + 1])
+	for(current_rule = 1; current_rule < n_rules; current_rule++) {
+		if (rulist[current_rule - 1] != rulist[current_rule])
 			delete rulist[current_rule];
 	}
+	if (n_rules) delete rulist[0];
 	if (rulist) free(rulist);
 }
 
@@ -112,14 +113,14 @@ block_rule::load_rules(rule *terminator, text *file, hash *inherited_vars)
 	char *began_in = strdup(file->current_file);
 	int   began_at = file->current_line;
 
-	l = cfg->rules;
+	l = scfg->rules;
 	rulist = (rule **)xmalloc(sizeof(rule *) * l);
 	n_rules = 0; again = 1;
 	while((rulist[n_rules] = --again ? rulist[n_rules-1]
 					 : next_rule(file, vars, &again)) > END_OF_RULES) {
 //		rulist[n_rules]->set_dbg_tag(file);
 		if (++n_rules == l) {
-			l+=cfg->rules;
+			l+=scfg->rules;
 			rulist = (rule **)xrealloc(rulist, sizeof(rule *) * l);
 		}
 	}
@@ -178,8 +179,8 @@ block_rule::apply_current(unit *root)
 		u->scope = true;
 		DEBUG(0,1,fprintf(STDDBG, "rules::apply current_rule %d\n", current_rule);)
 #ifdef DEBUGGING
-		if (cfg->use_dbg) current_debug_tag = r->dbg_tag;
-		if (cfg->showrule) fprintf(STDDBG, "[%s] %s %s\n",
+		if (scfg->use_dbg) current_debug_tag = r->dbg_tag;
+		if (scfg->showrule) fprintf(STDDBG, "[%s] %s %s\n",
 			r->dbg_tag,
 			enum2str(r->code(), OPCODEstr), r->raw);
 #endif
@@ -191,7 +192,7 @@ block_rule::apply_current(unit *root)
 		u = tmp_next;
 	}
 	
-	if (cfg->pausing) {
+	if (scfg->pausing) {
 		debug();
 		root->fout(NULL);
 		user_pause();
@@ -203,9 +204,9 @@ block_rule::debug()
 {
 	int i;
 	for(i=0;i<n_rules;i++) {
-		if (i==current_rule) color(cfg->stddbg, cfg->curul_col);
-		if (i==current_rule || cfg->r_dbg_sh_all) rulist[i]->debug();
-		if (i==current_rule) color(cfg->stddbg, cfg->normal_col);
+		if (i==current_rule) color(cfg->stddbg, scfg->curul_col);
+		if (i==current_rule || scfg->r_dbg_sh_all) rulist[i]->debug();
+		if (i==current_rule) color(cfg->stddbg, scfg->normal_col);
 	}
 }
 
@@ -288,17 +289,17 @@ rules::rules(const char *filename, const char *dirname)
 	text *file;
 	hash *vars;
 
-	DEBUG(0,0,if (cfg->loaded) fprintf(STDDBG,"Configuration already loaded when constructing rules\n");)
+	DEBUG(0,0,if (scfg->loaded) fprintf(STDDBG,"Configuration already loaded when constructing rules\n");)
 
-	if (!cfg->loaded) epos_init();
+	if (!scfg->loaded) /* epos_init() */ shriek(862, "compiling rules too soon");
 	
-	file=new text(filename, dirname, cfg->lang_base_dir, "rules", false);
-	vars = new hash(cfg->vars|1);
+	file=new text(filename, dirname, scfg->lang_base_dir, "rules", false);
+	vars = new hash(scfg->vars|1);
 	DEBUG(3,1,fprintf(STDDBG,"Rules shall be taken from %s\n",filename);)
 	
 	body = new r_block(file, vars);
-	body->scope = cfg->text_level;
-	body->target = cfg->phone_level;
+	body->scope = scfg->text_level;
+	body->target = scfg->phone_level;
 #ifdef DEBUGGING
 	body->dbg_tag = strdup("root block");
 #endif
@@ -352,7 +353,7 @@ rule_weight(const char *word, text *file)
 	}
 	if ((word[i]|('a'-'A'))=='x' && !word[i+1] && i) {
 		if (!result) diatax("Zero weight");
-		if (result > cfg->mrw) diatax("Weight too large");
+		if (result > scfg->mrw) diatax("Weight too large");
 		return result;	// shriek if 0 ?
 	}
 	return 0;
@@ -464,8 +465,8 @@ next_rule(text *file, hash *vars, int *count)
 			 else 		diatax("Extra stuff follows rule");
 	}
 		
-	scope = str2enum(word[param+1], cfg->unit_levels, U_DEFAULT);	/* no later */
-	target = str2enum(word[param+2], cfg->unit_levels, U_DEFAULT);
+	scope = str2enum(word[param+1], scfg->unit_levels, U_DEFAULT);	/* no later */
+	target = str2enum(word[param+2], scfg->unit_levels, U_DEFAULT);
 
 	if (word[param] && strchr(word[param], PSEUDOSPACE))
 		for (char *p = word[param]; *p; p++)

@@ -111,8 +111,8 @@ rule::~rule()
 void
 rule::set_level(UNIT scp, UNIT trg)
 {
-	scope =  scp == U_DEFAULT ? cfg->default_scope  : scp;
-	target = trg == U_DEFAULT ? cfg->default_target : trg;
+	scope =  scp == U_DEFAULT ? scfg->default_scope  : scp;
+	target = trg == U_DEFAULT ? scfg->default_target : trg;
 	if (scope < target) shriek (811, fmt("Scope must not be more narrow than target%s", debug_tag()));
 			// was scope <= target -  consider returning back
 }
@@ -156,10 +156,13 @@ rule::debug_tag()
 	char *tmp;
 	if (dbg_tag) {
 		tmp=strchr(dbg_tag, ':');
-		if (!tmp) tmp=" not specified";
-		*tmp++=0;
-		sprintf(wholetag, " in file %s line %s", dbg_tag, tmp);
-		tmp[-1]=':';
+		if (!tmp) {
+			sprintf(wholetag, "in unnumbered place %s", dbg_tag);
+		} else {
+			*tmp++=0;
+			sprintf(wholetag, " in file %s line %s", dbg_tag, tmp);
+			tmp[-1]=':';
+		}
 	} else
 #endif
 	{
@@ -213,7 +216,7 @@ hash *literal_hash(char *s)
 hashing_rule::hashing_rule(char *param) : rule(NULL)
 {
 	if (*param == DQUOT) raw = strdup(param);
-	else raw = compose_pathname(param, this_lang->hash_dir, cfg->lang_base_dir);
+	else raw = compose_pathname(param, this_lang->hash_dir, scfg->lang_base_dir);
 	dict = NULL;
 	allow_id = false;
 }
@@ -230,7 +233,7 @@ hashing_rule::load_hash()
 	if (dict) shriek(862, "unwanted load_hash");
 
 	if (*raw != DQUOT) {
-		dict = new hash(raw, cfg->hash_full, 0, 200, 3,
+		dict = new hash(raw, scfg->hash_full, 0, 200, 3,
 			(char *) allow_id, false, "dictionary %s not found", esctab);
 	} else dict = literal_hash(raw);
 	if (!dict) shriek(463, fmt("Unterminated argument%s", debug_tag()));	// or out of memory
@@ -240,8 +243,8 @@ void
 rule::debug()
 {
 	fprintf(STDDBG," rule: '%s' ",enum2str(code(),OPCODEstr));
-	fprintf(STDDBG,"par %s scope '%s' ", raw, enum2str(scope, cfg->unit_levels));
-	fprintf(STDDBG,"target '%s'\n", enum2str(target, cfg->unit_levels));
+	fprintf(STDDBG,"par %s scope '%s' ", raw, enum2str(scope, scfg->unit_levels));
+	fprintf(STDDBG,"target '%s'\n", enum2str(target, scfg->unit_levels));
 }
 
 
@@ -316,7 +319,7 @@ r_subst::apply(unit *root)
 
 	root->relabel(dict, method, target);
 
-	if (cfg->lowmemory) {
+	if (scfg->lowmemory) {
 		DEBUG(2,2,fprintf(STDDBG,"Hash table caching is disabled.\n");) //hashtabscache[rulist[i].param]->debug();
 		delete dict;
 		dict = NULL;
@@ -353,17 +356,17 @@ r_diph::r_diph(char *param) : hashing_rule(param)
 void
 r_diph::apply(unit *root)
 {
-	if (!cfg->use_diph) return;
+	if (!scfg->use_diph) return;
 	if (!dict) load_hash();
 	root->diphs(target, dict);
-	if (cfg->lowmemory) {
+	if (scfg->lowmemory) {
 		DEBUG(2,2,fprintf(STDDBG,"Hash table caching is disabled.\n");) //hashtabscache[rulist[i].param]->debug();
 		delete dict;
 		dict=NULL;
 	}
 
-	DEBUG(1,2,fprintf(STDDBG,"Diphones w%s be dumped just after the DIPHONES rule\n", cfg->imm_diph?"ill":"on't");)
-	if (cfg->imm_diph) {
+	DEBUG(1,2,fprintf(STDDBG,"Diphones w%s be dumped just after the DIPHONES rule\n", scfg->imm_diph?"ill":"on't");)
+	if (scfg->imm_diph) {
 		static diphone d[DIPH_BUFF_SIZE];   //every item is 16 bytes long
 		
 		int i=DIPH_BUFF_SIZE;
@@ -404,7 +407,7 @@ r_prosody::apply(unit *root)
 	if (!dict) load_hash();
 	DEBUG(1,1,fprintf(STDDBG,"entering rules::sseg()\n");)
 	root->sseg(target, dict);
-	if (cfg->lowmemory) {
+	if (scfg->lowmemory) {
 		DEBUG(2,2,fprintf(STDDBG,"Hash table caching is disabled.\n");) //hashtabscache[rulist[i].param]->debug();
 		delete dict;
 		dict = NULL;
@@ -700,7 +703,7 @@ class r_raise: public rule
 r_raise::r_raise(char *param) : rule(param)
 {
 	char *cond;
-	if ((cond=strchr(raw,RAISE_DELIM))) *cond++=0; else cond="!";
+	if ((cond = strchr(raw,RAISE_DELIM))) *cond++=0; else cond=(char *)"!";
 	whattab = booltab(raw);
 	whentab = booltab(cond);
 }
@@ -941,7 +944,7 @@ r_with::r_with(char *param, text *file, hash *vars) : cond_rule(param, file, var
 	char *old = raw;
 
 	if (*raw == DQUOT) raw = strdup(raw);
-	else raw = compose_pathname(raw, this_lang->hash_dir, cfg->lang_base_dir);
+	else raw = compose_pathname(raw, this_lang->hash_dir, scfg->lang_base_dir);
 
 	free(old);
 	dict = NULL;
@@ -957,7 +960,7 @@ r_with::apply(unit *root)
 {
 	if (!dict) {
 		if (*raw == DQUOT) dict = literal_hash(raw);
-		else dict = new hash(raw, cfg->hash_full,
+		else dict = new hash(raw, scfg->hash_full,
 			0, 200, 3, DATA_EQUALS_KEY, false, "dictionary %s not found", esctab);
 	}
 	if (!dict) shriek(811, fmt("Unterminated argument%s", debug_tag()));	// or out of memory

@@ -108,8 +108,8 @@ agent::timeslice()
 {
 	c->enter();
 	DEBUG(1,11,fprintf(STDDBG, "Timeslice for %s\n", name());)
-	DEBUG(0,11,fprintf(STDDBG, "pendcount %d, next->pendcount %d, pend_max %d\n", pendcount, next ? next->pendcount : -42, cfg->pend_max);)
-	if (next && next->pendcount > cfg->pend_max) {
+	DEBUG(0,11,fprintf(STDDBG, "pendcount %d, next->pendcount %d, pend_max %d\n", pendcount, next ? next->pendcount : -42, scfg->pend_max);)
+	if (next && next->pendcount > scfg->pend_max) {
 		DEBUG(1,11,fprintf(STDDBG, "(satiated)\n");)
 		c->leave();
 		return;
@@ -126,7 +126,7 @@ agent::timeslice()
 		inb = tmp->d;
 		pendin = tmp->next;
 		delete tmp;
-		if (pendcount-- == cfg->pend_min) prev->unquench();
+		if (pendcount-- == scfg->pend_min) prev->unquench();
 		if (!pendin) {
 			prev->pendout = NULL;
 			if (pendcount) shriek(862, "pending count incorrect");
@@ -404,32 +404,38 @@ class a_synth : public agent
 {
 	virtual void run();
 	virtual const char *name() { return "synth"; };
+   protected:
+	void init_syn();
    public:
+	a_synth(DATA_TYPE din, DATA_TYPE dout) : agent(din, dout) {};
 	a_synth() : agent(T_DIPHS, T_WAVEFM) {};
 };
+
+void
+a_synth::init_syn()
+{
+	try {
+		this_voice->syn = setup_synth(this_voice);
+	} catch (command_failed *e) {
+		if (e->code / 10 == 47 && this_lang->fallback_voice && *this_lang->fallback_voice) {
+							// 47x codes are network errors
+			voice_switch(this_lang->fallback_voice);
+			if (this_lang->permanent_fallbacks) {
+				c->leave();
+				voice_switch(this_lang->fallback_voice);
+				c->enter();
+			} 
+			delete e;
+			return;
+		} else throw e;
+	}
+}
 
 void
 a_synth::run()
 {
 	if (!this_voice) shriek(861, "No current voice");
-	if (!this_voice->syn) {
-		try {
-			this_voice->syn = setup_synth(this_voice);
-		} catch (command_failed *e) {
-			if (e->code / 10 == 47 && this_lang->fallback_voice && *this_lang->fallback_voice) {
-								// 47x codes are network errors
-				voice_switch(this_lang->fallback_voice);
-				if (this_lang->permanent_fallbacks) {
-					c->leave();
-					voice_switch(this_lang->fallback_voice);
-					c->enter();
-				} 
-				delete e;
-				run();
-				return;
-			} else throw e;
-		}
-	}
+	while (!this_voice->syn) init_syn();	// at most twice
 	wavefm *wfm = new wavefm(this_voice);
 	this_voice->syn->syndiphs(this_voice, (diphone *)inb + 1, ((diphone*)inb)->code, wfm);
 	DEBUG(1,11,fprintf(STDDBG, "a_synth processes %d diphones\n", ((diphone *)inb)->code);)
@@ -438,6 +444,32 @@ a_synth::run()
 	inb = NULL;
 	pass(wfm);
 }
+
+/*
+
+class a_syn : public a_synth
+{
+	virtual void run();
+   public:
+	a_syn() : a_synth(T_SSIF, T_WAVEFM) {};
+//	a_syn() : agent(T_SSIF, T_WAVEFM) {};
+};
+
+void
+a_syn::run()
+{
+	if (!this_voice) shriek(861, "No current voice");
+	while (!this_voice->syn) init_syn();	// at most twice
+	wavefm *wfm = new wavefm(this_voice);
+	this_voice->syn->synssif(this_voice, (char *)inb, wfm);
+//	DEBUG(1,11,fprintf(STDDBG, "a_synth processes %d diphones\n", ((diphone *)inb)->code);)
+
+	free(inb);
+	inb = NULL;
+	pass(wfm);
+}
+
+*/
 
 template <DATA_TYPE TYPE> class a_type : public agent
 {
@@ -635,7 +667,8 @@ a_output::report(bool total, int written)
 	if (foreground()) {
 		reply(total ? "122 total bytes" : "123 written bytes");
 		sprintf(scratch, " %d", written);
-		reply(scratch);
+		sputs(scratch, cfg->sd_out);
+		sputs("\r\n", cfg->sd_out);
 	}
 }
 
@@ -828,7 +861,7 @@ stream::stream(char *s, context *pc) : agent(T_NONE, T_NONE)
 	agent *l = head = NULL;
 
 	callbk = NULL;
-//	c = new context(cfg->sd_in, cfg->sd_out);	// a little redundant
+//	c = new context(cfg->sdin, cfg->sdout);	// a little redundant
 	c = pc;
 //	navelcord<context> ncc(c);
 
@@ -1032,8 +1065,8 @@ a_ttscp::a_ttscp(int sd_in, int sd_out) : a_protocol()
 		"server: Epos\r\n"
 		"release: " VERSION "\r\n"
 		"handle: ", cfg->sd_out);
-	reply(handle);
-	reply("");
+	sputs(		handle, cfg->sd_out);
+	sputs(	"\r\n", cfg->sd_out);
 	ctrl = NULL;
 	deps = new hash_table<char, a_ttscp>(4);
 	deps->dupdata = deps->dupkey = false;
@@ -1151,7 +1184,7 @@ void make_nonblocking(int f)
 }
 
 #ifndef HAVE_GETHOSTNAME
-int gethostbyname(char *b, size_t)
+int gethostname(char *b, size_t)
 {
 	strcpy(b, "localhost");
 	return 0;
@@ -1169,10 +1202,10 @@ a_accept::a_accept() : agent(T_NONE, T_NONE)
 
 	cfg->sd_in = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	memset(&sa, 0, sizeof(sa));
-	gethostname(scratch, cfg->scratch - 1);
+	gethostname(scratch, scfg->scratch - 1);
 	sa.sin_family = AF_INET;
-	sa.sin_addr.s_addr = htonl(cfg->local_only ? INADDR_LOOPBACK : INADDR_ANY);
-	sa.sin_port = htons(cfg->listen_port);
+	sa.sin_addr.s_addr = htonl(scfg->local_only ? INADDR_LOOPBACK : INADDR_ANY);
+	sa.sin_port = htons(scfg->listen_port);
 	setsockopt(cfg->sd_in, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int));
 	DEBUG(2,11,fprintf(STDDBG, "[core] Trying to bind...\n");)
 	if (bind(cfg->sd_in, (sockaddr *)&sa, sizeof (sa))) shriek(871, "Could not bind");
@@ -1189,7 +1222,7 @@ a_accept::a_accept() : agent(T_NONE, T_NONE)
 
 a_accept::~a_accept()
 {
-	close (cfg->sd_in);
+	close (c->config->sd_in);
 	delete c;
 }
 

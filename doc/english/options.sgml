@@ -253,7 +253,7 @@ is equivalent to
 say --show_transcript off "Say this, do not show the transcription"
 </verb></tscreen>
 
-Refer to the <ref id="indivopts" name="individual options"> subsection
+Refer to the <ref id="indivopts" name="individual options"> section
 for documentation on available long options.
 
 <sect2> Language and voice switching
@@ -364,7 +364,7 @@ It is authentication and limiting access to specified options
 for some or all users.
 
 By default, all settable parameters can be changed by any outside connection
-(this doesn't affect any other connections in any way). 
+(this doesn't affect the value in use for any other connection in any way). 
 You can control this privilege by restricting it in <tt>cfg/restr.ini</tt>.
 
 Every line of that file is in the form
@@ -434,6 +434,12 @@ set language slovak
 This example will adjust the preferred pitch and volume for a certain
 Czech voice; it will also set the default language to Slovak. See
 the <ref id="ttscp" name="TTSCP specification"> for more info.
+
+<sect1> Reloading configuration files
+<p>
+
+Under UNIX, Epos reinitializes itself upon a hangup signal (SIGHUP).
+Existing TTSCP connections are terminated and configuration is reloaded.
 
 <sect1> Soft options <label id="soft-options">
 <p>
@@ -535,6 +541,9 @@ with these options changed, but they can be useful in some special
 configurations.  They also get added to resolve some simple software
 engineering dilemmata.
 
+The options in this subsection are not <ref id="static" name="static">
+unless specified otherwise.
+
 <descrip>
 <tag>--comma <sl/delimiter/</tag>
 	This is the delimiter for Epos-generated lists, especially
@@ -575,14 +584,14 @@ engineering dilemmata.
 	either the ANSI escape sequences (ISO 6429) or the Rich Text
 	Format; they use colors to distinguish between symbols of different
 	levels of description.
-<tag>--pend_max <sl/n/ </tag>
+<tag>--pend&lowbar;max <sl/n/ </tag>
 	The maximum number of subtasks waiting in an input queue for
 	a single agent.  If this limit is reached, the preceding
 	agent stops processing further input until only <tt/pend_min/
 	subtasks are left in the queue.  Setting this limit higher
 	will consume additional memory, as more processing can happen
 	in advance, but setting it too low may cause unnecessary delays.
-<tag>--pend_min <sl/n/ </tag>
+<tag>--pend&lowbar;min <sl/n/ </tag>
 	The minimum desired number of subtasks waiting in an input
 	queue for a single agent.  If the queue length decrements
 	to this limit and the preceding agent has enough input
@@ -601,6 +610,7 @@ engineering dilemmata.
 	various kinds of input files than without.  It will rather
 	try to reject suspicious or formally incorrect inputs,
 	than to do something reasonable with them. Useful for debugging.
+	This option is not static.
 <tag>--pausing</tag>
 	With this option on, Epos will pause and wait for a keypress
 	after every rule is applied.  Of course, this is incompatible
@@ -618,6 +628,7 @@ engineering dilemmata.
 	any text which contains an unknown character (not listed in on of the
 	<tt/perm_*/ options).  This option replaces such characters with
 	the value of the <tt/default_char/ option before they're classified.
+	This option is not static.
 <tag>--show_rule</tag>
 	Print each rule before it is applied.  This is useful mostly for
 	debugging situations (when a text is parsed in an unexpected way
@@ -667,6 +678,8 @@ is controlled by TTSCP rather than by option settings.  However, there
 are some options related to the output formats produced by the monolithic
 binary (executable).  There are also some conventional informative outputs
 that can be produced by the monolithic and server binaries equally.
+
+All options in this subsection are <ref id="static" name="static">.
 
 <descrip>
 <tag>--show_phones</tag>
@@ -741,6 +754,8 @@ The <tt/diphone/ and <tt/text/ may not be applicable for some of
 these options. This model of displaying the TSR is not used for
 transmitting the text over TTSCP.
 
+All the options in this subsection are <ref id="static" name="static>.
+
 <descrip>
 <tag>--colored</tag>
 	If disabled, all color manipulating options will be ignored.
@@ -804,11 +819,11 @@ transmitting the text over TTSCP.
 	<tt/postfix/ options effectively disables printing other characters
 	than sounds.  This option is orthogonal to the <tt/structured/
 	option.
-<tag>--swallow_underbars</tag>
+<tag>--swallow&lowbar;underbars</tag>
 	Epos uses the low line (<tt/&lowbar;/) character to represent
 	suprasegmental units with no content at their level (e.g. syllables
 	are often only implicitly terminated or even generated
-	by the rules and have no associated symbol.); this option,
+	by the rules and have no associated symbol); this option,
 	when enabled, suppresses them completely.
 </descrip>
 
@@ -828,8 +843,11 @@ these are no limits at all. Also some <em/sanity check limits/ are imposed; thes
 act as hard limits, but can be effectively disabled by setting them to absurdly
 high values, with no direct impact on efficiency in the typical case.
 
-In fact, you can ignore this section completely, as the few hard limits tend to
+In fact, you can ignore this subsection completely, as the few hard limits tend to
 employ reasonably high values.
+
+The options in this subsection are <ref id="static" name="static"> unless
+specified otherwise.
 
 <descrip>
 <tag>--diph_buff_size <sl/diphones/</tag>
@@ -849,7 +867,7 @@ employ reasonably high values.
 	Sanity check limit.  When reading from a device, this is the maximum
 	amount of data which will be read for processing.  This is not necessary
 	when reading from a file, because the length of a file can be known in
-	advance and it is always finite.
+	advance and it is always finite.  This option is not static.
 <tag>--hashes&lowbar;full <sl/percentage/</tag>
 	Trade-off. Controls how full should a hash table ideally be.
 	The hash tables used in Epos
@@ -858,7 +876,7 @@ employ reasonably high values.
 	in near-optimal speed. Values somewhere below 100 are the best bet.
 <tag>--max_line_len <sl/characters/</tag>
 	Hard limit. Maximum line length in a text-oriented input file.
-	Longer lines are truncated.
+	Longer lines are truncated.  This option is not static.
 <tag>--max_net_cmd <sl/characters/</tag>
 	Hard limit. Maximum TTSCP command length. TTSCP lines longer
 	than this will be truncated.  The protocol requires this value
@@ -1059,7 +1077,7 @@ option is thence language dependent.
 <sect2> Prosody generation
 <p>
 
-The options in this section control how the resulting per diphone prosodic
+The options in this subsection control how the resulting per diphone prosodic
 information is assembled from the prosodic adjustments done to the
 structural units by the rules.  It actually controls the interpretation
 of those adjustments themselves.
@@ -1148,10 +1166,12 @@ Likewise, if the directory name begins with a slash, it is not considered
 to be relative to the base directory.
 
 Changing these options in run time does not immediately cause re-reading the
-renamed files.
+renamed files.  All of the options in this section are <ref id="static" name="static">
+unless stated otherwise.
 
 <descrip>
 <tag>--base&lowbar;dir <sl/dirname/</tag>
+	Only changeable on the command line.
 	The value is an absolute directory name.  This option can be used to
 	change the location of the whole configuration structure, which can also be
 	used for trying out Epos before installing it:
@@ -1172,16 +1192,19 @@ cd src
 	to this subtree to any user except Epos effectively gives him
 	the privilege to use the Epos file access rights anywhere
 	in the system through creating a symlink to the absolute root directory.
+	This option is not static.
 
 
 <tag>--ini&lowbar;dir <sl/dirname/</tag>
 	The value is a directory name.  Sets the path to language
-	independent configuration files.
+	independent configuration files.  This option is only changeable
+	on the command line.
 
 <tag>--fixed&lowbar;ini&lowbar;file <sl/filename/</tag>
 	The value is a file name.  This option can be used to change the file name
 	of the <tt>fixed.ini</tt> file, which usually contains operating system
-	independent, relatively fixed default global configuration.
+	independent, relatively fixed default global configuration.  This option
+	is only changeable on the command line.
 <tag>--cfg&lowbar;file <sl/filename/</tag>
 	The value is a file name. This option can be used to change the file name
 	of the <tt>epos.ini</tt> file.
@@ -1239,7 +1262,8 @@ cd src
 	The value is a directory name.  In this directory, TTSCP help files
 	for individual TTSCP commands and other help topics are located.
 	The contents of these files is sent to the TTSCP control connection
-	in reply to a corresponding <tt/help/ command.
+	in reply to a corresponding <tt/help/ command.  This option is not
+	static.
 <tag>--wav_dir <sl/dirname/</tag>
 	The value is a global directory name.
 	Any waveform files created by Epos without explicit directory
@@ -1267,14 +1291,32 @@ change them in the configuration files instead.
 	The value is a file name. This option can be used to set the file
 	where various information about the Epos process is recorded.
 	At the moment that is of little practical use except for debugging.
+<tag>--use&lowbar;syslog</tag>
+	Log all TTSCP completion messages with syslogd, if the syslog facility is
+	available.
+<label id="authpriv-option">
+<tag>--authpriv</tag>
+	Log all security relevant TTSCP completion messages with the
+	facility <tt/authpriv/ instead of <tt/daemon/.  This includes
+	messages concerning denial of access or incorrectly specified
+	resource or password.  In that case, the <tt/err/ message level
+	is used instead of <tt/warn/.  Notice that network errors
+	are not affected by this option.
+<tag>--log&lowbar;codes </tag>
+	When set, all TTSCP messages are preceded with their numeric codes
+	as in TTSCP.
 <tag>--server&lowbar;pwd&lowbar;file <sl/filename/</tag>
 	The value is a file name. This option can be used to force the server
 	to store its internal password to a file.  This password can then
 	be used for TTSCP authentication in order to issue restricted commands
 	such as <tt/down/.  If the file can not be created, no error is reported.
+<tag>--debug&lowbar;password <sl/password/</tag>
+	The value is a string.  The string may be used instead of the server
+	password.  Use of this option makes Epos insecure and is discouraged.
 <tag>--restr&lowbar;file <sl/filename/</tag>
 	The file named by this parameter provides access control in TTSCP to individual
 	options.  Its syntax is described <ref id="restricted-options" name="above">.
+	This option can only be changed from the command line.
 <tag>--listen&lowbar;port <sl/port/</tag>
 	The TCP port number where the daemon should be listening for incoming
 	TTSCP connections. The daemon will check if no other service is already
@@ -1303,7 +1345,7 @@ This code is usually a <tt/fprintf/ to the <tt/stddbg/ stream.
 The decision whether to execute the debugging code, based on the
 code area and severity level is carried out by the <tt/debug&lowbar;wanted/
 function supplied in <tt>src/interf.cc</tt>.  You can either edit
-it yourself, or, you can use the options described in this section
+it yourself, or, you can use the options described in this subsection
 to control the behavior of the default <tt/debug&lowbar;wanted/ function
 supplied by Epos.  Note that <tt/&num;define DEBUGGING/ must be
 enabled in <tt/interf.h/, else the <tt/DEBUG/ macro is ignored
@@ -1329,13 +1371,13 @@ level | debugging messages | comment @
 </caption>
 </table>
 
-
+All options in this subsection are <ref id="static" name="static">.
 
 <descrip>
 <tag>--use&lowbar;debug</tag>
 	This option must be <tt/on/ to provide any debugging information (except for
 	daemon activity logging controlled by <ref id="daemon-log-option" 
-	name="the daemon&lowbar;log option">.
+	name="the daemon&lowbar;log option"> and syslog logging.
 <tag>--assim&lowbar;debug <sl/level/</tag>
 	Severity level threshold for the code area of <tt/regress/ and
 	related types of rules, as well as their implementation in the

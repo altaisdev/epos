@@ -89,11 +89,11 @@ lpcsyn::lpcsyn(voice *v)
 	for (i=0; i<rad; i++) ifilt[i] = 0;
 
 //	tdiph = (char (*)[4])freadin(v->dptfile, v->inv_dir, "rt", "diphone names");
-	diph_len = claim(v->counts, v->loc, cfg->inv_base_dir, "rb", "model counts", NULL);
+	diph_len = claim(v->counts, v->loc, scfg->inv_base_dir, "rb", "model counts", NULL);
 	diph_offs[0] = 0;
 	for (i = 1; i < v->n_segs; i++)
 		diph_offs[i] = diph_offs[i-1] + (int)diph_len->data[i-1];	// cast to unsigned char * before [] if LPC sounds bad
-//	models = claim(v->models, v->loc, cfg->inv_base_dir, "rb", "lpc inventory");
+//	models = claim(v->models, v->loc, scfg->inv_base_dir, "rb", "lpc inventory");
 //	delmod = diph_offs[440] + diph_len[440];
 }
 
@@ -118,6 +118,8 @@ inline void lpcsyn::synmod(model mod, wavefm *w)
 {
 	int i,k,ihilb = 0;
 	int gain,finp,iy,jrc[8],kz;	// were long - geo
+
+	printf("lsyn=%d nsyn=%d esyn=%d lsq=%d\n", mod.lsyn, mod.nsyn, mod.esyn, mod.lsq);
 
 	if (cfg->paranoid && ipitch>0 && mod.lsyn>0 && ipitch + mod.lsyn - lastl)
 		shriek(862, "ihilb is undefined in synteza.synmod! Please contact the authors.\n");
@@ -159,7 +161,7 @@ inline void lpcsyn::synmod(model mod, wavefm *w)
 }//synmod
 
 
-void lpcsyn::syndiph(voice *, diphone d, wavefm *w)	// voice not used
+void lpcsyn::syndiph(voice *v, diphone d, wavefm *w)	// voice not used
 {
 	int i,imodel,lincr,incrl,numodel,zaklad,znely;
 	model m;
@@ -169,7 +171,7 @@ void lpcsyn::syndiph(voice *, diphone d, wavefm *w)	// voice not used
 	lincr=0;
 	numodel=(int)diph_len->data[d.code];	// cast to unsigned char * before [] if problems
 	if(!numodel) {
-		DEBUG(4,9,fprintf(STDDBG, "Unknown diphone %d, %3s\n", d.code, d.code<445 ? "in range" : "out of range"));
+		DEBUG(4,9,fprintf(STDDBG, "Unknown diphone %d, %3s\n", d.code, d.code < v->n_segs ? "in range" : "out of range"));
 		return;
 	}
 	/* nacti_mem_popis(code,numodel) */
@@ -262,7 +264,7 @@ void lpcint::frobmod(int imodel, diphone d, model *m, int &incrl, int &znely)
 
 void floatoven(char *p, int l)
 {
-	if (!cfg->big_endian) return;
+	if (!scfg->big_endian) return;
 	for (fcmodel *tmp = (fcmodel *)p; (char *)tmp < p + l; tmp++) {
 		// FIXME - a few floats
 	}
@@ -270,13 +272,13 @@ void floatoven(char *p, int l)
 
 void intoven(char *, int)
 {
-	if (!cfg->big_endian) return;
+	if (!scfg->big_endian) return;
 	shriek(462, "no int inventories on big-endians, please");
 }
 
 void vqoven(char *, int)
 {
-	if (!cfg->big_endian) return;
+	if (!scfg->big_endian) return;
 	shriek(462, "no vq inventories on big-endians, please");
 }
 
@@ -287,7 +289,7 @@ void bswap(short *p)
 
 void shortoven(char *p, int l)
 {
-	if (!cfg->big_endian) return;
+	if (!scfg->big_endian) return;
 	for (short *tmp = (short *)p; (char *)tmp < p + l; tmp++) {
 		bswap(tmp);
 	}
@@ -297,7 +299,7 @@ void shortoven(char *p, int l)
 lpcfloat::lpcfloat(voice *v) : lpcsyn(v)
 {
 // 	fcmodely = (fcmodel *)freadin(v->models, v->inv_dir, "rb", "float inventory");
-	models = claim(v->models, v->loc, cfg->inv_base_dir, "rb", "lpc inventory", floatoven);
+	models = claim(v->models, v->loc, scfg->inv_base_dir, "rb", "lpc inventory", floatoven);
 }
 
 lpcint::lpcint(voice *v) : lpcsyn(v)
@@ -307,19 +309,19 @@ lpcint::lpcint(voice *v) : lpcsyn(v)
 	if (cfg->ti_adj) { //Needs some more hacking before use -- twice in this file
 //	    kor_t = (short int *)freadin("korekce.set", v->inv_dir, "rb", "integer inventory");
 		shriek(462, "Remove the comment above this message and hack the line to claim()/unclaim(), then remove this shriek()");
-	    kor_i = (short int *)(445*2 + (char *)kor_t);
+	    kor_i = (short int *)(v->n_segs*2 + (char *)kor_t);
 	}
 #endif
-	models = claim(v->models, v->loc, cfg->inv_base_dir, "rb", "lpc inventory", intoven);
+	models = claim(v->models, v->loc, scfg->inv_base_dir, "rb", "lpc inventory", intoven);
 }
 
 lpcvq::lpcvq(voice *v) :lpcsyn(v)
 {
 //	codebook = (short int (*)[8])freadin(v->book, v->inv_dir, "rb", "vector quant synthesis");
-	codebook = claim(v->book, v->loc, cfg->inv_base_dir, "rb", "vector quant synthesis codebook", shortoven);
+	codebook = claim(v->book, v->loc, scfg->inv_base_dir, "rb", "vector quant synthesis codebook", shortoven);
 	ener = (short int *)(256*16 + (char *)codebook->data);
 //	vqmodels = (vqmodel *)freadin(v->models, v->inv_dir, "rb", "vector quant synthesis");
-	models = claim(v->models, v->loc, cfg->inv_base_dir, "rb", "lpc inventory", vqoven);
+	models = claim(v->models, v->loc, scfg->inv_base_dir, "rb", "lpc inventory", vqoven);
 }
 
 lpcvq::~lpcvq()

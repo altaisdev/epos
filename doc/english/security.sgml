@@ -1,3 +1,50 @@
+<sect> Logging
+<p>
+
+A very short section which just doesn't seem to belong anywhere else.
+
+Epos supports error logging via syslog (on systems where syslogd
+is running).  At the moment, only (the most of) TTSCP completion codes
+together with the associated messages can be logged; this includes
+all abnormal server termination states (except for a plain old fatal
+signal).  If syslog should be available (the <tt>syslog.h</tt> header
+file is present), but isn't, the error messages are logged directly
+to the system console.  If the syslog facility is being missed at
+compilation time, Epos opens a file called <tt>hackfile</tt> in the
+current directory whatever it may be and writes some debugging information
+there instead.
+
+The syslog message levels are set according to the <ref id="syslogs"
+name="syslog message levels"> table.  In all cases, Epos messages
+are logged with the <tt/daemon/ facility.
+
+
+<table loc="h">
+<tabular ca="|l|l|">
+<hline>
+<label id="syslogs">
+level		|  used for @
+<hline>
+<tt>debug</tt>	|  trivial success TTSCP codes @
+<tt>info</tt>	|  silly errors and other messages @
+<tt>notice</tt>	|  shutting down as requested @
+<tt>warning</tt>|  security or network error @
+<tt>err</tt>	|  internal error @
+<tt>crit</tt>	|  abnormal termination @
+<hline>
+</tabular>
+<caption>
+	syslog message levels
+</caption>
+</table>
+
+See also the <ref id="authpriv-option" name="<tt>authpriv</tt> option">
+which may change this behavior for possibly security-related errors,
+but not network errors.
+
+Any debugging output together with error messages etc. is also often logged
+to <tt>/var/log/epos</tt> as specified with the <tt/daemon_log/ option.
+
 <sect> Security
 <p>
 

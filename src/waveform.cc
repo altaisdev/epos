@@ -382,8 +382,8 @@ wavefm::attach()
 	int d;
 
 	if (fd != -1) shriek(862, "Nested voice::attach()");
-	if (!cfg->play_diph) cfg->wav_file = NULL_FILE;
-	output = compose_pathname(cfg->wav_file, cfg->wav_dir);
+	if (!scfg->play_diph) scfg->wav_file = NULL_FILE;
+	output = compose_pathname(scfg->wav_file, scfg->wav_dir);
 
 #ifdef S_IRGRP
 	d = open(output, O_WRONLY | O_CREAT | O_TRUNC | O_NONBLOCK | O_BINARY, MODE_MASK);
@@ -640,7 +640,7 @@ wavefm::write_header()
 }
 
 void
-wavefm::label(int pos, char *label, char *note)
+wavefm::label(int pos, char *label, const char *note)
 {
 	if (current_cp) {
 		if (!(current_cp & (current_cp - 1)))

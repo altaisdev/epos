@@ -24,20 +24,19 @@
 
 parser::parser(const char *filename, int mode)
 {
-	if (!cfg->loaded) epos_init();
 	if (!filename || !*filename) {
 		register signed char c;
 		int i = 0;
 		text = (unsigned char *)xmalloc(cfg->dev_txtlen+1);
 		if(!text) shriek(422, "Parser: Out of memory");
 		do text[i++] = c = getchar(); 
-			while(c!=-1 && c!=cfg->eof_char && i<cfg->dev_txtlen);
+			while(c!=-1 && c!=scfg->eof_char && i<cfg->dev_txtlen);
 		text[--i] = 0;
 		txtlen = i;
 	} else { 
 		if (mode) text = (unsigned char *) strdup(filename);
 		else {
-			file *f = claim(filename, this_lang->input_dir, cfg->lang_base_dir, "rt", "input text", NULL);
+			file *f = claim(filename, this_lang->input_dir, scfg->lang_base_dir, "rt", "input text", NULL);
 			text = (unsigned char *)strdup(f->data);
 			unclaim(f);
 		}
@@ -49,7 +48,6 @@ parser::parser(const char *filename, int mode)
 
 parser::parser(const char *str)
 {
-	if (!cfg->loaded) epos_init();
 	DEBUG(1,7,fprintf(STDDBG,"Parser for %s is to be built\n",str);)
 	text = (unsigned char *)strdup(str);
 	txtlen = strlen(str);
@@ -68,10 +66,10 @@ parser::init(SYMTABLE symtab)
 		//    It's meant to be altered when we later decide to use
 		//    another Czech char encoding.
 	current = text-1; 
-	do level = chrlev(*++current); while (level > cfg->phone_level && level < cfg->text_level);
+	do level = chrlev(*++current); while (level > scfg->phone_level && level < scfg->text_level);
 		//We had to skip any garbage before the first phone
 
-	gettoken();		// new - hope this works
+	token = '0'; gettoken();		// new - hope this works
 //	f = i = t = 0;
 
 	DEBUG(0,7,fprintf(STDDBG,"Parser: initial level is %u.\n",level);)
@@ -101,11 +99,11 @@ parser::getchar()
 	unsigned char retchar = *current++;
 	f = i = t = 0;
 	level = chrlev(*current);   // level of the next character
-	if (level == U_TEXT) {
-		DEBUG(2,7,fprintf(STDDBG,"Parser: end of text reached, changing the policy\n");)
-		initables(ST_EMPTY);
-		*current = NO_CONT;  // return '_' or something instead of quirky '\0'
-	}
+//	if (level == U_TEXT) {
+//		DEBUG(2,7,fprintf(STDDBG,"Parser: end of text reached, changing the policy\n");)
+//		initables(ST_EMPTY);
+//		*current = NO_CONT;  // return '_' or something instead of quirky '\0'
+//	}
 	DEBUG(0,7,fprintf(STDDBG,"Parser: char requested, '%c' (level %u), next: '%c' (level %u)\n",retchar, lastlev, *current, level);)
 
 	return(retchar);           // return the old char
@@ -118,6 +116,8 @@ parser::getchar()
 unsigned char
 parser::gettoken()
 {
+	if (!token) return NO_CONT;
+
 	UNIT lastlev = level;
 	unsigned char ret = token;
 	do {
@@ -146,13 +146,13 @@ parser::gettoken()
 		}
 		level = chrlev(token);
 		f = i = t = 0;
-		if (level == cfg->text_level) {
+		if (level == scfg->text_level) {
 			DEBUG(2,7,fprintf(STDDBG,"Parser: end of text reached, changing the policy\n");)
-			initables(ST_EMPTY);
+//			initables(ST_EMPTY);
 			*current = NO_CONT;  // return '_' or something instead of quirky '\0'
 		}
 		current++;
-	} while (level <= lastlev && level > cfg->phone_level);
+	} while (level <= lastlev && level > scfg->phone_level);
 		// (We are skipping any empty units, except for phones.)
 	DEBUG(0,7,fprintf(STDDBG,"Parser: char requested, '%c' (level %u), next: '%c' (level %u)\n", ret, lastlev, *current, level);)
 
@@ -185,7 +185,7 @@ void
 parser::regist(UNIT u, const char *list)
 {
 	unsigned char *s;
-	if (!list) shriek (812, fmt("Parser configuration: No characters for level %d", u));
+	if (!list) return;
 	for(s=(unsigned char *)list;*s!=0;s++)
 	{
 		if (CHRLEV[*s] != U_ILL && CHRLEV[*s] != u)
@@ -211,21 +211,21 @@ void
 parser::initables(SYMTABLE table)
 {
 	int c;
-	UNIT u = cfg->phone_level;
+	UNIT u = scfg->phone_level;
 //	if (cfg->relax_input) for (c=1; c<256; c++) TRANSL_INPUT[c] = cfg->dflt_char;
 	for(c=0; c<256; c++) TRANSL_INPUT[c] = (unsigned char)c;
-	for(c=1; c<256; c++) CHRLEV[c] = U_ILL; *CHRLEV = cfg->text_level;
+	for(c=1; c<256; c++) CHRLEV[c] = U_ILL; *CHRLEV = scfg->text_level;
 	switch (table) {
 	case ST_ROOT:
 		alias("  ","\r\t");
 	case ST_RAW:
-		for (u = cfg->phone_level; u < cfg->text_level; u = (UNIT)(u+1))
+		for (u = scfg->phone_level; u < scfg->text_level; u = (UNIT)(u+1))
 			regist(u, this_lang->perm[u]);
 //		regist(U_WORD, " ");
 		break;
-	case ST_EMPTY:
-		for(c=1; c<256; c++) CHRLEV[c] = U_VOID; *CHRLEV = cfg->text_level;
-		break;
+//	case ST_EMPTY:
+//		for(c=1; c<256; c++) CHRLEV[c] = U_VOID; *CHRLEV = scfg->text_level;
+//		break;
 	default: shriek(861, fmt("Garbage passed to parser::initables, %d", table));
 	}
 }

@@ -84,7 +84,7 @@ unit::unit()
 
 unit::~unit()
 {
-	DEBUG(0,2,fprintf(STDDBG,"Disposing %c\n",cont);)
+//	DEBUG(0,2,fprintf(STDDBG,"Disposing %c\n",cont);)
 	if (next) delete next;
 	if (firstborn) delete firstborn;
 }
@@ -105,8 +105,8 @@ unit::write_diphs(diphone *whither, int first, int n)
 	if (!whither) shriek (861, fmt("NULL ptr passed to write_diphs() n=%d", n));
 	scope = true;
 	if (first == ifcache && iucache == this) tmpu=ocache;
-	else for (m = first, tmpu = LeftMost(cfg->segm_level); m--; tmpu = tmpu->Next(cfg->segm_level));
-	for (m=0; m<n && tmpu != &EMPTY; m++, tmpu = tmpu->Next(cfg->segm_level)) {
+	else for (m = first, tmpu = LeftMost(scfg->segm_level); m--; tmpu = tmpu->Next(scfg->segm_level));
+	for (m=0; m<n && tmpu != &EMPTY; m++, tmpu = tmpu->Next(scfg->segm_level)) {
 		tmpu->sanity();
 		whither[m].code = tmpu->cont;
 		whither[m].f = tmpu->effective(Q_FREQ);
@@ -122,7 +122,7 @@ void
 unit::show_phones()
 {
 	unit *tmpu;
-	for (tmpu = LeftMost(cfg->phone_level); tmpu != &EMPTY; tmpu = tmpu->Next(cfg->phone_level))
+	for (tmpu = LeftMost(scfg->phone_level); tmpu != &EMPTY; tmpu = tmpu->Next(scfg->phone_level))
 		printf("%c %d %d %d\n", tmpu->cont,
 			tmpu->effective(Q_FREQ),
 			tmpu->effective(Q_INTENS),
@@ -141,13 +141,13 @@ unit::fout(char *filename)      //NULL means stdout
 	file *tmp;
 	outf = filename ? fopen(filename, "wt", "unit dump file") : cfg->stddbg;
 
-	tmp = claim(cfg->header_xscr, cfg->ini_dir, "", "rt", "transcription header", NULL);
+	tmp = claim(scfg->header_xscr, scfg->ini_dir, "", "rt", "transcription header", NULL);
 	fputs(tmp->data, outf);
 	unclaim(tmp);
 
 	fdump(outf);
 
-	tmp = claim(cfg->footer_xscr, cfg->ini_dir, "", "rt", "transcription footer", NULL);
+	tmp = claim(scfg->footer_xscr, scfg->ini_dir, "", "rt", "transcription footer", NULL);
 	fputs(tmp->data, outf);
 	unclaim(tmp);
 
@@ -158,7 +158,7 @@ unit::fout(char *filename)      //NULL means stdout
  unit::fdump
  ****************************************************************************/
 
-inline char *
+inline const char *
 fmtchar(char c)
 {
 	static char b[2];
@@ -179,41 +179,41 @@ unit::fdump(FILE *handle)        //this one does the real job
 	unit *tmpu;
     
 	sanity();
-	if (depth == cfg->phone_level) {
+	if (depth == scfg->phone_level) {
 		colorize (depth, handle);
-		if (cont != NO_CONT || !cfg->out_swallow__) fputs(fmtchar(cont), handle);
+		if (cont != NO_CONT || !scfg->out_swallow__) fputs(fmtchar(cont), handle);
 		colorize(-1, handle);
 		return;
 	}
-	if (cfg->out_prefix && !(cont == NO_CONT && cfg->out_swallow__)) {
+	if (scfg->out_prefix && !(cont == NO_CONT && scfg->out_swallow__)) {
 		colorize(depth, handle);   //If you wanna disable this, go to interf.cc::colorize()   
 		fputs(fmtchar(cont), handle);
 		colorize(-1, handle);
 	}
-	if (cfg->out_verbose) {
+	if (scfg->out_verbose && scfg->out_opening[depth]) {
 		colorize(depth, handle);   //If you wanna disable this, go to interf.cc::colorize()   
-		fputs(cfg->out_opening[depth], handle);
+		fputs(scfg->out_opening[depth], handle);
 		colorize(-1,handle);
 	}
 	if ((tmpu = firstborn)) {
 		tmpu->fdump(handle);
 		tmpu = tmpu->next;
 		while (tmpu) {
-			if (cfg->out_verbose) {
+			if (scfg->out_verbose && scfg->out_separ[depth-1]) {
 				colorize(depth-1, handle);	
-				fputs(cfg->out_separ[depth-1], handle);
+				fputs(scfg->out_separ[depth-1], handle);
 				colorize(-1, handle);
 			}
 			tmpu->fdump(handle);
 			tmpu = tmpu->next;
 		}
 	}
-	if (cfg->out_verbose) {
+	if (scfg->out_verbose && scfg->out_closing[depth]) {
 		colorize(depth,handle);
-		fputs(cfg->out_closing[depth],handle);
+		fputs(scfg->out_closing[depth],handle);
 		colorize(-1,handle);
 	} else fputc(' ', handle);	
-	if (cfg->out_postfix && !(cont == NO_CONT && cfg->out_swallow__)) { 
+	if (scfg->out_postfix && !(cont == NO_CONT && scfg->out_swallow__)) { 
 		colorize(depth, handle);   //If you wanna disable this, go to interf.cc::colorize()   
 		fputs(fmtchar(cont), handle);
 		colorize(-1, handle);
@@ -343,10 +343,10 @@ unit::gather(char *buffer_now, char *buffer_end, bool suprasegm)
 		buffer_now = tmpu->gather(buffer_now, buffer_end, suprasegm);
 		if (!buffer_now) return NULL;
 	}
-	if (cont != NO_CONT && (depth == cfg->phone_level || suprasegm)) {
-		if(buffer_now >= buffer_end) 
-			return NULL;
-		if (depth < cfg->phone_level) 
+	if(buffer_now >= buffer_end) 
+		return NULL;
+	if (cont != NO_CONT && (depth == scfg->phone_level || suprasegm)) {
+		if (depth < scfg->phone_level) 
 			// shriek(811, "Cannot gather diphonized units (reorder rules)");
 			return buffer_now;
 		*(buffer_now++) = (char)cont; 
@@ -367,7 +367,7 @@ unit::gather(int *l, bool delimited, bool suprasegm)
 		if (delimited) *b++ = '^';
 		r = gather(b, gb + gbsize - 2, suprasegm);
 		if (!r) {
-			if (gbsize >= cfg->maxtext) shriek(456, "buffer grown too long");
+			if (gbsize >= scfg->maxtext) shriek(456, "buffer grown too long");
 			gbsize <<= 1;
 			gb = (char *)xrealloc(gb, gbsize);
 		}
@@ -560,7 +560,7 @@ unit::subst(hash *table, SUBST_METHOD method)
 bool
 unit::relabel(hash *table, SUBST_METHOD method, UNIT target)
 {
-	if (target == cfg->phone_level) return subst(table, method);
+	if (target == scfg->phone_level) return subst(table, method);
 
 	char	*r;
 	unit	*u;
@@ -819,13 +819,14 @@ unit::syllabify(UNIT target, char *sonor)
  unit::sseg    suprasegmentalia are found here
  ****************************************************************************/
 
-#define SSEG_QUESTIONS 5
-static char _sseg_question[SSEG_QUESTIONS][SSEG_QUESTION_LEN];
+//#define SSEG_QUESTIONS 5
+//static char _sseg_question[SSEG_QUESTIONS][SSEG_QUESTION_LEN];
 
 void
 unit::sseg(hash *templts, char symbol, int *quant)
 {
-	int adj;
+	shriek(869, "no sseg");
+/*	int adj;
 	
 	for (int i=0; i<SSEG_QUESTIONS; i++) {
 		*_sseg_question[i]=symbol;
@@ -836,11 +837,14 @@ unit::sseg(hash *templts, char symbol, int *quant)
 		*quant+=adj;
 		return;	
 	}
+*/
 }
 
 void
 unit::sseg(UNIT target, hash *templts)
 {
+	shriek(869, "no sseg 2");
+/*
 	unit *tmpu;
 	int  j,n;
 	
@@ -858,6 +862,7 @@ unit::sseg(UNIT target, hash *templts)
 		sseg(templts, 'i', &tmpu->i);
 		sseg(templts, 't', &tmpu->t);
 	}
+*/
 }
 
 /****************************************************************************
@@ -1007,7 +1012,7 @@ unit::diph(hash *dinven)   //_d_descr should contain a diphone name
 	int n;
 	for (n = dinven->translate_int(_d_descr); n >= 0; n -= OMEGA) {
 		DEBUG(1,5,fprintf(STDDBG,"Diphone number %d born\n", n % OMEGA);)
-		insert_end(new unit(cfg->segm_level, n % OMEGA), NULL);
+		insert_end(new unit(scfg->segm_level, n % OMEGA), NULL);
 		sanity();
 		DEBUG(1,5,fprintf(STDDBG,"...born and inserted\n");)
 	}
@@ -1249,11 +1254,11 @@ unit::Prev(UNIT target)
 void
 unit::sanity()
 {
-	if (cfg->trusted) return;    
+	if (scfg->trusted) return;    
 	if (this == NULL)			  EMPTY.insane ("this non-NULL");
-//	if (!firstborn && depth > cfg->phone_level)	insane ("having content");
+//	if (!firstborn && depth > scfg->phone_level)	insane ("having content");
 	if (this == _unit_just_unlinked)		return;
-	if (depth > cfg->text_level && this != &EMPTY)	insane("depth");
+	if (depth > scfg->text_level && this != &EMPTY)	insane("depth");
 	if ((firstborn && 1) != (lastborn && 1))	insane("first == last");
 	if (firstborn && firstborn->depth+1 != depth)	insane("firstborn->depth");
 	if (lastborn && lastborn->depth+1 != depth)	insane("lastborn->depth");
@@ -1261,10 +1266,10 @@ unit::sanity()
 	if (lastborn && lastborn->next)			insane("lastborn->next");
 	if (prev && prev->next != this)			insane("prev->next");
 	if (next && next->prev != this)			insane("next->prev");
-	if (depth==cfg->text_level && father)		insane("TEXT.father");
-	if (cont < 0 || cont > 255 && depth > cfg->segm_level)	insane("content"); 
+	if (depth==scfg->text_level && father)		insane("TEXT.father");
+	if (cont < 0 || cont > 255 && depth > scfg->segm_level)	insane("content"); 
 
-        if (cfg->allpointers) return;
+        if (scfg->allpointers) return;
 	if (prev && (unsigned long int) prev<0x8000000) insane("prev");
 	if (next && (unsigned long int) next<0x8000000)  insane("next");
 	if (firstborn && (unsigned long int) firstborn<0x8000000) insane("firstborn");
@@ -1274,9 +1279,10 @@ unit::sanity()
 void
 unit::insane(const char *token)
 {
-	if (cfg->colored) fprintf(cfg->stdshriek,"\033[00;32mSanity check of \033[01;32m%s\033[00;32m failed. cont=%d depth=%d\033[37m. This is a bug; contact the authors.\n", token,cont,depth); 
+	if (scfg->colored) fprintf(cfg->stdshriek,"\033[00;32mSanity check of \033[01;32m%s\033[00;32m failed. cont=%d depth=%d\033[37m. This is a bug; contact the authors.\n", token,cont,depth); 
 	else fprintf(cfg->stdshriek,"Sanity check of %s failed. cont=%d depth=%d. This is a bug; contact the authors.\n", token,cont,depth); 
-	user_pause();
+	shriek(461, "TSR sanity check failed");
+//	user_pause();
     
     	if (father) father->fout(NULL);
 }

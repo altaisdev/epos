@@ -63,13 +63,15 @@ if   !naive_prosody
 	@include "prosody.rul"
 }
 
-regress   0>\#(!_0)	colon	; vlo¾ení pausy
-inside	\#	phone
+if    phr_break
 {
-	contour   t/-65   phone
+	regress   0>\#(!_0)	colon	; vlo¾ení pausy
+	inside	\#	phone
+	{
+		contour   t/-65   phone
+	}
+	5x  regress   0>\#(!_0)	sent	; vlo¾ení pausy
 }
-
-5x  regress   0>\#(!_0)	sent	; vlo¾ení pausy
 
 if   kadlec_dph
 	diphones  kadlec.dph    colon

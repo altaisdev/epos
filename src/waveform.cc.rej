@@ -1,0 +1,35 @@
+***************
+*** 649,655 ****
+  
+  	cp_buff[current_cp] = cue_point_template;
+  	cp_buff[current_cp].name = current_cp + 1;	/* numbered starting from 1 */
+- 	int offs = cp_buff[current_cp].pos = cp_buff[current_cp].sample_offset = hdr.buffer_idx;
+  	current_cp++;
+  	cuehdr.len += sizeof(cue_point);
+  	cuehdr.n++;
+--- 649,656 ----
+  
+  	cp_buff[current_cp] = cue_point_template;
+  	cp_buff[current_cp].name = current_cp + 1;	/* numbered starting from 1 */
++ 	/* int offs = */ cp_buff[current_cp].pos = cp_buff[current_cp].sample_offset = hdr.buffer_idx;
++ 	cp_buff[current_cp].pos /= samp_size_bytes;	// pos in samples, offset in bytes
+  	current_cp++;
+  	cuehdr.len += sizeof(cue_point);
+  	cuehdr.n++;
+***************
+*** 681,687 ****
+  
+  	adtlhdr.len += sizeof(ltxt) + strlen(lbl) + 1;
+  
+- 	last_offset = offs;
+  }
+  
+  #ifdef SIMPLE_WFM
+--- 682,688 ----
+  
+  	adtlhdr.len += sizeof(ltxt) + strlen(lbl) + 1;
+  
++ //	last_offset = offs;
+  }
+  
+  #ifdef SIMPLE_WFM

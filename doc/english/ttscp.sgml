@@ -706,7 +706,7 @@ sending a "done" command to the server; the server will however
 confirm that command with a reply of 600 before disconnecting,
 and this is the only 6xx response code defined at the moment.
 
-Replies of 8xx except 800 are reserved for cases of severe server
+Replies of 8xx except 80x are reserved for cases of severe server
 misconfiguration, or detected programming bugs. Their meanings
 are very implementation dependent (implementations are encouraged
 not to issue them except in emergency). If such a reply is ever
@@ -815,6 +815,7 @@ code      | error type      | suggested action@
 464	| input triggered OS incompatibility@
 465	| i/o problem : error on close()@
 466	| command stuck@
+467	| fatal signal@
 471	| tcpsyn received invalid waveform@
 472	| unresolved remote tcpsyn server@
 473	| unreachable remote tcpsyn server@
@@ -838,6 +839,7 @@ of errors (internal errors).
 <tabular ca="|l|l|">
 <hline>
 600	| session ended normally@
+601	| server reinitializing as requested@
 <hline>
 800	| server shutting down as requested by client@
 801	| error explicitly reported in config files@

@@ -1,0 +1,18 @@
+***************
+*** 1258,1264 ****
+  <sect2> Daemon startup options
+  <p>
+  
+- The options in this section usually have no effect if changed during run time;
+  change them in the configuration files instead.
+  
+  <descrip>
+--- 1282,1289 ----
+  <sect2> Daemon startup options
+  <p>
+  
++ All options in this subsection are <ref id="static" name="static">.
++ They also usually have no effect if changed during run time;
+  change them in the configuration files instead.
+  
+  <descrip>

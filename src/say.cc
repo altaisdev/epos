@@ -95,7 +95,7 @@ int get_result(int sd)
 
 void say_data()
 {
-	if (!data) data = "No.";
+	if (!data) data = strdup("No.");
 	sputs("strm $", ctrld);
 	sputs(dh, ctrld);
 	if (chunking) sputs(":chunk", ctrld);
@@ -113,7 +113,7 @@ void say_data()
 
 void trans_data()
 {
-	if (!data) data = "No.";
+	if (!data) data = strdup("No.");
 	sputs("strm $", ctrld);
 	sputs(dh, ctrld);
 	if (show_segments) sputs(":raw:rules:diphs:$", ctrld);
@@ -138,7 +138,7 @@ void trans_data()
 			if (show_segments) {
 				diphone *b=(diphone *)malloc(count);
 				yread(datad, b, count);
-				for (int i=1;i<b[0].code;i++) printf("%4.d - %3.d %3.d %3.d\n", b[i].code, b[i].f, b[i].e, b[i].t);
+				for (int i=1;i<b[0].code;i++) printf("%4d - %3d %3d %3d\n", b[i].code, b[i].f, b[i].e, b[i].t);
 			} else {
 				char *b=(char *)malloc(count+1);
 				b[yread(datad, b, count)] = 0;
@@ -150,7 +150,7 @@ void trans_data()
 	get_result(ctrld);
 }
 
-void send_option(char *name, char *value)
+void send_option(const char *name, const char *value)
 {
 	xmit_option(name, value, ctrld);
 	get_result(ctrld);
@@ -223,10 +223,10 @@ void send_cmd_line(int argc, char **argv)
 					  printf("Voices available for the current language:\n");
 					  get_result(ctrld);
 					  exit(0);
-			//	case 'n': cfg->rules_file="nnet.rul";
+			//	case 'n': scfg->rules_file="nnet.rul";
 			//		  if (this_lang)
-			//			this_lang->rules_file = cfg->rules_file;
-			//		  cfg->neuronet=true; break;
+			//			this_lang->rules_file = scfg->rules_file;
+			//		  scfg->neuronet=true; break;
 				case 'p': send_option("pausing", "true"); break;
 				case 's': send_option("play_diph", "true"); break;
 				case 'u': chunking = true; break;
@@ -235,9 +235,9 @@ void send_cmd_line(int argc, char **argv)
 					  output_file = "/said.wav"; break;
 				case 'D':
 					send_option("use_debug", "true");
-			//		if (!cfg->use_dbg) cfg->use_dbg=true;
-			//		else if (cfg->warnings)
-			//			cfg->always_dbg--;
+			//		if (!scfg->use_dbg) cfg->use_dbg=true;
+			//		else if (scfg->warnings)
+			//			scfg->always_dbg--;
 					break;
 				default : shriek("Unknown short option");
 			}

@@ -39,7 +39,7 @@ extern double buf[6];
 ktdsyn::ktdsyn (voice *v)
 {
 	FILE *f;
-	char * pathname = compose_pathname("useky.dat", v->loc, cfg->inv_base_dir);
+	char * pathname = compose_pathname("useky.dat", v->loc, scfg->inv_base_dir);
 	f = fopen (pathname, "rt", "ktd segments");
 	free(pathname);
 //	if (!f) shriek(841, "Cannot open file useky.dat");
@@ -69,9 +69,9 @@ void ktdsyn::syndiph(voice *v, diphone d, wavefm *w)
 	unsigned char *s_psl = new unsigned char[6000];
 	char *m_sub = (char *)xmalloc(MAX_PATHNAME);
 
-	strcpy (m_sub, cfg->base_dir);
+	strcpy (m_sub, scfg->base_dir);
 	strcat (m_sub, "/");
-	strcat (m_sub, cfg->inv_base_dir);
+	strcat (m_sub, scfg->inv_base_dir);
 	strcat (m_sub, "/");
 	strcat (m_sub, v->loc);
 	strcat (m_sub, "/");

@@ -20,6 +20,8 @@
  *
  */
 
+enum SYMTABLE {ST_ROOT, ST_RAW, /* ST_EMPTY */};		// FIXME: necessary?
+
 class parser
 {
 	unsigned char *text;	// allocated dynamically
@@ -67,7 +69,7 @@ class parser
  *
  *	Adding special tokens: parser::gettoken(), fmtchar(), .ini
  *	files must recognize the token (probably as a perm_phone), for
- *	which you have to add some intuitive escape sequence to option.cc,
+ *	which you have to add some intuitive escape sequence to option.lst,
  *	namely to token_esc and value_esc defaults.
  *	Then add some appropriate handling within the rules.
  */

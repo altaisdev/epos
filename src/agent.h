@@ -197,7 +197,7 @@ extern socky int select_fd_max;
 
 inline int my_fork()
 {
-	if (!cfg->forking) return -1;
+	if (!scfg->forking) return -1;
 	else return fork();
 }
 
@@ -227,9 +227,9 @@ enum PAR_SYNTAX {PAR_REQ, PAR_FORBIDDEN, PAR_OPTIONAL};
 struct ttscp_cmd
 {
 //	char name[4];
-	int name;
+	const int name;
 	int(*impl)(char *param, a_ttscp *a);
-	char *short_help;
+	const char *short_help;
 	PAR_SYNTAX param;
 };
 

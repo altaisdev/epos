@@ -151,7 +151,7 @@ context::~context()
 	// fclose(config->stdshriek...
 #endif
 	if (this == this_context) leave();  // shriek(862, "Deleting active context");
-	cow_unclaim(config);
+	if (this != master_context) cow_unclaim(config);
 	free(sgets_buff);
 }
 
@@ -302,9 +302,10 @@ static void detach()
 	int i;
         UNIX (ioctl(0, TIOCNOTTY);)          //Release the control terminal
 	for (i=0; i<3; i++) close(i);
-	if (cfg->daemon_log && open(cfg->daemon_log, O_RDWR|O_CREAT|O_APPEND
-					UNIX( |O_NOCTTY), MODE_MASK) != -1) {
+	if (scfg->daemon_log && !open(scfg->daemon_log, O_RDWR|O_CREAT|O_APPEND
+					UNIX( |O_NOCTTY), MODE_MASK)) {
 		for (i=1; i<3; i++) dup(0);
+		scfg->colored = false;
 		DEBUG(3,11,fprintf(STDDBG, "\n\n\n\nEpos restarted at ");)
 		fflush(stdout);
 		system("/bin/date");
@@ -315,21 +316,22 @@ static inline void make_server_passwd()
 {
 	make_rnd_passwd(server_passwd, SERVER_PASSWD_LEN);
 	DEBUG(0,11,fprintf(STDDBG, "[core] server internal password is %s\n", server_passwd);)
-	if (cfg->listen_port != TTSCP_PORT) return;
+	if (scfg->listen_port != TTSCP_PORT) return;
 
 	FILE *f;
-	char *filename = compose_pathname(cfg->pwdfile, "");
+	char *filename = compose_pathname(scfg->pwdfile, "");
 	if (filename && *filename && (f = fopen(filename, "w", NULL))) {
 		UNIX(chmod(filename, S_IRUSR));
 		fwrite(server_passwd, SERVER_PASSWD_LEN, 1, f);
 		fwrite("\n", 1, 1, f);
 		fclose(f);
-		free((char *)cfg->pwdfile);
-		cfg->pwdfile = filename;
+		free((char *)scfg->pwdfile);
+		scfg->pwdfile = filename;
 	}
 }
 
 bool server_shutting_down = false;
+bool server_reinit_req = false;
 
 void server_shutdown()
 {
@@ -338,16 +340,55 @@ void server_shutdown()
 		sputs("800 shutdown requested\r\n", tmp->c->config->sd_out);
 		delete ctrl_conns->remove(tmp->handle);
 	}
-	if (cfg->pwdfile) remove(cfg->pwdfile);
+	if (scfg->pwdfile) remove(scfg->pwdfile);
 	delete accept_conn;
 	delete ctrl_conns;
 	delete data_conns;
 	delete master_context;
+//	cfg->n_langs = 0;	// otherwise the langs point into no man's land
 	free(sleep_table);
 	epos_done();
 	exit(0);
 }
 
+static void server_reinit_check()
+{
+	if (server_reinit_req) {
+		server_reinit_req = false;
+		while (ctrl_conns->items) {
+			a_ttscp *tmp = ctrl_conns->translate(ctrl_conns->get_random());
+			sputs("601 reinit requested\r\n", tmp->c->config->sd_out);
+			sleep_table[tmp->c->config->sd_out] = NULL;
+			FD_CLR(tmp->c->config->sd_out, &block_set);
+			FD_CLR(tmp->c->config->sd_out, &push_set);
+			delete ctrl_conns->remove(tmp->handle);
+		}
+		while (data_conns->items) {
+			a_ttscp *tmp = data_conns->translate(data_conns->get_random());
+			sleep_table[tmp->c->config->sd_out] = NULL;
+			FD_CLR(tmp->c->config->sd_out, &block_set);
+			FD_CLR(tmp->c->config->sd_out, &push_set);
+			delete data_conns->remove(tmp->handle);
+		}
+//		free_all_options();
+		delete accept_conn;
+		select_fd_max = 0;
+		delete master_context;
+		master_context = NULL;
+		epos_reinit();
+		FD_ZERO(&block_set);
+		FD_ZERO(&push_set);
+		master_context = new context(-1, DARK_ERRLOG);
+		accept_conn = new a_accept();
+	}
+}
+
+/*
+static void unix_sigfatal(int)
+{
+	shriek(467, "Helemese! A fatal signal occured.\n");
+}
+*/
 
 static void unix_sigterm(int)
 {
@@ -355,11 +396,24 @@ static void unix_sigterm(int)
 	server_shutting_down = true;
 }
 
+static void unix_sighup(int)
+{
+	server_reinit_req = true;
+}
+
 static void daemonize()
 {
 	UNIX(signal(SIGPIPE, SIG_IGN);)		// possibly dangerous
 	UNIX(signal(SIGCHLD, SIG_IGN);)		// automatic child reaping
 	UNIX(signal(SIGTERM, unix_sigterm);)
+	UNIX(signal(SIGHUP, unix_sighup);)
+//	UNIX(signal(SIGINT,...);)
+//	UNIX(signal(SIGQUIT,...);)
+//	UNIX(signal(SIGILL, unix_sigfatal);)
+//	UNIX(signal(SIGFPE, unix_sigfatal);)
+//	UNIX(signal(SIGSEGV, unix_sigfatal);)
+	
+	UNIX(chdir("/");)
 
 //	dispatcher_pid = getpid();
 
@@ -408,7 +462,9 @@ static bool select_socket(bool sleep)
 	if (n < 0) shriek(871, "select() failed");
 
    restart:
-	if (server_shutting_down) return false;
+	if (server_shutting_down || server_reinit_req) {
+		FD_ZERO(&rd_set); FD_ZERO(&wr_set); return false;
+	}
 
 	idle();
 
@@ -453,6 +509,7 @@ void server()
 				a->dep = NULL;
 			}
 		}
+		server_reinit_check();
 	}
 	server_shutdown();
 }
@@ -468,8 +525,9 @@ void server_crashed(char *, a_ttscp *a, int why_we_crashed)
 
 inline void lest_already_running()
 {
-	if (just_connect_socket(0, cfg->listen_port) > -1) {
-		cfg->pwdfile = NULL;
+	if (just_connect_socket(0, scfg->listen_port) > -1) {
+		if (scfg->pwdfile) free((char *)scfg->pwdfile);	// FIXME: set_option()
+		scfg->pwdfile = NULL;
 		shriek(872, "Already running\n");
 	}
 #ifdef ENETUNREACH
@@ -496,13 +554,13 @@ int main(int argc, char **argv)
 
 		/* handle all known uncatched exceptions here */
 		ctrl_conns->forall(server_crashed, e->code);
-		if (cfg->pwdfile) remove(cfg->pwdfile);
+		if (scfg->pwdfile) remove(scfg->pwdfile);
 		return 1;
 	} catch (...) {
 
 		/* handle all unknown uncatched exceptions here */
 		ctrl_conns->forall(server_crashed, 869);
-		if (cfg->pwdfile) remove(cfg->pwdfile);
+		if (scfg->pwdfile) remove(scfg->pwdfile);
 		return 2;
 	}
 }

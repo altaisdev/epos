@@ -960,3 +960,33 @@ for an exciting story, just skip it.
 	- label fixes
 	- say -d option (show segments)
 
+2.4.43 from 2.4.42	  3.9.00
+	- const qualifier fixes
+	- AC_CONST and AC_INLINE removed from configure.in (suggested by Milan Zamazal)
+	- syslog support
+	- hackfile used only if syslog is not available
+
+2.4.44 from 2.4.43
+	- added authpriv option
+
+2.5.-2 from 2.5.-3	27.3.00
+	- renamed oldsynth back to synth
+	- mbrsyn
+	- new Slovak stuff (Martin)
+	- a subtle gather() bug fixed
+	- eigth voices bug fixed
+
+2.5.-1 from 2.5.-2	internal
+	- drop connections and reread configuration on SIGHUP
+	- some harmless read-only overruns fixed
+	- traditional memory leaks associated with configuration strings fixed
+	- compose_pathname treats NULL string as ""
+	- chdir / on daemon startup
+		- consequently, --base_dir ../cfg ... is broken.  FIXME
+	- other fixes
+	- static options
+
+[this Changes file is a bit bogus]
+This is 2.4.4[34]   +   (2.5.-1   -  2.5.-3)  and some hacking to make it work somehow
+Should behave as 2.4.43, but should reread cfg on SIGHUP (repeatable about 100 times)
+

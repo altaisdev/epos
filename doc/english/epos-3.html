@@ -360,7 +360,7 @@ but sometimes a more fine-grained access control mechanism is needed.
 It is authentication and limiting access to specified options
 for some or all users.
 <P>By default, all settable parameters can be changed by any outside connection
-(this doesn't affect any other connections in any way). 
+(this doesn't affect the value in use for any other connection in any way). 
 You can control this privilege by restricting it in <CODE>cfg/restr.ini</CODE>.
 <P>Every line of that file is in the form
 <P>
@@ -427,7 +427,14 @@ Czech voice; it will also set the default language to Slovak. See
 the 
 <A HREF="epos-4.html#ttscp">TTSCP specification</A> for more info.
 <P>
-<H2><A NAME="soft-options"></A> <A NAME="ss3.6">3.6 Soft options </A>
+<H2><A NAME="ss3.6">3.6 Reloading configuration files</A>
+</H2>
+
+<P>
+<P>Under UNIX, Epos reinitializes itself upon a hangup signal (SIGHUP).
+Existing TTSCP connections are terminated and configuration is reloaded.
+<P>
+<H2><A NAME="soft-options"></A> <A NAME="ss3.7">3.7 Soft options </A>
 </H2>
 
 <P>
@@ -464,7 +471,7 @@ clash with each other. However, built-in option names may not be used
 as soft option names.
 <P>
 <P>
-<H2><A NAME="ss3.7">3.7 Level of description dependent options</A>
+<H2><A NAME="ss3.8">3.8 Level of description dependent options</A>
 </H2>
 
 <P>
@@ -500,7 +507,7 @@ recommended after any of both types of level of description dependent
 options has been set.
 <P>
 <P>
-<H2><A NAME="indivopts"></A> <A NAME="ss3.8">3.8 Selected individual options </A>
+<H2><A NAME="indivopts"></A> <A NAME="ss3.9">3.9 Selected individual options </A>
 </H2>
 
 <P>
@@ -1054,7 +1061,8 @@ to be relative to the base directory.
 renamed files.
 <P>
 <DL>
-<DT><B>--base_dir <I>dirname</I></B><DD><P>The value is an absolute directory name.  This option can be used to
+<DT><B>--base_dir <I>dirname</I></B><DD><P>Only changeable on the command line.
+The value is an absolute directory name.  This option can be used to
 change the location of the whole configuration structure, which can also be
 used for trying out Epos before installing it:
 <BLOCKQUOTE><CODE>
@@ -1076,11 +1084,13 @@ in the system through creating a symlink to the absolute root directory.
 <P>
 <P>
 <DT><B>--ini_dir <I>dirname</I></B><DD><P>The value is a directory name.  Sets the path to language
-independent configuration files.
+independent configuration files.  This option is only changeable
+on the command line.
 <P>
 <DT><B>--fixed_ini_file <I>filename</I></B><DD><P>The value is a file name.  This option can be used to change the file name
 of the <CODE>fixed.ini</CODE> file, which usually contains operating system
-independent, relatively fixed default global configuration.
+independent, relatively fixed default global configuration.  This option
+is only changeable on the command line.
 <DT><B>--cfg_file <I>filename</I></B><DD><P>The value is a file name. This option can be used to change the file name
 of the <CODE>epos.ini</CODE> file.
 <DT><B>--wave_file <I>filename</I></B><DD><P>The value is a file name. This option can be used to change the file name
@@ -1149,6 +1159,10 @@ change them in the configuration files instead.
 <A NAME="daemon-log-option"></A> <DT><B>--daemon_log <I>filename</I></B><DD><P>The value is a file name. This option can be used to set the file
 where various information about the Epos process is recorded.
 At the moment that is of little practical use except for debugging.
+<DT><B>--use_syslog</B><DD><P>Log all TTSCP completion messages with syslogd, if the syslog facility is
+available.
+<DT><B>--log_codes </B><DD><P>When set, all TTSCP messages are preceded with their numeric codes
+as in TTSCP.
 <DT><B>--server_pwd_file <I>filename</I></B><DD><P>The value is a file name. This option can be used to force the server
 to store its internal password to a file.  This password can then
 be used for TTSCP authentication in order to issue restricted commands
@@ -1156,6 +1170,7 @@ such as <CODE>down</CODE>.  If the file can not be created, no error is reported
 <DT><B>--restr_file <I>filename</I></B><DD><P>The file named by this parameter provides access control in TTSCP to individual
 options.  Its syntax is described 
 <A HREF="#restricted-options">above</A>.
+This option can only be changed from the command line.
 <DT><B>--listen_port <I>port</I></B><DD><P>The TCP port number where the daemon should be listening for incoming
 TTSCP connections. The daemon will check if no other service is already
 running on that port and refuses to run if the port is already occupied.

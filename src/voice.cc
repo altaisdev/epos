@@ -84,6 +84,110 @@ option langoptlist[] = {
 	#include "options.lst"
 
 	{"L:voice" + 2, O_VOICE, OS_LANG, A_PUBLIC, A_PUBLIC, false, false, 0},
+	{"", O_INT, OS_LANG, A_PUBLIC, A_PUBLIC, false, false, -3},
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
 	TWENTY_EXTRA_OPTIONS
 	TWENTY_EXTRA_OPTIONS
 	{NULL, O_INT, OS_LANG, A_PUBLIC, A_PUBLIC, false, false, -2},
@@ -92,19 +196,20 @@ option langoptlist[] = {
 #define CONFIG_VOICE_DESCRIBE
 option voiceoptlist[] = {
 	#include "options.lst"
-	{NULL}
+	{"", O_INT, OS_VOICE, A_PUBLIC, A_PUBLIC, false, false, -3},
+	{NULL, O_INT, OS_VOICE, A_PUBLIC, A_PUBLIC, false, false, -2},
 };
 
 
-#include "slab.h"
+// #include "slab.h"
 
-SLABIFY(lang, lang_slab, 2, shutdown_langs)
+// SLABIFY(lang, lang_slab, 2, shutdown_langs)
 
 #define CONFIG_LANG_INITIALIZE
 lang::lang(const char *filename, const char *dirname) : cowabilium()
 {
 	#include "options.lst"
-	name = "(unnamed)";
+//	name = "(unnamed)";
 	ruleset = NULL;
 	soft_options = NULL;
 	soft_defaults = NULL;
@@ -113,8 +218,8 @@ lang::lang(const char *filename, const char *dirname) : cowabilium()
 	default_voice = 0;
 	load_config(filename, dirname, "language", OS_LANG, this, NULL);
 //	if (!this_lang) this_lang = this;
-	add_soft_opts(soft_option_names);
-	add_voices(voice_names);
+	add_soft_opts(soft_opt_list);
+	add_voices(voice_list);
 }
 
 lang::~lang()
@@ -133,6 +238,8 @@ lang::~lang()
 		}
 		delete soft_options;
 	}
+	DEBUG(3,10,fprintf(STDDBG,"Disposed language %s\n", name);)
+	cow_unstring(this, langoptlist);
 	if (soft_defaults) free(soft_defaults);
 }
 
@@ -145,13 +252,13 @@ void
 lang::add_voice(const char *voice_name)
 {
 	char *filename = (char *)xmalloc(strlen(voice_name) + 6);
-	char *dirname = (char *)xmalloc(strlen(name) + strlen(cfg->voice_base_dir) + 6);
+	char *dirname = (char *)xmalloc(strlen(name) + strlen(scfg->voice_base_dir) + 6);
 	sprintf(filename, "%s.ini", voice_name);
-	sprintf(dirname, "%s%c%s", cfg->voice_base_dir, SLASH, name);
+	sprintf(dirname, "%s%c%s", scfg->voice_base_dir, SLASH, name);
 	if (*voice_name) {
-		if (!voices) voices = (voice **)xmalloc(8*sizeof (void *));
+		if (!voices) voices = (voice **)xmalloc(8*sizeof(void *));
 		else if (!(n_voices-1 & n_voices) && n_voices > 4)  // if n_voices==8,16,32...
-			voices = (voice **)xrealloc(voices, n_voices << 1);
+			voices = (voice **)xrealloc(voices, (n_voices << 1) * sizeof(void *));
 		voices[n_voices++] = new(this) voice(filename, dirname, this);
 	}
 	free(filename);
@@ -181,7 +288,7 @@ lang::add_soft_option(const char *optname)
 {
 	char *dflt = (char *)strchr(optname, EQUALSIGN);
 	if (dflt) *dflt++ = 0;
-	else dflt = "";
+	else dflt = const_cast<char *>("");
 	char *closing = (char *)strchr(optname, CLOSING);
 
 	option o;
@@ -296,13 +403,13 @@ void
 voice::claim_all()
 {
 	if (!diphone_names && dptfile && *dptfile)
-		diphone_names = claim(dptfile, loc, cfg->inv_base_dir, "rt", "diphone names", NULL);
-	if (cfg->show_labels && !sl) {
+		diphone_names = claim(dptfile, loc, scfg->inv_base_dir, "rt", "diphone names", NULL);
+	if (scfg->show_labels && !sl) {
 		sl = (sound_label *)xmalloc(sizeof(sound_label) * n_segs);
 		for (int i = 0; i < n_segs; i++) sl[i].pos = NO_SOUND_LABEL;
 		text *t;
 		if (!snlfile || !*snlfile) return;
-		t = new text(snlfile, loc, cfg->inv_base_dir, "sound labels", true);
+		t = new text(snlfile, loc, scfg->inv_base_dir, "sound labels", true);
 		char * l = (char *)xmalloc(cfg->max_line);
 		while (t->getline(l)) {
 			int a, b, d; char c;
@@ -321,6 +428,8 @@ voice::~voice()
 	if (sl) free(sl);
 //	if (buffer) detach();
 	delete syn;
+	DEBUG(3,10,fprintf(STDDBG, "Disposing voice %s\n", name);)
+	cow_unstring(this, voiceoptlist);
 }
 
 void *

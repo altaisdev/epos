@@ -18,10 +18,13 @@
  *	and scattered all around the code base.
  */
 
-enum OPT_STRUCT { OS_CFG, OS_LANG, OS_VOICE };
+enum OPT_STRUCT { OS_STATIC, OS_CFG, OS_LANG, OS_VOICE };
 enum ACCESS { A_PUBLIC, A_AUTH, A_ROOT, A_NOACCESS };
 enum OPT_TYPE { O_BOOL, O_UNIT, O_MARKUP, O_SYNTH, O_CHANNEL, O_DBG_AREA, O_INT, O_CHAR, O_STRING, O_LANG, O_VOICE };
 								//various types of options
+								
+#define OPT_STRUCT_PREFIX	"SCLV"								
+								
 #define CONFIG_DECLARE
 struct configuration : public cowabilium	//Some description & defaults can be found in options.lst
 {
@@ -37,10 +40,19 @@ struct configuration : public cowabilium	//Some description & defaults can be fo
 	stream * current_stream;
 
 	configuration();
+	~configuration();
 	void shutdown();	// destructor of some sort
 
 	void *operator new(size_t size);
 	void operator delete(void *ptr);
+};
+
+#define CONFIG_STATIC_DECLARE
+struct static_configuration
+{
+	#include "options.lst"
+	
+	inline static_configuration();
 };
 
 /*	Visual C++ 6.0 and Watcom C 10.6 generate incorrect code for
@@ -63,6 +75,7 @@ struct configuration : public cowabilium	//Some description & defaults can be fo
  //void cow(cowabilium **p, int size, int, int);	/* copy **p if shared and adjust *p, see options.cc */
 void cow_claim();				/* claim all current global cfg */
 void cow_unclaim(configuration *);		/* unclaim the cfg specified */
+void cow_catharsis();
 
 void cow_configuration(configuration **);
 
@@ -79,22 +92,31 @@ struct option
 	short int offset;
 };
 
+void cow_unstring(cowabilium *p, option *optlist);
+
 void config_init();
 void config_release();
 
 // void process_options(hash *tab, option *list, void *base);
 // char *get_named_cfg(const char *option_name);
 option *option_struct(const char *name, hash_table<char, option> *softopts);
-bool set_option(option *o, char *value);
-bool set_option(option *o, char *value, void *whither);
-char *format_option(option *name);	// may return scratch etc.
-char *format_option(const char *name);  // ditto
+
+/* For the following two functions, the value MAY get changed by set_option()
+   (in-place), if o->opttype is O_STRING or O_CHAR and value contains
+   backslashes or double quotes  		*/
+bool set_option(option *o, const char *value);			// the const qualifier IS A LIE
+bool set_option(option *o, const char *value, void *whither);	// the const qualifier IS A LIE
+
+
+const char *format_option(option *name);	// may return scratch etc.
+const char *format_option(const char *name);  // ditto
 
 bool lang_switch(const char *name);
 bool voice_switch(const char *name);
 
 extern configuration master_cfg;
 extern configuration *cfg;
+extern static_configuration * scfg;
 
 void load_config(const char *filename);
 void load_config(const char *filename, const char *dirname, const char *what,
@@ -105,6 +127,8 @@ void list_voices();
 
 void shutdown_cfgs();
 void shutdown_langs();
+
+void free_all_options();
 
 #define DQUOT          '"'            //used when parsing the .ini file
 

@@ -42,7 +42,7 @@ int getaddrbyname(const char *inet_name);
  *	xmit_option() send the "set" command appropriate for setting a named
  *	option to a specified value. 
  */
-void xmit_option(char *name, char *value, int sd);
+void xmit_option(const char *name, const char *value, int sd);
 
 /*
  *	get_handle() should be called before any TTSCP command is issued.
@@ -98,7 +98,7 @@ int sync_finish_command(int ctrld);	// wait for the completion code
 
 	inline void async_close(int fd)
 	{
-		int pid = cfg->asyncing ? fork() : -1;
+		int pid = scfg->asyncing ? fork() : -1;
 		switch(pid)
 		{
 			case -1:

@@ -216,10 +216,10 @@ void send_cmd_line(int argc, char **argv)
 					  printf("Voices available for the current language:\n");
 					  get_result(ctrld);
 					  exit(0);
-			//	case 'n': cfg->rules_file="nnet.rul";
+			//	case 'n': scfg->rules_file="nnet.rul";
 			//		  if (this_lang)
-			//			this_lang->rules_file = cfg->rules_file;
-			//		  cfg->neuronet=true; break;
+			//			this_lang->rules_file = scfg->rules_file;
+			//		  scfg->neuronet=true; break;
 				case 'p': send_option("pausing", "true"); break;
 				case 's': send_option("play_diph", "true"); break;
 				case 'u': chunking = true; break;
@@ -228,9 +228,9 @@ void send_cmd_line(int argc, char **argv)
 					  output_file = "/said.wav"; break;
 				case 'D':
 					send_option("use_debug", "true");
-			//		if (!cfg->use_dbg) cfg->use_dbg=true;
-			//		else if (cfg->warnings)
-			//			cfg->always_dbg--;
+			//		if (!scfg->use_dbg) cfg->use_dbg=true;
+			//		else if (scfg->warnings)
+			//			scfg->always_dbg--;
 					break;
 				default : shriek("Unknown short option");
 			}

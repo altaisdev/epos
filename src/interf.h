@@ -38,7 +38,7 @@ void epos_init();
 void epos_reinit();
 void epos_done();		// No real need to call, ever. Just to be 100% dmalloc correct.
 
-#define color(stream, seq) if (cfg->colored) fprintf(stream, seq)
+#define color(stream, seq) if (scfg->colored && seq) fprintf(stream, seq)
 void colorize(int level, FILE *handle);  // See this function in interf.cc for various #defines
 
 #define MAX_ERR_LINE 320	// No error nor warning message may be longer
@@ -64,6 +64,7 @@ void shriek(int code, const char *msg)
 	__attribute__((__noreturn__))
 #endif
 					;
+int severity(int code);
 
 char *split_string(char *string);	// 0-terminate the first word, return the rest
 
@@ -94,7 +95,7 @@ extern char *scratch;
 
 FIT_IDX fit(char c);		 // converts 'f', 'i' or 't' to 0, 1 or 2, respectively
 UNIT str2enum(const char *item, const char *list, int dflt);
-char *enum2str(int item, const char *list);
+const char *enum2str(int item, const char *list);
 // hash *str2hash(const char *list, unsigned int max_item_len);
 unit *str2units(const char *text);
 char *fntab(const char *s, const char *t); //will calloc and return 256 bytes not freeing s,t

@@ -26,10 +26,21 @@ SLABIFY(configuration, cfg_slab, 2, shutdown_cfgs)
 
 inline void *memdup(void *p, int size)
 {
+	if (!p) {
+		return NULL;
+	}
 	void *r = xmalloc(size);
 	memcpy(r,p,size);
 	return r;
 }
+
+configuration proto_cfg;
+
+configuration *cfg = &proto_cfg;
+
+static_configuration proto_scfg;
+static_configuration *scfg = &proto_scfg;
+
 
 /*
  *	cow - this routine should detect whether a piece of memory used
@@ -100,16 +111,23 @@ void cow_claim()
 	cfg->cow++;
 }
 
-static inline void cow_free(cowabilium *p, option *opts, void *extra)
+void cow_unstring(cowabilium *p, option *opts)
 {
 	for (option *o = opts; o->optname; o++) {
-		if (o->opttype != O_STRING) continue;
-		if (*(char **)((char *)p->parent + o->offset)
-		 != *(char **)((char *)p + o->offset)) {
+		if (o->opttype != O_STRING || o->per_level) continue;
+		char **to_free = (char **)((char *)p + o->offset);
+		if (*to_free && (*(char **)((char *)p->parent + o->offset) != *to_free
+				|| p->parent == p)) {
 //			printf("Freeing %s\n", o->optname);
-			free(*(char **)((char *)p + o->offset));
+			free(*to_free);
+			*to_free = NULL;
 		}
 	}
+}
+
+static inline void cow_free(cowabilium *p, option *opts, void *extra)
+{
+	cow_unstring(p, opts);
 	free(p);
 	if (extra) free(extra);
 }
@@ -132,6 +150,13 @@ void cow_unclaim(configuration *that_cfg)
 	if (!that_cfg->cow--) cow_free(that_cfg, optlist, that_cfg->langs), that_cfg = NULL;
 }
 
+void cow_catharsis()
+{
+	cow_unclaim(cfg);
+//	cfg = &proto_cfg;
+//	cow_claim();
+}
+
 #define CONFIG_INITIALIZE
 inline configuration::configuration() : cowabilium()
 {
@@ -146,18 +171,159 @@ inline configuration::configuration() : cowabilium()
 	current_stream = NULL;
 }
 
+configuration::~configuration()
+{
+	cow_unstring(this, optlist);
+}
+
 #define EO {NULL, O_INT, OS_CFG, A_PUBLIC, A_PUBLIC, false, false, -1},
 #define TWENTY_EXTRA_OPTIONS	EO EO EO EO EO EO EO EO EO EO EO EO EO EO EO EO EO EO EO EO 
 
-configuration master_cfg;
-
-configuration *cfg = &master_cfg;
+// configuration master_cfg;
 
 #define CONFIG_DESCRIBE
 option optlist[]={
         #include "options.lst"
 
 	{"C:language" + 2, O_LANG, OS_CFG, A_PUBLIC, A_PUBLIC, false, false, 0},
+	{"", O_INT, OS_CFG, A_PUBLIC, A_PUBLIC, false, false, -3},
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
 	TWENTY_EXTRA_OPTIONS
 	TWENTY_EXTRA_OPTIONS
 	TWENTY_EXTRA_OPTIONS
@@ -169,6 +335,165 @@ option optlist[]={
 
 #undef EO
 #undef TWENTY_EXTRA_OPTIONS
+
+
+#define CONFIG_STATIC_INITIALIZE
+inline static_configuration::static_configuration()
+{
+	#include "options.lst"
+}
+
+#define EO {NULL, O_INT, OS_STATIC, A_PUBLIC, A_PUBLIC, false, false, -1},
+#define TWENTY_EXTRA_OPTIONS	EO EO EO EO EO EO EO EO EO EO EO EO EO EO EO EO EO EO EO EO 
+
+#define CONFIG_STATIC_DESCRIBE
+option staticoptlist[]={
+	#include "options.lst"
+	{"", O_INT, OS_STATIC, A_PUBLIC, A_PUBLIC, false, false, -3},
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+ 	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	TWENTY_EXTRA_OPTIONS
+	{NULL, O_INT, OS_STATIC, A_PUBLIC, A_PUBLIC, false, false, -2}
+};
+
+#undef EO
+#undef TWENTY_EXTRA_OPTIONS
+
 
 hash_table<char, option> *option_set = NULL;
 
@@ -188,7 +513,7 @@ void configuration::shutdown()
  *	which means "string" with "X:" immediately preceding it.
  * Now we add to our option_set both normal option names ("string")
  *	and their prefixed spellings ("X:string", for X being either
- *	C, L or V for global/language/voice configuration items,
+ *	S, C, L or V for static/global/language/voice configuration items,
  *	respectively), eating up minimum memory space only.
  */
 
@@ -196,7 +521,7 @@ inline void put_into_option_set(option *o)
 {
 	if (*o->optname) {
 		option_set->add(o->optname, o);
-		option_set->add(o->optname-2, o);
+		option_set->add(o->optname - 2, o);
 	}
 }
 
@@ -209,6 +534,7 @@ void make_option_set()
 	option_set = new hash_table<char, option>(300);
 	option_set->dupkey = option_set->dupdata = 0;
 
+	for (o = staticoptlist; o->optname; o++)put_into_option_set(o);
 	for (o = optlist; o->optname; o++) 	put_into_option_set(o);
 	for (o = langoptlist; o->optname; o++)	put_into_option_set(o);
 	for (o = voiceoptlist; o->optname; o++)	put_into_option_set(o);
@@ -221,7 +547,7 @@ void restrict_options()
 {
 	option *o;
 
-	text *t = new text(cfg->restr_file, cfg->ini_dir, "", NULL, true);
+	text *t = new text(scfg->restr_file, scfg->ini_dir, "", NULL, true);
 	if (!t->exists()) {
 		delete t;
 		return;		/* if no restictions file, ignore it */
@@ -252,6 +578,36 @@ void restrict_options()
 	delete t;
 }
 
+static void free_all_options(option *optlist, cowabilium *whence)
+{
+	option *o;
+	for (o = optlist; o->offset != -2; o++) ;
+	for ( ; o->offset != -3; o--) ;
+	for ( o++; o->offset != -2 && o->offset != -1; o++) {
+		if (o->opttype == O_STRING && whence) {
+			if (*(char **)((char *)whence + o->offset)) {
+				free(*(char **)((char *)whence + o->offset));
+				*(char **)((char *)whence + o->offset) = NULL;
+			}
+		}
+		if (o->optname) {
+			DEBUG(1,10,fprintf(STDDBG, "Freeing an extra option %s\n", o->optname - 2);)
+			option_set->remove(o->optname);
+			option_set->remove(o->optname - 2);
+			free((char *)o->optname - 2);
+			o->optname = NULL;
+		}
+		o->offset = -1;
+	}
+}
+
+void free_all_options()
+{
+	free_all_options(voiceoptlist, NULL);
+	free_all_options(langoptlist, NULL);
+	free_all_options(optlist, cfg);
+}
+
 option *alloc_option(option *optlist, OPT_STRUCT os)
 {
 	DEBUG(1,10,fprintf(STDDBG, "Allocating an extra option, level %d\n", os);)
@@ -259,14 +615,14 @@ option *alloc_option(option *optlist, OPT_STRUCT os)
 	option *o;
 	for (o = optlist; ; o++) {
 		if (o->offset == -1) return o;
-		if (o->offset == -2) shriek(864, "No more options to allocate, add extra options");
+		if (o->offset == -2) shriek(864, fmt("No more options to allocate, add extra %c level options", OPT_STRUCT_PREFIX[os]));
 	}
 	return NULL;	// to keep the compiler happy
 }
 
 #define MAX_TOTAL_OPTION_NAME 64
 
-void alloc_level_options(option *optlist, OPT_STRUCT os, cowabilium *base, int levnum, char *levname)
+void alloc_level_options(option *optlist, OPT_STRUCT os, cowabilium *base, int levnum, const char *levname)
 {
 	char b[MAX_TOTAL_OPTION_NAME];
 
@@ -274,17 +630,17 @@ void alloc_level_options(option *optlist, OPT_STRUCT os, cowabilium *base, int l
 	for (o=optlist; o->optname; o++) {
 		if (o->per_level) {
 			option *p = alloc_option(optlist, os);
-			b[0] = "CLV"[os];
+			b[0] = OPT_STRUCT_PREFIX[os];
 			b[1] = ':';
 			strcpy(b+2, o->optname);
 			strcat(b+2, INDEXER);
 			strcat(b+2, levname);
-			p->optname = FOREVER(strdup(b));
+			p->optname = strdup(b) + 2;
 			p->opttype = o->opttype;
 			p->readable = o->readable;
 			p->writable = o->writable;
+			option_set->add(p->optname - 2, p);
 			option_set->add(p->optname, p);
-			option_set->add(p->optname+2, p);
 
 			int size;
 			switch (o->opttype) {
@@ -306,7 +662,7 @@ void alloc_level_options(option *optlist, OPT_STRUCT os, cowabilium *base, int l
 #define LEVNAME_PHONE	"phone"
 #define LEVNAME_TEXT	"text"
 
-char *pre_set_unit_levels(char *value)
+const char *pre_set_unit_levels(const char *value)
 {
 	if ((str2enum(LEVNAME_SEGMENT, value, U_DEFAULT) == U_ILL) ||
 		(str2enum(LEVNAME_PHONE, value, U_DEFAULT) == U_ILL) ||
@@ -328,20 +684,20 @@ char *pre_set_unit_levels(char *value)
 	return value;
 }
 
-void post_set_unit_levels(char *)
+void post_set_unit_levels(const char *)
 {
-	cfg->segm_level = str2enum(LEVNAME_SEGMENT, cfg->unit_levels, U_DEFAULT);
-	cfg->phone_level = str2enum(LEVNAME_PHONE, cfg->unit_levels, U_DEFAULT);
-	cfg->text_level = str2enum(LEVNAME_TEXT, cfg->unit_levels, U_DEFAULT);
-	cfg->default_scope = str2enum("word", cfg->unit_levels, U_DEFAULT);
-	if (cfg->default_scope == U_ILL) cfg->default_scope = cfg->text_level;
-	cfg->default_target = cfg->phone_level;
+	scfg->segm_level = str2enum(LEVNAME_SEGMENT, scfg->unit_levels, U_DEFAULT);
+	scfg->phone_level = str2enum(LEVNAME_PHONE, scfg->unit_levels, U_DEFAULT);
+	scfg->text_level = str2enum(LEVNAME_TEXT, scfg->unit_levels, U_DEFAULT);
+	scfg->default_scope = str2enum("word", scfg->unit_levels, U_DEFAULT);
+	if (scfg->default_scope == U_ILL) scfg->default_scope = scfg->text_level;
+	scfg->default_target = scfg->phone_level;
 
 	int n;
-	for (n=0; enum2str(n, cfg->unit_levels); n++) ;
+	for (n=0; enum2str(n, scfg->unit_levels); n++) ;
 
 	for (int i=0; i<n; i++) {
-		char *tmp = enum2str(i, cfg->unit_levels);
+		const char *tmp = enum2str(i, scfg->unit_levels);
 		alloc_level_options(optlist, OS_CFG, cfg, i, tmp);
 		alloc_level_options(langoptlist, OS_LANG, NULL, i, tmp);
 	}
@@ -360,7 +716,7 @@ void post_set_unit_levels(char *)
  *		options it doesn't handle specially.
  */
 
-char *invoke_set_action(option *o, char *value)
+const char *invoke_set_action(option *o, const char *value)
 {
 	if (!strcmp(o->optname, "unit_levels") || !strcmp(o->optname, "C:unit_levels")) {
 		if (value) {
@@ -405,7 +761,7 @@ void parse_cfg_str(char *val)
 	*netto=0;
 }
 
-template<class T> inline void set_enum_option(option *o, char *val, char *list, char *locus)
+template<class T> inline void set_enum_option(option *o, const char *val, char *list, char *locus)
 {
 	T tmp = (T)str2enum(val, list, U_ILL);
 	if (tmp == (T)U_ILL)
@@ -413,7 +769,7 @@ template<class T> inline void set_enum_option(option *o, char *val, char *list, 
 	*(T *)locus = tmp;
 }
 
-bool set_option(option *o, char *val, void *base)
+bool set_option(option *o, const char *val, void *base)
 {
 	if (!o) return false;
 	if (o->action && !invoke_set_action(o, val)) return false;
@@ -454,7 +810,7 @@ bool set_option(option *o, char *val, void *base)
 			DEBUG(1,10,fprintf(STDDBG,"Channel type option set to %i\n",*(int*)locus);)
 			break;
 		case O_UNIT:
-//			if((*(UNIT *)locus=str2enum(val, cfg->unit_levels, U_ILL))==U_ILL) 
+//			if((*(UNIT *)locus=str2enum(val, scfg->unit_levels, U_ILL))==U_ILL) 
 //				shriek(447, fmt("Can't set %s to %s", o->optname, val));
 			set_enum_option<SYNTH_TYPE>(o, val, STstr, locus);
 			DEBUG(1,10,fprintf(STDDBG,"Configuration option \"%s\" set to %d\n",o->optname,*(int *)locus);)
@@ -467,13 +823,14 @@ bool set_option(option *o, char *val, void *base)
 			DEBUG(1,10,fprintf(STDDBG,"Configuration option \"%s\" set to %d\n",o->optname,*(int *)locus);)
 			break;
 		case O_STRING: 
-			if (val[0]) parse_cfg_str(val);
+			if (val[0]) parse_cfg_str(const_cast<char *>(val));
 			DEBUG(1,10,fprintf(STDDBG,"Configuration option \"%s\" set to \"%s\"\n",o->optname,val);)
+			if (*(char **)locus) free(*(char**)locus);
 			*(char**)locus = strdup(val);	// FIXME: should be forever if monolith etc. (maybe)
 			break;
 		case O_CHAR:
 			if (!val[0]) shriek(447, fmt("Empty string given for a CHAR option %s", o->optname));
-			parse_cfg_str(val);
+			parse_cfg_str(const_cast<char *>(val));
 			if (val[1]) shriek(447, fmt("Multiple chars given for a CHAR option %s", o->optname));
 			else *(char *)locus=*val;
 //			DEBUG(1,10,fprintf(STDDBG,"Configuration option \"%s\" set to \"%s\"\n",o->optname,val);)
@@ -505,10 +862,11 @@ bool set_option(option *o, char *val, void *base)
 #define  VOICES_OFFSET  ((int)&((lang *)NULL)->voices)
 #define  VOICES_LENGTH  (this_lang->n_voices * sizeof(void *))
 
-bool set_option(option *o, char *value)
+bool set_option(option *o, const char *value)
 {
 	if (!o) return false;
 	switch(o->structype) {
+		case OS_STATIC: return set_option(o,value, scfg);
 		case OS_CFG:	cow_configuration(&cfg);
 				return set_option(o, value, cfg);
 		case OS_LANG:	cow_configuration(&cfg);
@@ -522,23 +880,23 @@ bool set_option(option *o, char *value)
 	return false;
 }
 
-static inline bool set_option(char *name, char *value)
+static inline bool set_option(char *name, const char *value)
 {
 //	option *o = option_struct(name, NULL);
 //	... tvorba indexu ...
 //	char *tmp;
 //	if ((tmp = strchr(name, INDEXER)) {
-//		UNIT x = str2enum(tmp + 1, cfg->unit_levels, U_ILL);
+//		UNIT x = str2enum(tmp + 1, scfg->unit_levels, U_ILL);
 //		if (x == U_ILL) 
 //	}
 	return set_option(option_struct(name, NULL), value);
 }
 
-static inline void set_option_or_die(char *name, char *value)
+static inline void set_option_or_die(char *name, const char *value)
 {
 	option *o = option_struct(name, NULL);
 	if (!o) shriek(814, fmt("Unknown option %s", name));
-	if (!cfg->langs && (o->structype != OS_CFG || o->opttype == O_LANG))
+	if (!cfg->langs && (o->structype == OS_LANG || o->structype == OS_VOICE || o->opttype == O_LANG))
 		return;
 
 	if (set_option(o, value)) return;
@@ -578,7 +936,7 @@ bool voice_switch(const char *value)
 	return false;
 }
 
-char *format_option(option *o, void *base)
+const char *format_option(option *o, void *base)
 {
 	char *locus = (char *)base + o->offset;
 	switch(o->opttype) {
@@ -591,7 +949,7 @@ char *format_option(option *o, void *base)
 		case O_SYNTH:
 			return enum2str(*(int *)locus, STstr);
 		case O_UNIT:
-			return enum2str(*(UNIT *)locus, cfg->unit_levels);
+			return enum2str(*(UNIT *)locus, scfg->unit_levels);
 		case O_INT:
 			sprintf(scratch, "%d", *(int *)locus);
 			return scratch;
@@ -610,9 +968,10 @@ char *format_option(option *o, void *base)
 	return NULL; /* unreachable */
 }
 
-char *format_option(option *o)
+const char *format_option(option *o)
 {
 	switch(o->structype) {
+		case OS_STATIC:return format_option(o, scfg);
 		case OS_CFG:   return format_option(o, cfg);
 		case OS_LANG:  return format_option(o, this_lang);
 		case OS_VOICE: return format_option(o, this_voice);
@@ -621,7 +980,7 @@ char *format_option(option *o)
 	return NULL; /* unreachable */
 }
 
-char *format_option(const char *name)
+const char *format_option(const char *name)
 {
 	option *o = option_struct(name, this_lang->soft_options);
 	if (!o) {
@@ -642,7 +1001,7 @@ void parse_cmd_line()
 		switch(strspn(ar, CMD_LINE_OPT)) {
 		case 3:
 			ar+=3;
-			if (strchr(ar, CMD_LINE_VAL) && cfg->warnings) 
+			if (strchr(ar, CMD_LINE_VAL) && scfg->warnings) 
 				shriek(814, "Thrice dashed options have an implicit value");
 			set_option_or_die(ar, "0");
 			break;
@@ -659,23 +1018,23 @@ void parse_cmd_line()
 			break;
 		case 1:
 			for (j = ar+1; *j; j++) switch (*j) {
-				case 'b': cfg->out_verbose=false; break;
-//				case 'd': cfg->show_diph=true; break;
-//				case 'e': cfg->show_phones=true; break;
-				case 'f': cfg->forking=false; break;
-				case 'H': cfg->long_help=true;	/* fall through */
-				case 'h': cfg->help=true; break;
+				case 'b': scfg->out_verbose=false; break;
+//				case 'd': scfg->show_diph=true; break;
+//				case 'e': scfg->show_phones=true; break;
+				case 'f': scfg->forking=false; break;
+				case 'H': scfg->long_help=true;	/* fall through */
+				case 'h': scfg->help=true; break;
 				case 'n': cfg->rules_file="nnet.rul";
 					  if (cfg->langs && this_lang)
 						this_lang->rules_file = cfg->rules_file;
-					  cfg->neuronet=true; break;
-				case 'p': cfg->pausing=true; break;
-				case 's': cfg->play_diph=true; break;
-				case 'v': cfg->version=true; break;
+					  scfg->neuronet=true; break;
+				case 'p': scfg->pausing=true; break;
+				case 's': scfg->play_diph=true; break;
+				case 'v': scfg->version=true; break;
 				case 'D':
-					if (!cfg->use_dbg) cfg->use_dbg=true;
-					else if (cfg->warnings)
-						cfg->always_dbg--;
+					if (!scfg->use_dbg) scfg->use_dbg=true;
+					else if (scfg->warnings)
+						scfg->always_dbg--;
 					break;
 				default : shriek(442, fmt("Unknown option -%c, no action taken", *j));
 			}
@@ -685,18 +1044,18 @@ void parse_cmd_line()
 			}
 			break;
 		case 0:
-			if (cfg->input_text && cfg->input_text!=ar) {
-				if (!cfg->warnings) break;
+			if (scfg->input_text && scfg->input_text!=ar) {
+				if (!scfg->warnings) break;
 				if (cfg->paranoid) shriek(814, "Quotes forgotten on the command line?");
-				scratch = (char *) xmalloc(strlen(ar)+strlen(cfg->input_text)+2);
-				sprintf(scratch, "%s %s", cfg->input_text, ar);
+				scratch = (char *) xmalloc(strlen(ar)+strlen(scfg->input_text)+2);
+				sprintf(scratch, "%s %s", scfg->input_text, ar);
 				ar = FOREVER(strdup(scratch));
 				free(scratch);
 			}
-			cfg->input_text = ar;
+			scfg->input_text = ar;
 			break;
 		default:
-			if (cfg->warnings) shriek(814, "Too many dashes");
+			if (scfg->warnings) shriek(814, "Too many dashes");
 		}
 	}
 }
@@ -709,7 +1068,7 @@ void load_config(const char *filename, const char *dirname, const char *what,
 	if (!filename || !*filename) return;
 	DEBUG(3,10,fprintf(STDDBG,"Loading %s from %s\n", what, filename);)
 	char *line = (char *)xmalloc(cfg->max_line + 2) + 2;
-	line[-2] = "CLV"[type];
+	line[-2] = OPT_STRUCT_PREFIX[type];
 	line[-1] = ':';
 	text *t = new text(filename, dirname, "", what, true);
 	while (t->getline(line)) {
@@ -720,8 +1079,14 @@ void load_config(const char *filename, const char *dirname, const char *what,
 			if (value[i]) i++;
 			value[i] = 0;		// clumsy: strip off trailing whitespace
 		}
-		if (!set_option(line - 2, value, whither, parent_lang ? parent_lang->soft_options : (hash_table<char, option> *)NULL))
-			shriek(812, fmt("Bad option %s %s in %s", line, value, compose_pathname(filename, dirname)));
+		if (!set_option(line - 2, value, whither, parent_lang ? parent_lang->soft_options : (hash_table<char, option> *)NULL)) {
+			if (whither == cfg) {		// ...try also static_cfg
+				line[-2] = OPT_STRUCT_PREFIX[OS_STATIC];
+				if (!set_option(line - 2, value, scfg, (hash_table<char, option> *)NULL))
+					shriek(812, fmt("Bad option %s %s in %s", line, value, compose_pathname(filename, dirname)));
+				line[-2] = OPT_STRUCT_PREFIX[OS_CFG];
+			}
+		}
 	}
 	free(line - 2);
 	delete t;
@@ -729,7 +1094,7 @@ void load_config(const char *filename, const char *dirname, const char *what,
 
 void load_config(const char *filename)
 {
-	load_config(filename, cfg->ini_dir, "config", OS_CFG, cfg, NULL);
+	load_config(filename, scfg->ini_dir, "config", OS_CFG, cfg, NULL);
 }
 
 static inline void add_language(const char *lng_name)
@@ -739,7 +1104,7 @@ static inline void add_language(const char *lng_name)
 
 	DEBUG(3,10, fprintf(STDDBG, "Adding language %s\n", lng_name);)
 	sprintf(filename, "%s.ini", lng_name);
-	sprintf(dirname, "%s%c%s", cfg->lang_base_dir, SLASH, lng_name);
+	sprintf(dirname, "%s%c%s", scfg->lang_base_dir, SLASH, lng_name);
 	if (*lng_name) {
 		if (!cfg->langs) cfg->langs = (lang **)xmalloc(8 * sizeof (void *));
 		else if (!(cfg->n_langs-1 & cfg->n_langs) && cfg->n_langs > 4)	    // n_langs == 8, 16, 32...
@@ -789,7 +1154,7 @@ static inline void dump_help()
 	printf(" -D  debugging info (more D's - more detailed)\n");
 	printf(" -   keyboard input\n");
 	printf(" --long_options    ...see src/options.lst or 'epos -H' for these\n");
-	if (!cfg->long_help) exit(0);
+	if (!scfg->long_help) exit(0);
 
 	printf("Long option types: (b) boolean,    (c) character, (e) special enumerated\n");
 	printf("                   (n) int number, (s) string,    (u) unit level\n");
@@ -822,38 +1187,38 @@ void config_init()
 {
 	const char *mlinis[] = {"","ansi.ini","rtf.ini", NULL};
 
-	if (option_set) shriek(862, "config_init() too late");
+//	if (option_set) shriek(862, "config_init() too late");
 	make_option_set();
 //	restrict_options();
 //	if (privileged_exec())	/* parse restr.ini before command line */
 //		restrict_options(); 
 	parse_cmd_line();
 	restrict_options();
-	DEBUG(3,10,fprintf(STDDBG,"Base directory is %s\n", cfg->base_dir);)
-	DEBUG(2,10,fprintf(STDDBG,"Using configuration file %s\n", cfg->inifile);)
+	DEBUG(3,10,fprintf(STDDBG,"Base directory is %s\n", scfg->base_dir);)
+	DEBUG(2,10,fprintf(STDDBG,"Using configuration file %s\n", scfg->inifile);)
 
-	load_config(cfg->fixedfile);
+	load_config(scfg->fixedfile);
 	parse_cmd_line();
 
 	check_cfg_version("version");
 
-	load_config(mlinis[cfg->ml]);
-	load_config(cfg->inifile);
+	load_config(mlinis[scfg->ml]);
+	load_config(scfg->inifile);
 	parse_cmd_line();
-	load_languages(cfg->languages);
+	load_languages(scfg->languages);
 
 	if (!this_voice) shriek(842, "No voices configured");
 
-	cfg->warnings = true;
+	scfg->warnings = true;
 	parse_cmd_line();
-	cfg->loaded=true;
+	scfg->loaded=true;
 	
-	cfg->use_diph = cfg->show_diph | cfg->play_diph | cfg->imm_diph;
+	scfg->use_diph = scfg->show_diph | scfg->play_diph | scfg->imm_diph;
 	
 	hash_max_line = cfg->max_line;
 
-	if (cfg->version) version();
-	if (cfg->help || cfg->long_help) dump_help();
+	if (scfg->version) version();
+	if (scfg->help || scfg->long_help) dump_help();
 }
 
 void config_release()

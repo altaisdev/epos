@@ -127,7 +127,7 @@ class wavefm
 		}
 	}
 
-	void label(int position, char *label, char *note);
+	void label(int position, char *label, const char *note);
 
 	void become(void *buffer, int size);
 

@@ -1,0 +1,302 @@
+***************
+*** 312,420 ****
+  # ifndef BASE_DIR
+  	# define BASE_DIR /usr/lib/epos
+  # endif
+- 	OPTION (base_dir, "base_dir", STR, stringify(BASE_DIR))// base path to everything
+  # undef strfy
+  # undef stringify
+  
+  
+  
+  
+- OPTION (use_dbg,    "use_debug",  BOOL, false)  // Whether to print any debug info at all
+- 
+- OPTION (interf_dbg, "interf_debug",INT, 3)      // Debugging levels of various
+- OPTION (rules_dbg,  "rules_debug", INT, 3)      // code categories. See debug.doc
+- OPTION (elem_dbg,   "elem_debug",  INT, 3)      // 
+- OPTION (subst_dbg,  "subst_debug", INT, 3)      // 
+- OPTION (assim_dbg,  "assim_debug", INT, 3)      // 
+- OPTION (split_dbg,  "split_debug", INT, 3)      // 
+- OPTION (parser_dbg, "parser_debug",INT, 3)      // 
+- OPTION (synth_dbg,  "synth_debug", INT, 3)	//
+- OPTION (cfg_dbg,    "cfg_debug",   INT, 4)	//
+- OPTION (daemon_dbg, "daemon_debug",INT, 3)	//
+- 
+- OPTION (focus_dbg,  "focus_debug", DEBUG_AREA, _NONE_) 
+  						// _DEBUG_AREA_ not affected by limit_debug 
+- OPTION (always_dbg, "always_debug",INT, 3)      // Always debug this level and upwards
+- OPTION (limit_dbg,  "limit_debug", INT, 0)      // Never debug under this level, unless focussed
+  
+- OPTION (loaded, "",               BOOL, false)  // Do we have already compiled the .ini files?
+- OPTION (fixedfile,"fixed_ini_file",STR, "fixed.ini")
+- OPTION (inifile, "cfg_file",       STR, "epos.ini")	// What is our favourite .ini file?
+- OPTION (token_esc, "",             STR, "nt[eE\\ #;@~.-mXYZWVU")  // Escape sequences usable in the .ini files
+- OPTION (value_esc, "",             STR, "\n\t\033\033\033\\\377#;@\1\2\3\4\037\036\035\034\032\031")
+- OPTION (slash_esc, "",            CHAR, '/')	// Path separator ('/' or '\') .ini escape seq
+  
+- OPTION (hash_full, "hashes_full",  INT, 100)    // How full should a hash table become?
+  OPTION (multi_subst,"multi_subst", INT, 100)    // How many substs should apply to a word?
+- OPTION (lowmemory, "memory_low",  BOOL, false)  // Should we free hash tables after first use?
+- OPTION (forking, "forking",	  BOOL, false)  // (UNIX only) Detach using a child process?
+- OPTION (asyncing, "asyncing",	  BOOL, false)  // (UNIX only) Close files using a child process?
+- OPTION (colored, "colored",       BOOL, false)  // Use the color escape sequences?
+- OPTION (languages, "languages",     STR, "")	// Which languages to provide?
+- OPTION (ml, "markup_language",  MARKUP, ML_NONE)// Are these ANSI escape seqs or the RTF ones?
+- OPTION (version, "version",	  BOOL, false)	// Print version info to stdshriek on startup?
+- OPTION (help, "help",		  BOOL, false)	// Print help on stdshriek and exit on startup?
+- OPTION (long_help, "long_help",   BOOL, false)	// Print also a simple list of long options?
+- OPTION (neuronet, "neuronet",     BOOL, false)  // Allow nnet_out()?
+- OPTION (trusted, "trusted",       BOOL, false)  // Are sanity checks in unit::sanity() unnecessary?
+  OPTION (paranoid, "paranoid",     BOOL, true)   // Are config files out to get us? (strict syntax)
+  OPTION (stml, "stml",	          BOOL, false)	// Input text are STML (as opposed to plain ASCII)?
+- OPTION (showrule, "show_rule",    BOOL, false)  // Print each rule before its application? DEBUGGING only!
+- OPTION (pausing, "pausing",       BOOL, false)  // Pause after each rule application?
+- OPTION (r_dbg_sh_all, "verbose",  BOOL, false)  // When dumping rules, print them all?
+  // OPTION (warnpause, "warn_pause",  BOOL, false)  // Pause after every warning?
+- OPTION (warnings, "warnings",     BOOL, false)	// Show warnings at all?
+- OPTION (allpointers,"ptr_trusted",BOOL, true)   // When sanity checking, allow any pointers?
+  
+- OPTION (vars, "variables",         INT, 43)     // About how many variables in the rules?
+- OPTION (rules, "rules_in_block",   INT, 32)	// About how many rules in a block?
+- OPTION (mrw, "max_rule_weight",    INT, 900000)	// Maximum rule weight in a choice?
+  OPTION (max_line, "max_line_len",  INT, 512)	// How long may an input line be?
+- OPTION (scratch, "scratch_size",   INT, 512)	// How long may some temporary strings be?
+  OPTION (dev_txtlen,"dev_text_len", INT, 50000)  // How much data can we expect from a device?
+- OPTION (maxtext, "max_text_size",  INT, 17000000)  // Maximum gather buffer size
+  
+- OPTION (eof_char, "end_of_file",  CHAR, '\033') // Which key should terminate user input?
+  
+  
+- LNG_OPTION (rules_dir, rules_dir, "rules_dir", STR, ".")  // path to the rules and banner files
+- LNG_OPTION (hash_dir, hash_dir, "hash_dir",    STR, ".")  //  to the dictionaries
+- LNG_OPTION (input_dir, input_dir, "input_dir", STR, ".")  //  to the input file
+  // VOICE_OPTION (invent_dir, inv_dir, "invent_dir", STR, ".")  //  to the diphone inventories
+  // LNG_OPTION (pros_dir, pros_dir, "prosody_dir", STR, ".")  //  to the prosody files
+- OPTION (pseudo_root_dir, "pseudo_root_dir",STR, "root")	  //  to the virtual file tree
+- OPTION (help_dir, "ttscp_help_dir",    STR, "ttscp/help") //  to the ttscp help topics
+- OPTION (lang_base_dir, "lang_base_dir",    STR, "lng")    //  to the language descriptions
+- OPTION (voice_base_dir, "voice_base_dir",  STR, "voice")  //  to the voice descriptions
+- OPTION (inv_base_dir, "inv_base_dir",  STR, "inv")	  //  to the diphone inventories
+- OPTION (ini_dir, "ini_dir",	   STR, "cfg")  //      to fixed.ini
+- OPTION (matlab_dir, "matlab_dir",  STR, ".")	//      where to store nnet output
+- OPTION (wav_dir, "wav_dir",        STR, ".")	//      where to store .wav files
+  LNG_OPTION (input_file, input_file, "input_file",  STR, NULL)   // relative filename of the input text
+- OPTION (input_text, "",            STR, NULL)			// the input text itself
+  LNG_OPTION (rules_file, rules_file, "rules_file",  STR, NULL)   // relative filename of the rules text
+- OPTION (nnet_file, "nnet_file",    STR, NULL)	// relative filename of nnet output
+- OPTION (stddbg_file, "stddbg_file",     STR, NULL)   // file to write debug info to (NULL...stdout)
+  // OPTION (stdwarn_file, "stdwarn_file",   STR, NULL)   // file to write warnings to (NULL...stderr)
+- OPTION (stdshriek_file,"stdshriek_file",STR, NULL)   // file to write fatal errors to (NULL...std~err)
+  
+  // OPTION (trans, "show_transcript", BOOL, true)	// Should we display transcription on exit?
+- OPTION (show_phones,"show_phones",BOOL, false)	// Should we display the sounds on exit?
+- OPTION (use_diph,"",		  BOOL, true)	// (enabled if one of the following is on)
+- OPTION (show_diph,"show_diphones",BOOL, false)  // Should we display the diphones on exit?
+- OPTION (show_labels,"show_labels",BOOL, false)  // Should we display the diphone labels?
+- OPTION (play_diph,"play_diphones",BOOL, false)  // Should we write the sound to a file?
+- OPTION (diph_raw,"show_raw_diphs",BOOL, false)  // show_diphones including diphone numbers?
+  // OPTION (show_crc, "show_crc",     BOOL, false)	// Near-unique signature of the sound
+- OPTION (wav_file, "wave_file",     STR, NULL)	// File to write .wav into if play_diphones
+- OPTION (imm_diph,"immed_diphones",BOOL, false)  // Should we output them after a DIPHONES rule?
+  
+- VOICE_OPTION (inv_name, name, "name",	   STR, "(unnamed)")
+  VOICE_OPTION (inv_type, type, "type",       TYPE, S_NONE)	// Int, float, vector quantified...
+- VOICE_OPTION (inv_ct,channel, "channel", CHANNEL, CT_MONO)// (unused; not stereo)
+  VOICE_OPTION (inv_counts, counts, "counts",  STR, NULL)	// File with the model counts for every diphone?
+  VOICE_OPTION (inv_models, models, "models",  STR, NULL)	// File with the models themselves?
+- VOICE_OPTION (inv_book, book, "codebook",    STR, NULL)	// No idea what this file is
+  //VOICE_OPTION (inv_dph, dphfile, "dph_file",  STR, NULL)	// File describing the diphones?
+  VOICE_OPTION (inv_dpt, dptfile, "dpt_file",  STR, NULL)	// File naming the diphones?
+  VOICE_OPTION (inv_f0, init_f, "init_f",      INT, 100)	// Neutral frequency for the inventory
+--- 456,562 ----
+  # ifndef BASE_DIR
+  	# define BASE_DIR /usr/lib/epos
+  # endif
++ 	STATIC (base_dir, "base_dir", STR, strdup(stringify(BASE_DIR)))// base path to everything
+  # undef strfy
+  # undef stringify
+  
+  
++ STATIC (use_dbg,    "use_debug",  BOOL, false)  // Whether to print any debug info at all
+  
++ STATIC (interf_dbg, "interf_debug",INT, 3)      // Debugging levels of various
++ STATIC (rules_dbg,  "rules_debug", INT, 3)      // code categories. See debug.doc
++ STATIC (elem_dbg,   "elem_debug",  INT, 3)      // 
++ STATIC (subst_dbg,  "subst_debug", INT, 3)      // 
++ STATIC (assim_dbg,  "assim_debug", INT, 3)      // 
++ STATIC (split_dbg,  "split_debug", INT, 3)      // 
++ STATIC (parser_dbg, "parser_debug",INT, 3)      // 
++ STATIC (synth_dbg,  "synth_debug", INT, 3)	//
++ STATIC (cfg_dbg,    "cfg_debug",   INT, 4)	//
++ STATIC (daemon_dbg, "daemon_debug",INT, 3)	//
+  
++ STATIC (focus_dbg,  "focus_debug", DEBUG_AREA, _NONE_) 
+  						// _DEBUG_AREA_ not affected by limit_debug 
++ STATIC (always_dbg, "always_debug",INT, 3)      // Always debug this level and upwards
++ STATIC (limit_dbg,  "limit_debug", INT, 0)      // Never debug under this level, unless focussed
+  
++ STATIC (loaded, "",               BOOL, false)  // Do we have already compiled the .ini files?
++ STATIC (fixedfile,"fixed_ini_file",STR, strdup("fixed.ini"))
++ STATIC (inifile, "cfg_file",       STR, NULL)
++ STATIC (token_esc, "",             STR, strdup("nt[eE\\ #;@~.-mXYZWVU"))  // Escape sequences usable in the .ini files
++ STATIC (value_esc, "",             STR, strdup("\n\t\033\033\033\\\377#;@\1\2\3\4\037\036\035\034\032\031"))	// FIXME: this should become a constant, not an option; or to become changeable
++ STATIC (slash_esc, "",            CHAR, '/')	// Path separator ('/' or '\') .ini escape seq
+  
++ STATIC (hash_full, "hashes_full",  INT, 100)    // How full should a hash table become?
+  OPTION (multi_subst,"multi_subst", INT, 100)    // How many substs should apply to a word?
++ STATIC (lowmemory, "memory_low",  BOOL, false)  // Should we free hash tables after first use?
++ STATIC (forking, "forking",	  BOOL, false)  // (UNIX only) Detach using a child process?
++ STATIC (asyncing, "asyncing",	  BOOL, false)  // (UNIX only) Close files using a child process?
++ STATIC (colored, "colored",       BOOL, false)  // Use the color escape sequences?
++ STATIC (ml, "markup_language",  MARKUP, ML_NONE)// Are these ANSI escape seqs or the RTF ones?
++ STATIC (languages, "languages",     STR, NULL)	// Which languages to provide?
++ STATIC (version, "version",	  BOOL, false)	// Print version info to stdshriek on startup?
++ STATIC (help, "help",		  BOOL, false)	// Print help on stdshriek and exit on startup?
++ STATIC (long_help, "long_help",   BOOL, false)	// Print also a simple list of long options?
++ STATIC (neuronet, "neuronet",     BOOL, false)  // Allow nnet_out()?
++ STATIC (trusted, "trusted",       BOOL, false)  // Are sanity checks in unit::sanity() unnecessary?
+  OPTION (paranoid, "paranoid",     BOOL, true)   // Are config files out to get us? (strict syntax)
+  OPTION (stml, "stml",	          BOOL, false)	// Input text are STML (as opposed to plain ASCII)?
++ STATIC (showrule, "show_rule",    BOOL, false)  // Print each rule before its application? DEBUGGING only!
++ STATIC (pausing, "pausing",       BOOL, false)  // Pause after each rule application?
++ STATIC (r_dbg_sh_all, "verbose",  BOOL, false)  // When dumping rules, print them all?
+  // OPTION (warnpause, "warn_pause",  BOOL, false)  // Pause after every warning?
++ STATIC (warnings, "warnings",     BOOL, false)	// Show warnings at all?
++ STATIC (allpointers,"ptr_trusted",BOOL, true)   // When sanity checking, allow any pointers?
+  
++ STATIC (vars, "variables",         INT, 43)     // About how many variables in the rules?
++ STATIC (rules, "rules_in_block",   INT, 32)	// About how many rules in a block?
++ STATIC (mrw, "max_rule_weight",    INT, 900000)	// Maximum rule weight in a choice?
+  OPTION (max_line, "max_line_len",  INT, 512)	// How long may an input line be?
++ STATIC (scratch, "scratch_size",   INT, 512)	// How long may some temporary strings be?
+  OPTION (dev_txtlen,"dev_text_len", INT, 50000)  // How much data can we expect from a device?
++ STATIC (maxtext, "max_text_size",  INT, 17000000)  // Maximum gather buffer size
+  
++ STATIC (eof_char, "end_of_file",  CHAR, '\033') // Which key should terminate user input?
+  
+  
++ LNG_OPTION (rules_dir, rules_dir, "rules_dir", STR, NULL)  // path to the rules and banner files
++ LNG_OPTION (hash_dir, hash_dir, "hash_dir",    STR, NULL)  //  to the dictionaries
++ LNG_OPTION (input_dir, input_dir, "input_dir", STR, NULL)  //  to the input file
+  // VOICE_OPTION (invent_dir, inv_dir, "invent_dir", STR, ".")  //  to the diphone inventories
+  // LNG_OPTION (pros_dir, pros_dir, "prosody_dir", STR, ".")  //  to the prosody files
++ OPTION (pseudo_root_dir, "pseudo_root_dir",STR, NULL)	  //  to the virtual file tree	// FIXME: dirs might be STATIC?
++ OPTION (help_dir, "ttscp_help_dir",    STR, NULL) //  to the ttscp help topics
++ STATIC (lang_base_dir, "lang_base_dir",    STR, NULL)    //  to the language descriptions
++ STATIC (voice_base_dir, "voice_base_dir",  STR, NULL)  //  to the voice descriptions
++ STATIC (inv_base_dir, "inv_base_dir",  STR, NULL)	  //  to the diphone inventories
++ STATIC (ini_dir, "ini_dir",	   STR, strdup("cfg"))  //      to fixed.ini
++ STATIC (matlab_dir, "matlab_dir",  STR, NULL)	//      where to store nnet output
++ STATIC (wav_dir, "wav_dir",        STR, NULL)	//      where to store .wav files
+  LNG_OPTION (input_file, input_file, "input_file",  STR, NULL)   // relative filename of the input text
++ STATIC (input_text, "",            STR, NULL)			// the input text itself
+  LNG_OPTION (rules_file, rules_file, "rules_file",  STR, NULL)   // relative filename of the rules text
++ STATIC (nnet_file, "nnet_file",    STR, NULL)	// relative filename of nnet output
++ STATIC (stddbg_file, "stddbg_file",     STR, NULL)   // file to write debug info to (NULL...stdout)
+  // OPTION (stdwarn_file, "stdwarn_file",   STR, NULL)   // file to write warnings to (NULL...stderr)
++ STATIC (stdshriek_file,"stdshriek_file",STR, NULL)   // file to write fatal errors to (NULL...std~err)
+  
+  // OPTION (trans, "show_transcript", BOOL, true)	// Should we display transcription on exit?
++ STATIC (show_phones,"show_phones",BOOL, false)	// Should we display the sounds on exit?	// FIXME: STATIC or OPTION?  maybe need a rename
++ STATIC (use_diph,"",		  BOOL, true)	// (enabled if one of the following is on)
++ STATIC (show_diph,"show_diphones",BOOL, false)  // Should we display the diphones on exit?
++ STATIC (show_labels,"show_labels",BOOL, false)  // Should we display the diphone labels?
++ STATIC (play_diph,"play_diphones",BOOL, false)  // Should we write the sound to a file?
++ STATIC (diph_raw,"show_raw_diphs",BOOL, false)  // show_diphones including diphone numbers?
+  // OPTION (show_crc, "show_crc",     BOOL, false)	// Near-unique signature of the sound
++ STATIC (wav_file, "wave_file",     STR, NULL)	// File to write .wav into if play_diphones
++ STATIC (imm_diph,"immed_diphones",BOOL, false)  // Should we output them after a DIPHONES rule?
+  
++ VOICE_OPTION (name, name, "name",	     STR, NULL)
+  VOICE_OPTION (inv_type, type, "type",       TYPE, S_NONE)	// Int, float, vector quantified...
++ VOICE_OPTION (v_channel,channel,"channel",CHANNEL,CT_MONO)// (unused; not stereo)
+  VOICE_OPTION (inv_counts, counts, "counts",  STR, NULL)	// File with the model counts for every diphone?
+  VOICE_OPTION (inv_models, models, "models",  STR, NULL)	// File with the models themselves?
++ VOICE_OPTION (inv_book, book, "codebook",    STR, NULL)	// File with vectors for vq voices?
+  //VOICE_OPTION (inv_dph, dphfile, "dph_file",  STR, NULL)	// File describing the diphones?
+  VOICE_OPTION (inv_dpt, dptfile, "dpt_file",  STR, NULL)	// File naming the diphones?
+  VOICE_OPTION (inv_f0, init_f, "init_f",      INT, 100)	// Neutral frequency for the inventory
+***************
+*** 422,461 ****
+  VOICE_OPTION (inv_t0, init_t, "init_t",      INT, 100)	// Neutral time factor
+  VOICE_OPTION (inv_st, st, "st_length",       INT, 400)	// Length of ST signals (ptdsyn)
+  
+- VOICE_OPTION (inv_hz, samp_rate, "inv_sampling_rate", INT, 8000)	// The real sampling rate of the inventory
+- VOICE_OPTION (inv_samp_size, samp_size, "sample_size",INT, 16)	// (not supported)
+  
+  OPTION (wav_hdr, "wave_header",	  BOOL, false)  // Should .wav output contain .wav file header?
+  // VOICE_OPTION (ioctlable, ioctlable, "ioctlable",	BOOL, false)  // Is the voice a real device not file?
+  
+- OPTION (daemon_log, "daemon_log",  STR, NULL)	// Log file of daemon.cc activities (TTSCP server)
+- OPTION (pwdfile, "server_pwd_file",STR, NULL)	// File to store the server passwd for TTSCP auth
+- OPTION (dbg_pwd, "debug_password", STR, "")	// Additional server password (insecure)
+- OPTION (restr_file, "restr_file",  STR, "restr.ini") // restricted options
+  OPTION (db_size, "diph_buff_size", INT, 0)	// max n of diphones to be synthesized at once
+  OPTION (ssifb_size, "ssif_buff_size",INT,0)	// max n bytes of SSIF to be synthesized at once
+  OPTION (buffer_size, "buffer_size",INT, 8192)	// buffer size for wave files
+- OPTION (max_net_cmd, "max_net_cmd",INT, 16384)  // Max TCP command length
+- OPTION (listen_port, "listen_port",INT, TTSCP_PORT) // TCP port where the daemon should listen
+  OPTION (handle_size, "handle_size",INT, 15)	// TTSCP handle size
+- OPTION (local_only, "local_only",  BOOL, true) // visible only to local clients ?
+  OPTION (deadlk_timeout, "deadlock_timeout", INT, 5)	// remote voice timeout
+- VOICE_OPTION (inv_loc, loc, "location", STR, "")
+  // OPTION (sd, "",		   INT, 0)	// network socket of the current session
+  						// (can also be used to detect the daemon mode)
+  OPTION (sd_in, "",		   INT, -1)	// current input network socket
+  OPTION (sd_out, "",		   INT, -1)	// current output network socket
+  
+- OPTION (pend_min, "pend_min",	   INT, 3)	// FIXME: non-functional
+- OPTION (pend_max, "pend_max",	   INT, 7)	// FIXME: non-functional
+  
+- OPTION (big_endian, "big_endian", BOOL, false)  // run-time decided
+  
+- LNG_OPTION (std_voices, voice_names, "voices", STR, "")	// voices supported for this language
+- LNG_OPTION (sft_opts, soft_option_names, "soft_options", STR, "")
+  				// language-specific voice options supported for this language
+  LNG_OPTION (permanent_fallbacks, permanent_fallbacks, "permanent_fallbacks", BOOL, false)
+- LNG_OPTION (fallback_voice, fallback_voice, "fallback_voice", STR, "")
+  				// voice to be used when the current one fails at run time
+  
+  // OPTION (ktd_pitch, "ktd_pitch",    INT, 100)
+--- 564,603 ----
+  VOICE_OPTION (inv_t0, init_t, "init_t",      INT, 100)	// Neutral time factor
+  VOICE_OPTION (inv_st, st, "st_length",       INT, 400)	// Length of ST signals (ptdsyn)
+  
++ VOICE_OPTION (samp_rate, samp_rate, "inv_sampling_rate", INT, 8000)	// The real sampling rate of the inventory
++ VOICE_OPTION (samp_size, samp_size, "sample_size",INT, 16)	// (not supported)
+  
+  OPTION (wav_hdr, "wave_header",	  BOOL, false)  // Should .wav output contain .wav file header?
+  // VOICE_OPTION (ioctlable, ioctlable, "ioctlable",	BOOL, false)  // Is the voice a real device not file?
+  
++ STATIC (daemon_log, "daemon_log",  STR, NULL)	// Log file of daemon.cc activities (TTSCP server)
++ STATIC (pwdfile, "server_pwd_file",STR, NULL)	// File to store the server passwd for TTSCP auth
++ STATIC (dbg_pwd, "debug_password", STR, NULL)	// Additional server password (insecure)
++ STATIC (restr_file, "restr_file",  STR, strdup("restr.ini")) // restricted options
+  OPTION (db_size, "diph_buff_size", INT, 0)	// max n of diphones to be synthesized at once
+  OPTION (ssifb_size, "ssif_buff_size",INT,0)	// max n bytes of SSIF to be synthesized at once
+  OPTION (buffer_size, "buffer_size",INT, 8192)	// buffer size for wave files
++ OPTION (max_net_cmd, "max_net_cmd",INT, 16384)  // Max TTSCP command length
++ STATIC (listen_port, "listen_port",INT, TTSCP_PORT) // TTSCP port where the daemon should listen
+  OPTION (handle_size, "handle_size",INT, 15)	// TTSCP handle size
++ STATIC (local_only, "local_only",  BOOL, true) // visible only to local clients ?
+  OPTION (deadlk_timeout, "deadlock_timeout", INT, 5)	// remote voice timeout
++ VOICE_OPTION (loc, loc, "location", STR, NULL)
+  // OPTION (sd, "",		   INT, 0)	// network socket of the current session
+  						// (can also be used to detect the daemon mode)
+  OPTION (sd_in, "",		   INT, -1)	// current input network socket
+  OPTION (sd_out, "",		   INT, -1)	// current output network socket
+  
++ STATIC (pend_min, "pend_min",	   INT, 3)	// FIXME: non-functional
++ STATIC (pend_max, "pend_max",	   INT, 7)	// FIXME: non-functional
+  
++ STATIC (big_endian, "big_endian", BOOL, false)  // run-time decided
+  
++ LNG_OPTION (voice_list, voice_list, "voices", STR, NULL) // voices supported for this language
++ LNG_OPTION (soft_opt_list, soft_opt_list, "soft_options", STR, NULL)
+  				// language-specific voice options supported for this language
+  LNG_OPTION (permanent_fallbacks, permanent_fallbacks, "permanent_fallbacks", BOOL, false)
++ LNG_OPTION (fallback_voice, fallback_voice, "fallback_voice", STR, NULL)
+  				// voice to be used when the current one fails at run time
+  
+  // OPTION (ktd_pitch, "ktd_pitch",    INT, 100)
