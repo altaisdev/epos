@@ -18,11 +18,10 @@ $vowel     = $short$long$diphtong
 $consonant = $voiced$voiceless$sonant
 $everywhere= !_!
 $numbers   = 1234567890
-$sonority  = 0'<$voiceless$voiced$SONANT<$nasal<l<rj<$vowel   ;l<r viz "umrlec" etc. Ani systematické, ani bezpeèné.
+$sonority  = 0'<$voiceless$voiced<$nasal<l<rjJ<$vowel   ;l<r viz "umrlec" etc. Ani systematické, ani bezpeèné.
 
 $lower_case = aábcèdïeéìfghiíjklmnòoópqrøs¹t»uúùvwxyýz¾
 $upper_case = AÁBCÈDÏEÉÌFGHIÍJKLMNÒOÓPQRØS©T«UÚÙVWXYÝZ®
-$letter = ${lower_case}${upper_case}
 
 #  \Z oznaèuje teèku oznaèující øadovou èíslovku.  Tu je nutno rozli¹it
 #  od teèky obyèejné, vìtu vydìlující, ne¾li se ztratí rozdíl mezi velkými
@@ -41,13 +40,11 @@ regex  /\Z(\\.)([${upper_case}])/\1\2/	text
 
 # Pravidla pro ètení zkratek apod.: velké písmeno na jiném,
 #   ne¾ prvním místì ve slovì indikuje zkratku a hláskuje se.
-#   Stejnì tak jednotlivé písmeno pøed nebo za cifrou nebo
-#   speciálním znakem nebo hláskovanou èástí slova.
+#   Stejnì tak jednotlivé písmeno pøed cifrou nebo speciálním znakem.
 
+regress	 ${lower_case}>${upper_case}(0_!${lower_case})			colon
 regress  ${upper_case}>${lower_case}(0_${lower_case})			word
 regress  ${upper_case}>${lower_case}(0_${lower_case})			colon
-regress	 ${lower_case}>${upper_case}(0_!${lower_case})			colon
-regress  ${lower_case}>${upper_case}(!${lower_case}_!$letter)		colon
 if	spellout
 {
 	regex	/^([^\Y\ ~]*)(.\?)\$/\1\Y\1\2/	word
@@ -95,7 +92,7 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
 	regress j>J(0_ds)	; fixme: random environment
  }
 
- regress   i>j($vowel_0)   syll
+
  subst     syll.dic		; Rozsadit vokály
  regress   0>'(0_$vowel)	; Rázy
 
@@ -126,18 +123,6 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
  }
  progress  P>\ ($everywhere)	word	word
 
- regress   b>0(!_b)	syll	; pochybný heuristický odstaveèek
- regress   n>0(!_nò)	syll	; namíøený proti geminátám
- regress   s>0(!_s)	syll
- regress   t>0(!_t)	syll
- regress   f>0(!_f)	syll
-
- progress  ø>Ø($voiceless_!0) syll ; je u¾ zde kvùli "k øízení [gøízeòí]" "køeè [kØeè]"
-
- regress   $sonant>$SONANT(0_!)  syll
- syll      $sonority	syll	; Rozklad_na_slabiky
- regress   $SONANT>$sonant(!_!)
-
  prep	nonsyl.dic		syll
 
 
@@ -145,6 +130,7 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
 
  regress   h>0(t_!)		; pathologie, plethora, thanatos. Pochybné.
 
+ progress  ø>Ø($voiceless_!0)
  regress   $voiced>${voiceless}(!_$voiceless&0')       	; Asimilace znìlosti
  regress   $voiceless>$voiced(!_$voiced!v)       colon
 
@@ -162,19 +148,18 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
  regress   ì>e($everywhere)
 
  progress  yý>ií($everywhere)
-
- progress  tkfslmn>TKFSLMN(i_0)
- progress  i>j(oae_TKFSLMN)
- progress  TKFSLMN>tkfslmn(!_!)
-
- progress  n>N(!_kg)
-
+ progress  i>j($vowel_!) syll   ; slabièné èlenìní? Leda výjimeènì 
  progress  w>u($vowel_$consonant&0)
  progress  w>v($everywhere)     ; vìt¹inou ale "w" odstraní výjimky, øeknìme
+ progress  n>N(!_kg)
 
-				; zde bývala eliminace geminát
-				; zde býval rozklad na slabiky
+ regress   b>0(!_b)	syll	; pochybný heuristický odstaveèek
+ regress   n>0(!_nò)	syll	; namíøený proti geminátám
+ regress   s>0(!_s)	syll
+ regress   t>0(!_t)	syll
+ regress   f>0(!_f)	syll
 
+ syll      $sonority	syll	; Rozklad_na_slabiky
 
  progress  oae>OAE(!_u)	syll	; Dvojhlásky
  regress   u>0(OAE_!)	syll
