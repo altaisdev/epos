@@ -1,10 +1,9 @@
-/***********************************************************
+/*
+ *	epos/src/tdpsyn.cc
+ * 	(c) 2000-2001 Petr Horak, petr.horak@click.cz
+ * 	(c) 2001 Jirka Hanika, geo@cuni.cz
  *
- * epos/src/tdpsyn.cc
- *
- * Copyright (c) 2000-2001 , Petr Horak (petr.horak@click.cz).
- *
- * Version 1.03 (22.4.2001)
+ *	tdpsyn version 1.1 (31.10.2001)
  *
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,7 +38,11 @@ class tdpsyn : public synth
 	int *diph_len;
 	int outpos;
 	int difpos;
-	double *wwin;
+	unsigned short *wwin;
+	
+	file *tdi;
+	
+	int average_pitch(int offs, int len);
    public:
 	tdpsyn(voice *);
 	virtual ~tdpsyn(void);
