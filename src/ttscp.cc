@@ -23,6 +23,8 @@
 
 #ifdef HAVE_SYSLOG_H
 	#include <syslog.h>
+	
+	int severity(int code);
 #endif
 
 hash_table<char, a_ttscp> *data_conns = new hash_table<char, a_ttscp> (30);
@@ -38,10 +40,10 @@ static inline void sendstring(const char *text)
 void reply(const char *text)
 {
 #ifdef HAVE_SYSLOG_H
-	if (scfg->use_syslog) {
+	if (cfg->use_syslog && (cfg->full_syslog || text[0] > '2')) {
 		if (text[3] != ' ') shriek(461, "No TTSCP error code supplied");
 		syslog(severity(text[0]*100 + text[1]*10 + text[2] - '0'*111),
-			scfg->log_codes ? text : text+4);
+			cfg->log_codes ? text : text+4);
 	}
 #endif
 	sendstring(text);
@@ -50,7 +52,7 @@ void reply(const char *text)
 void reply(int code, const char *text)
 {
 	if (code == MUTE_EXCEPTION) return;
-	fflush(NULL);
+	if (0) fflush(NULL);
 	char c[5];
 	c[0] = code / 100 + '0';
 	c[1] = code / 10 % 10 + '0';
@@ -95,8 +97,7 @@ int cmd_user(char *param, a_ttscp *)
 int cmd_pass(char *param, a_ttscp *)
 {
 	if (this_context->uid == UID_ANON) {
-		if (!strcmp(param, server_passwd) || scfg->dbg_pwd
-				&& !strcmp(param, scfg->dbg_pwd)) {
+		if (!strcmp(param, server_passwd) || *cfg->dbg_pwd && !strcmp(param, cfg->dbg_pwd)) {
 			DEBUG(2,11,fprintf(STDDBG, "[core] It's me\n");)
 			this_context->uid = UID_SERVER;
 			reply("200 OK");
@@ -202,7 +203,7 @@ int cmd_help(char *param, a_ttscp *)
 			return PA_NEXT;
 		}
 		*scratch = ' ';
-		while (fgets(scratch + 1, scfg->scratch - 3, f)) {
+		while (fgets(scratch + 1, cfg->scratch - 3, f)) {
 			int l = strlen(scratch);
 			scratch[l-1] = '\r'; scratch[l] = '\n'; scratch[l+1] = 0;
 			sputs(scratch, cfg->sd_out);
@@ -270,11 +271,11 @@ int do_show(char *param)
 //		}
 		if (!strcmp("languages", param)) {
 			int bufflen = 0;
-			for (i=0; i < cfg->n_langs; i++) bufflen += strlen(cfg->langs[i]->name) + strlen(scfg->comma);
+			for (i=0; i < cfg->n_langs; i++) bufflen += strlen(cfg->langs[i]->name) + strlen(cfg->comma);
 			char *result = (char *)xmalloc(bufflen + 1);
 			strcpy(result, cfg->n_langs ? cfg->langs[0]->name : "(empty list)");
 			for (i=1; i < cfg->n_langs; i++) {
-				strcat(result, scfg->comma);
+				strcat(result, cfg->comma);
 				strcat(result, cfg->langs[i]->name);
 			}
 			sendstring(result);
@@ -285,11 +286,11 @@ int do_show(char *param)
 		if (!strcmp("voices", param)) {
 			int bufflen = 0;
 			for (i=0; i < this_lang->n_voices; i++)
-				bufflen += strlen(this_lang->voices[i]->name) + strlen(scfg->comma);
+				bufflen += strlen(this_lang->voices[i]->name) + strlen(cfg->comma);
 			char *result = (char *)xmalloc(bufflen + 1);
 			strcpy(result, this_lang->n_voices ? this_lang->voices[0]->name : "(empty list)");
 			for (i=1; i < this_lang->n_voices; i++) {
-				strcat(result, scfg->comma);
+				strcat(result, cfg->comma);
 				strcat(result, this_lang->voices[i]->name);
 			}
 			sendstring(result);
@@ -382,7 +383,7 @@ int cmd_delhandle(char *param, a_ttscp *a)
  *	in real world TTSCP sessions, for efficiency reasons.
  */
 
-#define TTSCP_COMMAND(x,y,s,p) {*(const int *)x, &y, s, p},
+#define TTSCP_COMMAND(x,y,s,p) {(*(const int *)x), (&y), (s), (p)},
 
 ttscp_cmd ttscp_cmd_set[] = {
 	TTSCP_COMMAND("appl", cmd_apply, "n",		   PAR_REQ)

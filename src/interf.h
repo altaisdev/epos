@@ -38,7 +38,7 @@ void epos_init();
 void epos_reinit();
 void epos_done();		// No real need to call, ever. Just to be 100% dmalloc correct.
 
-#define color(stream, seq) if (scfg->colored && seq) fprintf(stream, seq)
+#define color(stream, seq) if (cfg->colored) fprintf(stream, seq)
 void colorize(int level, FILE *handle);  // See this function in interf.cc for various #defines
 
 #define MAX_ERR_LINE 320	// No error nor warning message may be longer
@@ -64,8 +64,6 @@ void shriek(int code, const char *msg)
 	__attribute__((__noreturn__))
 #endif
 					;
-int severity(int code);
-
 char *split_string(char *string);	// 0-terminate the first word, return the rest
 
 FILE *fopen(const char *filename, const char *flags, const char *reason);
@@ -123,10 +121,12 @@ void unclaim(file *);
 // void list_voices();
 
 class unit;
-void process_diphones(unit *root);
+void process_segments(unit *root);
 
-struct diphone {
-	int code;
+struct segment {
+	short code;
+	char nothing;
+	char ll;
 	int f,e,t;
 };
 

@@ -74,13 +74,13 @@ if    phr_break
 }
 
 if   kadlec_dph
-	diphones  kadlec.dph    colon
+	segments  kadlec.dph    colon
 if   !kadlec_dph
 {
    if ptacek97_dph
-	diphones  ptacek97.dph  colon
+	segments  ptacek97.dph  colon
    if !ptacek97_dph
-	diphones  traditnl.dph  colon
+	segments  traditnl.dph  colon
 }
 
 #

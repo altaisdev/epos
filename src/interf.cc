@@ -14,6 +14,7 @@
  *
  */
 
+
 #include "common.h"
 #include "exc.cc"
 #include <time.h>	// used to initialize the rand number generator
@@ -60,13 +61,14 @@ int unused_variable;
 
 void *xmall_ptr_holder;
 
+#ifdef HAVE_SYSLOG_H
 int severity(int code)
 {
 	if (code > 899 || code < 100)	return LOG_ERR;		/* that is, meta-error */
 	if (code / 10 == 80) return LOG_NOTICE;
 	if (code >= 610) return LOG_CRIT;
 	if (code / 10 == 45 || code == 444 || code == 445) {
-		if (scfg->authpriv) return LOG_ERR | LOG_AUTHPRIV;
+		if (cfg->authpriv) return LOG_ERR | LOG_AUTHPRIV;
 		return LOG_WARNING;
 	}
 	if (code / 10 == 46) return LOG_ERR;
@@ -75,25 +77,25 @@ int severity(int code)
 	if (code == 600) return LOG_DEBUG;
 	return LOG_INFO;
 }
+#endif
 
 
 void shriek(int code, const char *s) 
 {	/* Art (c) David Miller */
-	int l_errno = errno;
-	if (scfg->shriek_art == 1) fprintf(cfg->stdshriek,
+	if (cfg->shriek_art == 1) fprintf(cfg->stdshriek,
 "              \\|/ ____ \\|/\n"
 "              \"@'/ ,. \\`@\"\n"
 "              /_| \\__/ |_\\\n"
 "                 \\__U_/\n");
-	if (scfg->shriek_art == 2) fprintf(cfg->stdshriek, "\nSuddenly, something went wrong.\n\n");
-	color(cfg->stdshriek, scfg->shriek_col);
+	if (cfg->shriek_art == 2) fprintf(cfg->stdshriek, "\nSuddenly, something went wrong.\n\n");
+	color(cfg->stdshriek, cfg->shriek_col);
 	fprintf(cfg->stdshriek, "Fatal: %s\n",s); 
-	color(cfg->stdshriek, scfg->normal_col);
+	color(cfg->stdshriek, cfg->normal_col);
 
 
 #ifdef HAVE_SYSLOG_H
-	if (scfg->use_syslog)
-		if (scfg->log_codes) syslog(LOG_DAEMON | severity(code), "%3d %s", code, s);
+	if (cfg->use_syslog)
+		if (cfg->log_codes) syslog(LOG_DAEMON | severity(code), "%3d %s", code, s);
 		else syslog(LOG_DAEMON | severity(code), s);
 #else
 	FILE *hackfile = fopen("hackfile","w");
@@ -115,7 +117,7 @@ void shriek(int code, const char *s)
 
 		case 8 :
 			printf("Abnormal condition: %s (code %d)\n", s, code);
-			if (l_errno) printf("Current errno value: %d (%s)\n", l_errno, strerror(l_errno));
+			if (errno) printf("Current errno value: %d (%s)\n", errno, strerror(errno));
 			throw new fatal_error (code, s);
 
 			printf("Your compiler does NOT support exception handling, aborting\n");
@@ -231,12 +233,12 @@ fopen(const char *filename, const char *flags, const char *reason)
 
 void colorize(int level, FILE *handle)
 {
-	if (!scfg->colored) return; 
+	if (!cfg->colored) return; 
 	if (level==-1) {
-		if (scfg->normal_col) fputs(scfg->normal_col, handle);
+		fputs(cfg->normal_col, handle);
 		return;
 	}
-	if (scfg->out_color[level]) fputs(scfg->out_color[level],handle);
+	fputs(cfg->out_color[level],handle);
 }
 
 FIT_IDX fit(char c)
@@ -336,11 +338,11 @@ unit *str2units(const char *text)
 	unit *root;
 	parser *parsie;
 
-	if (text && (signed)strlen(text) > scfg->maxtext) shriek(456, "input too long");
+	if (text && (signed)strlen(text) > cfg->maxtext) shriek(456, "input too long");
 
 	if (text && *text) parsie = new parser(text, 1);
 	else parsie = new parser(this_lang->input_file, 0);
-	root=new unit(scfg->text_level, parsie);
+	root=new unit(cfg->text_level, parsie);
 	delete parsie;
 	return root;
 }
@@ -390,7 +392,7 @@ bool *booltab(const char *s)
  * be slow and robust
  * if filename is absolute, ignore the dirname
  * if filename begins with "./", ignore the dirname
- * non-absolute dirnames start from scfg->base_dir
+ * non-absolute dirnames start from cfg->base_dir
  * convert any slashes to backslashes in DOS
  * the compiler will notice if '/'==SLASH and test only once
  */
@@ -402,14 +404,13 @@ char *compose_pathname(const char *filename, const char *dirname, const char *tr
 	register int tmp=0;
 	char *pathname;
 
-	if (!filename) filename = "";
-	if (!dirname || !*dirname) dirname = ".";
-	if (!treename) treename = "";
-	pathname = (char *)xmalloc(strlen(filename) + strlen(dirname) + strlen(treename) + strlen(scfg->base_dir) + 4);
+	if (!filename || !dirname || !treename) return strdup("");
+	if (!*dirname) dirname = ".";
+	pathname = (char *)xmalloc(strlen(filename) + strlen(dirname) + strlen(treename) + strlen(cfg->base_dir) + 4);
 	if (IS_NOT_SLASH(*filename) && (filename[0]!='.' || IS_NOT_SLASH(filename[1]))) {
 		if (IS_NOT_SLASH(*dirname)) {
 			if (IS_NOT_SLASH(*treename)) {
-				strcpy(pathname, scfg->base_dir);
+				strcpy(pathname, cfg->base_dir);
 				tmp = strlen(pathname);
 				if (IS_NOT_SLASH(pathname[tmp-1])) pathname[tmp++] = SLASH;
 			}
@@ -441,7 +442,7 @@ char *limit_pathname(const char *filename, const char *dirname)
 {
 	char *p;
 	char *r;
-	if ((int)strlen(filename) >= scfg->scratch) shriek(864, "File name too long");
+	if ((int)strlen(filename) >= cfg->scratch) shriek(864, "File name too long");
 	strcpy(scratch, filename);
 	for (p = scratch; !IS_NOT_SLASH(*p); p++);
 	for (r = scratch; (*r = *p); p++, r++) {
@@ -560,7 +561,7 @@ void unclaim(file *ff)
 {
 	ff->ref_count--;
 	if (!ff->ref_count) {
-		if (scfg->lowmemory) uncache_file(NULL, ff, NULL);
+		if (cfg->lowmemory) uncache_file(NULL, ff, NULL);
 	}
 }
 
@@ -614,15 +615,12 @@ void epos_init(int argc_, char**argv_)	 //Some global sanity checks made here
 	register char *result;
 	
 	argc=argc_; argv=argv_;
-	
-//	cow_claim();
-//	cow_configuration(&cfg);
 
-	if ((result=getenv(CFG_FILE_ENVIR_VAR))) scfg->inifile=result;
+	if ((result=getenv(CFG_FILE_ENVIR_VAR))) cfg->inifile=result;
 	for (int i=1; i<argc-1; i++) if (!strncmp(argv[i], CFG_FILE_OPTION, optlen)) {
 		switch (argv[i][optlen]) {
-			case 0:	  scfg->inifile=argv[++i]; break;
-			case '=': scfg->inifile=argv[i]+optlen+1; break;
+			case 0:	  cfg->inifile=argv[++i]; break;
+			case '=': cfg->inifile=argv[i]+optlen+1; break;
 			default:  /* another option, most likely a bug */;
 		}
 	}
@@ -636,37 +634,37 @@ void epos_init()	 //Some global sanity checks made here
 	openlog("epos", LOG_CONS, LOG_DAEMON);
 #endif
 
-	if (!scfg->loaded)	cfg->stddbg = stdout,
+	if (!cfg->loaded)	cfg->stddbg = stdout,
 				cfg->stdshriek = stderr;
 	if (sizeof(int)<4*sizeof(char) || sizeof(int *)<4*sizeof(char)) 
 		shriek (862, fmt("You dwarf! I want at least 32 bit arithmetic & pointery [%d]", sizeof(int)));
 	if (sizeof(int) > sizeof(void *)) shriek(862, "Your integers are longer than pointers!\n"
 				"Turn hash_table::forall() fns in hash.h the other way round.");
 	if ((unsigned char)-1 != 255) shriek(862, "Your chars are not 8-bit? Funny.");
-	if (*(short int *)"wxyz" == 256 * 'w' + 'x') scfg->big_endian = true;
-	if (*(short int *)"wxyz" != 256 * 'x' + 'w' && !scfg->big_endian) shriek(862,
+	if (*(short int *)"wxyz" == 256 * 'w' + 'x') cfg->big_endian = true;
+	if (*(short int *)"wxyz" != 256 * 'x' + 'w' && !cfg->big_endian) shriek(862,
 				"Endianness detection failed");		// FIXME
 
 	srand(time(NULL));	// randomize
 
-	if (!esctab) esctab = FOREVER(fntab(scfg->token_esc, scfg->value_esc));
+	if (!esctab) esctab = FOREVER(fntab(cfg->token_esc, cfg->value_esc));
 
 	config_init();
 
 #ifdef DEBUGGING
-	if (scfg->use_dbg && scfg->stddbg_file && *scfg->stddbg_file)
-		cfg->stddbg = fopen(scfg->stddbg_file,"w","debugging messages");
+	if (cfg->use_dbg && cfg->stddbg_file && *cfg->stddbg_file)
+		cfg->stddbg = fopen(cfg->stddbg_file,"w","debugging messages");
 #else
-	if (scfg->use_dbg) shriek(813, "Either disable debugging in config file, or #define it in interf.h");
+	if (cfg->use_dbg) shriek(813, "Either disable debugging in config file, or #define it in interf.h");
 #endif
 	cfg->stdshriek = stderr;
-	if (scfg->stdshriek_file && *scfg->stdshriek_file)
-		cfg->stdshriek = fopen(scfg->stdshriek_file, "w", "error messages");
+	if (cfg->stdshriek_file && *cfg->stdshriek_file)
+		cfg->stdshriek = fopen(cfg->stdshriek_file, "w", "error messages");
 		
 //	if (!_subst_buff) _subst_buff = (char *)xmalloc(MAX_GATHER+2);
 //	if (!_gather_buff) _gather_buff = (char *)xmalloc(MAX_GATHER+2);
 	if (!_resolve_vars_buff) _resolve_vars_buff = (char *)xmalloc(cfg->max_line+1); 
-	if (!scratch) scratch = (char *)xmalloc(scfg->scratch+1);
+	if (!scratch) scratch = (char *)xmalloc(cfg->scratch+1);
 	
 	compile_rules();
 
@@ -705,7 +703,7 @@ void epos_done()
 	config_release();
 	unit::done();
 	shutdown_hashing();
-//	shutdown_langs();
+	shutdown_langs();
 	shutdown_cfgs();
 
 //	release(&_subst_buff);
@@ -714,13 +712,12 @@ void epos_done()
 	release(&scratch);
 	
 	END_OF_ETERNITY;
-	cow_catharsis();
 }
 
 void epos_reinit()
 {
 	epos_catharsis();
-//	load_config("default.ini");
+	load_config("default.ini");
 	epos_init();
 }
 
@@ -744,16 +741,16 @@ char *current_debug_tag = NULL;
 int  debug_config(int area)
 {
 	switch (area) {
-		case _INTERF_: return scfg->interf_dbg;
-		case _RULES_:  return scfg->rules_dbg;
-		case _ELEM_:   return scfg->elem_dbg;
-		case _SUBST_:  return scfg->subst_dbg;
-		case _ASSIM_:  return scfg->assim_dbg;
-		case _SPLIT_:  return scfg->split_dbg;
-		case _PARSER_: return scfg->parser_dbg;
-		case _SYNTH_:  return scfg->synth_dbg;
-		case _CFG_:    return scfg->cfg_dbg;
-		case _DAEMON_: return scfg->daemon_dbg;
+		case _INTERF_: return cfg->interf_dbg;
+		case _RULES_:  return cfg->rules_dbg;
+		case _ELEM_:   return cfg->elem_dbg;
+		case _SUBST_:  return cfg->subst_dbg;
+		case _ASSIM_:  return cfg->assim_dbg;
+		case _SPLIT_:  return cfg->split_dbg;
+		case _PARSER_: return cfg->parser_dbg;
+		case _SYNTH_:  return cfg->synth_dbg;
+		case _CFG_:    return cfg->cfg_dbg;
+		case _DAEMON_: return cfg->daemon_dbg;
 	}
 	shriek(861, fmt("Unknown debug area %d", area));
 	return 0;   // keep the compiler happy
@@ -761,11 +758,11 @@ int  debug_config(int area)
 
 bool debug_wanted(int lev, /*_DEBUG_AREA_*/ int area) 
 {
-	if (!scfg->use_dbg) return false;
-	if (scfg->always_dbg > 10 || scfg->always_dbg < 0) shriek(862, "cfg bogus"); //FIXME: hack
-	if (lev >= scfg->always_dbg) return true;
-	if (area == scfg->focus_dbg) return lev >= debug_config(area);
-	if (lev < scfg->limit_dbg)   return false;
+	if (!cfg->use_dbg) return false;
+	if (cfg->always_dbg > 10 || cfg->always_dbg < 0) shriek(862, "cfg bogus"); //FIXME: hack
+	if (lev >= cfg->always_dbg) return true;
+	if (area == cfg->focus_dbg) return lev >= debug_config(area);
+	if (lev < cfg->limit_dbg)   return false;
 	return  lev >= debug_config(area);
 }
 

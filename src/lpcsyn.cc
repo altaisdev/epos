@@ -75,8 +75,8 @@ lpcsyn::lpcsyn(voice *v)
 
 	kyu = 0;		/* random initial value - geo */
 
-	diph_offs = (int *)xmalloc(sizeof(int) * v->n_segs);
-//	diph_len = (unsigned char *)xmalloc(sizeof(unsigned char) * v->n_segs);
+	seg_offs = (int *)xmalloc(sizeof(int) * v->n_segs);
+//	seg_len = (unsigned char *)xmalloc(sizeof(unsigned char) * v->n_segs);
 
 	nvyrov = 0;
 	lold = v->init_f;
@@ -88,19 +88,19 @@ lpcsyn::lpcsyn(voice *v)
 
 	for (i=0; i<rad; i++) ifilt[i] = 0;
 
-//	tdiph = (char (*)[4])freadin(v->dptfile, v->inv_dir, "rt", "diphone names");
-	diph_len = claim(v->counts, v->loc, scfg->inv_base_dir, "rb", "model counts", NULL);
-	diph_offs[0] = 0;
+//	tseg = (char (*)[4])freadin(v->dptfile, v->inv_dir, "rt", "segment names");
+	seg_len = claim(v->counts, v->loc, cfg->inv_base_dir, "rb", "model counts", NULL);
+	seg_offs[0] = 0;
 	for (i = 1; i < v->n_segs; i++)
-		diph_offs[i] = diph_offs[i-1] + (int)diph_len->data[i-1];	// cast to unsigned char * before [] if LPC sounds bad
-//	models = claim(v->models, v->loc, scfg->inv_base_dir, "rb", "lpc inventory");
-//	delmod = diph_offs[440] + diph_len[440];
+		seg_offs[i] = seg_offs[i-1] + (int)seg_len->data[i-1];	// cast to unsigned char * before [] if LPC sounds bad
+//	models = claim(v->models, v->loc, cfg->inv_base_dir, "rb", "lpc inventory");
+//	delmod = seg_offs[440] + seg_len[440];
 }
 
 lpcsyn::~lpcsyn(void)
 {
-	free(diph_offs);
-	unclaim(diph_len);
+	free(seg_offs);
+	unclaim(seg_len);
 	unclaim(models);
 }
 
@@ -119,7 +119,7 @@ inline void lpcsyn::synmod(model mod, wavefm *w)
 	int i,k,ihilb = 0;
 	int gain,finp,iy,jrc[8],kz;	// were long - geo
 
-	printf("lsyn=%d nsyn=%d esyn=%d lsq=%d\n", mod.lsyn, mod.nsyn, mod.esyn, mod.lsq);
+	DEBUG(1,9,printf("lsyn=%d nsyn=%d esyn=%d lsq=%d\n", mod.lsyn, mod.nsyn, mod.esyn, mod.lsq);)
 
 	if (cfg->paranoid && ipitch>0 && mod.lsyn>0 && ipitch + mod.lsyn - lastl)
 		shriek(862, "ihilb is undefined in synteza.synmod! Please contact the authors.\n");
@@ -161,17 +161,17 @@ inline void lpcsyn::synmod(model mod, wavefm *w)
 }//synmod
 
 
-void lpcsyn::syndiph(voice *v, diphone d, wavefm *w)	// voice not used
+void lpcsyn::synseg(voice *v, segment d, wavefm *w)	// voice not used
 {
 	int i,imodel,lincr,incrl,numodel,zaklad,znely;
 	model m;
-//	if (cfg->ti_adj) shriek("Should call lpcvq::adjust(diphone *), but can't"); // twice in this file
-	DEBUG(1,9,fprintf(STDDBG, "lpcsyn processing another diphone\n"));
+//	if (cfg->ti_adj) shriek("Should call lpcvq::adjust(segment *), but can't"); // twice in this file
+	DEBUG(1,9,fprintf(STDDBG, "lpcsyn processing another segment\n"));
 //	d.eproz=(d.eproz-100) / 9 + (cfg->ti_adj ? kor_i[d.hlaska]-15 : 0);
 	lincr=0;
-	numodel=(int)diph_len->data[d.code];	// cast to unsigned char * before [] if problems
+	numodel=(int)seg_len->data[d.code];	// cast to unsigned char * before [] if problems
 	if(!numodel) {
-		DEBUG(4,9,fprintf(STDDBG, "Unknown diphone %d, %3s\n", d.code, d.code < v->n_segs ? "in range" : "out of range"));
+		DEBUG(4,9,fprintf(STDDBG, "Unknown segment %d, %3s\n", d.code, d.code < v->n_segs ? "in range" : "out of range"));
 		return;
 	}
 	/* nacti_mem_popis(code,numodel) */
@@ -189,7 +189,6 @@ void lpcsyn::syndiph(voice *v, diphone d, wavefm *w)	// voice not used
 				if(imodel==numodel-1) m.lsyn=d.f;
 				else {
 					zaklad = (d.f-lold) * 256 / numodel;
-					       // Deliberately ^^^ changed associativity - geo
 					m.lsyn = lold + zaklad*(imodel+1) / 256;
 				}
 				m.lsyn=m.lsyn+lincr;
@@ -213,15 +212,15 @@ void lpcsyn::syndiph(voice *v, diphone d, wavefm *w)	// voice not used
 }//hlask_synt
 
 
-void lpcvq::frobmod(int imodel, diphone d, model *m, int &incrl, int &znely)
+void lpcvq::frobmod(int imodel, segment d, model *m, int &incrl, int &znely)
 {
 	int i;
-	vqmodel *vqm = (vqmodel *)models->data + diph_offs[d.code] + imodel;
+	vqmodel *vqm = (vqmodel *)models->data + seg_offs[d.code] + imodel;
 	short int (*cbook)[8] = (short int (*)[8])codebook->data;
 
 	incrl = vqm->incrl == 999 ? 0 : -vqm->incrl;
-//	if(vqmodels[diph_offs[d.code]+imodel].incrl == 999) incrl = 0;
-//	else incrl = -vqmodels[diph_offs[d.code]+imodel].incrl;
+//	if(vqmodels[seg_offs[d.code]+imodel].incrl == 999) incrl = 0;
+//	else incrl = -vqmodels[seg_offs[d.code]+imodel].incrl;
 	znely = (vqm->incrl != 999);	// was "=" instead of "!=" (a bug?) - geo
 	d.e = (d.e-100) / 9; // + (cfg->ti_adj ? kor_i[d.code]-15 : 0);
 	i = vqm->adren-1 + d.e;
@@ -233,10 +232,10 @@ void lpcvq::frobmod(int imodel, diphone d, model *m, int &incrl, int &znely)
 }
 
 
-void lpcfloat::frobmod(int imodel, diphone d, model *m, int &incrl, int &znely)
+void lpcfloat::frobmod(int imodel, segment d, model *m, int &incrl, int &znely)
 {
 	int i;
-	fcmodel *fcm = (fcmodel *)models->data + diph_offs[d.code] + imodel;
+	fcmodel *fcm = (fcmodel *)models->data + seg_offs[d.code] + imodel;
 
 	incrl = fcm->incrl;
 	m->esyn = (int)(32768.0 * fcm->ener);
@@ -247,10 +246,10 @@ void lpcfloat::frobmod(int imodel, diphone d, model *m, int &incrl, int &znely)
 	if (incrl == 999) incrl = 0;
 }
 
-void lpcint::frobmod(int imodel, diphone d, model *m, int &incrl, int &znely)
+void lpcint::frobmod(int imodel, segment d, model *m, int &incrl, int &znely)
 {
 	int i;
-	cmodel *cm = (cmodel *) models->data + diph_offs[d.code] + imodel;
+	cmodel *cm = (cmodel *) models->data + seg_offs[d.code] + imodel;
 
 //  	if (cfg->ti_adj) adjust(d);
 	incrl = (int)cm->incrl;
@@ -264,7 +263,7 @@ void lpcint::frobmod(int imodel, diphone d, model *m, int &incrl, int &znely)
 
 void floatoven(char *p, int l)
 {
-	if (!scfg->big_endian) return;
+	if (!cfg->big_endian) return;
 	for (fcmodel *tmp = (fcmodel *)p; (char *)tmp < p + l; tmp++) {
 		// FIXME - a few floats
 	}
@@ -272,13 +271,13 @@ void floatoven(char *p, int l)
 
 void intoven(char *, int)
 {
-	if (!scfg->big_endian) return;
+	if (!cfg->big_endian) return;
 	shriek(462, "no int inventories on big-endians, please");
 }
 
 void vqoven(char *, int)
 {
-	if (!scfg->big_endian) return;
+	if (!cfg->big_endian) return;
 	shriek(462, "no vq inventories on big-endians, please");
 }
 
@@ -289,7 +288,7 @@ void bswap(short *p)
 
 void shortoven(char *p, int l)
 {
-	if (!scfg->big_endian) return;
+	if (!cfg->big_endian) return;
 	for (short *tmp = (short *)p; (char *)tmp < p + l; tmp++) {
 		bswap(tmp);
 	}
@@ -299,7 +298,7 @@ void shortoven(char *p, int l)
 lpcfloat::lpcfloat(voice *v) : lpcsyn(v)
 {
 // 	fcmodely = (fcmodel *)freadin(v->models, v->inv_dir, "rb", "float inventory");
-	models = claim(v->models, v->loc, scfg->inv_base_dir, "rb", "lpc inventory", floatoven);
+	models = claim(v->models, v->loc, cfg->inv_base_dir, "rb", "lpc inventory", floatoven);
 }
 
 lpcint::lpcint(voice *v) : lpcsyn(v)
@@ -312,16 +311,16 @@ lpcint::lpcint(voice *v) : lpcsyn(v)
 	    kor_i = (short int *)(v->n_segs*2 + (char *)kor_t);
 	}
 #endif
-	models = claim(v->models, v->loc, scfg->inv_base_dir, "rb", "lpc inventory", intoven);
+	models = claim(v->models, v->loc, cfg->inv_base_dir, "rb", "lpc inventory", intoven);
 }
 
 lpcvq::lpcvq(voice *v) :lpcsyn(v)
 {
 //	codebook = (short int (*)[8])freadin(v->book, v->inv_dir, "rb", "vector quant synthesis");
-	codebook = claim(v->book, v->loc, scfg->inv_base_dir, "rb", "vector quant synthesis codebook", shortoven);
+	codebook = claim(v->book, v->loc, cfg->inv_base_dir, "rb", "vector quant synthesis codebook", shortoven);
 	ener = (short int *)(256*16 + (char *)codebook->data);
 //	vqmodels = (vqmodel *)freadin(v->models, v->inv_dir, "rb", "vector quant synthesis");
-	models = claim(v->models, v->loc, scfg->inv_base_dir, "rb", "lpc inventory", vqoven);
+	models = claim(v->models, v->loc, cfg->inv_base_dir, "rb", "lpc inventory", vqoven);
 }
 
 lpcvq::~lpcvq()
@@ -329,7 +328,7 @@ lpcvq::~lpcvq()
 	unclaim(codebook);
 }
 
-void lpcint::adjust(diphone d)
+void lpcint::adjust(segment d)
 {
 	int pomf;
 	pomf=d.t;                         //korekce zatim nepouzivam

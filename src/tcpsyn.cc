@@ -70,15 +70,15 @@ void *tcpsyn_appl(int bytes, int ctrld, int datad, int *size)
 	sputs(scratch, ctrld);
 	sputs("\r\n", ctrld);
 	do {
-		sgets(scratch, scfg->scratch, ctrld);
+		sgets(scratch, cfg->scratch, ctrld);
 		if (!strncmp("122 ", scratch, 4)) {
-			sgets(scratch, scfg->scratch, ctrld);
+			sgets(scratch, cfg->scratch, ctrld);
 			sscanf(scratch, " %d", &bytes);
 			if (bs != bytes) rec = rec ? (char *)xrealloc(rec, bytes)
 						   : (char *)xmalloc(bytes);
 		}
 		if (!strncmp("123 ", scratch, 4)) {
-			sgets(scratch, scfg->scratch, ctrld);
+			sgets(scratch, cfg->scratch, ctrld);
 			sscanf(scratch, " %d", &bytes);
 			sum += bytes;
 			if (sum > bs) rec = rec ? (char *)xrealloc(rec, sum)
@@ -120,7 +120,7 @@ static int tcpsyn_connect_socket(unsigned int ipaddr, int port)
 	timeval tv; tv.tv_sec = cfg->deadlk_timeout; tv.tv_usec = ZERO_DEADLK_TIMEOUT;
 	if (select(sd+1, &fds, NULL, NULL, &tv) < 1) shriek(476, "Timed out - tcpsyn deadlock");
 
-	sgets(scratch, scfg->scratch, sd);
+	sgets(scratch, cfg->scratch, sd);
 	if (strncmp(scratch, "TTSCP spoken here", 18)) {
 		scratch[15] = 0;
 		shriek(474, "Protocol not recognized");
@@ -214,19 +214,19 @@ tcpsyn::~tcpsyn()
 }
 
 void
-tcpsyn::syndiph(voice *, diphone, wavefm *)
+tcpsyn::synseg(voice *, segment, wavefm *)
 {
-	shriek(861, "abstract tcpsyn::syndiph");
+	shriek(861, "abstract tcpsyn::synseg");
 }
 
 void
-tcpsyn::syndiphs(voice *, diphone *d, int count, wavefm *w)
+tcpsyn::synsegs(voice *, segment *d, int count, wavefm *w)
 {
 	int size;
 	void *b;
 
-	ywrite(dd, d - 1,sizeof(diphone) * ++count);
-	b = tcpsyn_appl(sizeof(diphone) * count, cd, dd, &size);
+	ywrite(dd, d - 1,sizeof(segment) * ++count);
+	b = tcpsyn_appl(sizeof(segment) * count, cd, dd, &size);
 	w->become(b, size);
 	free(b);
 }

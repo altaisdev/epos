@@ -35,7 +35,7 @@ enum DIRECTIVE {DI_INCL, DI_WARN, DI_ERROR};
 
 void doneprefices()
 {
-	if (!scfg->lowmemory) return;	//will result in a small memory leak
+	if (!cfg->lowmemory) return;	//will result in a small memory leak
 	delete _directive_prefices;
 	_directive_prefices=NULL;
 };
@@ -58,8 +58,9 @@ void strip(char *s)
 				return;
 			case ESCAPE:
 				if (!*++t || *t=='\n') shriek(462, "text.cc still cannot split lines");
-				if (strchr(scfg->token_esc, *t)) *r = esctab[*t];
+				if (strchr(cfg->token_esc, *t)) *r = esctab[*t];
 				else t--;
+//				else r++;
 				break;
 			default:;
 		}

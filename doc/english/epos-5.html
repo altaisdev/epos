@@ -37,13 +37,16 @@ are logged with the <CODE>daemon</CODE> facility.
 <CODE>debug</CODE>      </TD><TD> trivial success TTSCP codes </TD></TR><TR><TD>
 <CODE>info</CODE>       </TD><TD> silly errors and other messages </TD></TR><TR><TD>
 <CODE>notice</CODE>     </TD><TD> shutting down as requested </TD></TR><TR><TD>
-<CODE>warning</CODE></TD><TD> possibly security related error </TD></TR><TR><TD>
+<CODE>warning</CODE></TD><TD> security or network error </TD></TR><TR><TD>
 <CODE>err</CODE>        </TD><TD> internal error </TD></TR><TR><TD>
 <CODE>crit</CODE>       </TD><TD> abnormal termination </TD></TR><TR><TD>
 
 <CAPTION>       syslog message levels</CAPTION>
 </TD></TR></TABLE></CENTER>
-<P>
+<P>See also the 
+<A HREF="epos-3.html#authpriv-option">&lt;tt>authpriv&lt;/tt> option</A>
+which may change this behavior for possibly security-related errors,
+but not network errors.
 <P>Any debugging output together with error messages etc. is also often logged
 to <CODE>/var/log/epos</CODE> as specified with the <CODE>daemon_log</CODE> option.
 <P>

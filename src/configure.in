@@ -14,7 +14,7 @@ AC_PROG_CXX
 if test $GXX = yes; then 
 	if $CXX -v 2>&1 | grep -q egcs
 		then CFLAGS="-Wall -Wunused -pipe -gstabs+ -fdefer-pop"
-		else CFLAGS="-Wall -Wunused -fhandle-exceptions"
+		else CFLAGS="-Wall -Wunused -gstabs+"
 	fi
 	else CFLAGS=-O
 fi

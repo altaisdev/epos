@@ -20,7 +20,7 @@
 
 #define DIPH_BUFF_SIZE  1000 //unimportant
 
-#define OPCODEstr "subst:regex:postp:prep:diphones:prosody:contour:progress:regress:insert:syll:smooth:raise:debug:if:inside:with:{:}:[:]:<:>:nothing:error:"
+#define OPCODEstr "subst:regex:postp:prep:segments:prosody:contour:progress:regress:insert:syll:smooth:raise:debug:if:inside:with:{:}:[:]:<:>:nothing:error:"
 enum OPCODE {OP_SUBST, OP_REGEX, OP_POSTP, OP_PREP, OP_DIPH, OP_PROSODY, OP_CONTOUR, OP_PROGRESS, OP_REGRESS, 
 	OP_INSERT, OP_SYLL, OP_SMOOTH, OP_RAISE, OP_DEBUG, OP_IF, OP_INSIDE, OP_WITH,
 	OP_BEGIN, OP_END, OP_CHOICE, OP_CHOICEND, OP_SWITCH, OP_SWEND, OP_NOTHING, OP_ERROR};
@@ -55,7 +55,7 @@ extern char * _rules_buff;
 #define SPACE		' '	// to delimit lists in literal hash tables
 #define TILDE		'~'
 
-#define UNDIPHONE "~"			//OP_DIPH only, means "delete diphones if any"
+#define UNDIPHONE "~"			//OP_DIPH only, means "delete segments if any"
 
 class rule
 {
@@ -111,8 +111,8 @@ rule::~rule()
 void
 rule::set_level(UNIT scp, UNIT trg)
 {
-	scope =  scp == U_DEFAULT ? scfg->default_scope  : scp;
-	target = trg == U_DEFAULT ? scfg->default_target : trg;
+	scope =  scp == U_DEFAULT ? cfg->default_scope  : scp;
+	target = trg == U_DEFAULT ? cfg->default_target : trg;
 	if (scope < target) shriek (811, fmt("Scope must not be more narrow than target%s", debug_tag()));
 			// was scope <= target -  consider returning back
 }
@@ -216,7 +216,7 @@ hash *literal_hash(char *s)
 hashing_rule::hashing_rule(char *param) : rule(NULL)
 {
 	if (*param == DQUOT) raw = strdup(param);
-	else raw = compose_pathname(param, this_lang->hash_dir, scfg->lang_base_dir);
+	else raw = compose_pathname(param, this_lang->hash_dir, cfg->lang_base_dir);
 	dict = NULL;
 	allow_id = false;
 }
@@ -233,7 +233,7 @@ hashing_rule::load_hash()
 	if (dict) shriek(862, "unwanted load_hash");
 
 	if (*raw != DQUOT) {
-		dict = new hash(raw, scfg->hash_full, 0, 200, 3,
+		dict = new hash(raw, cfg->hash_full, 0, 200, 3,
 			(char *) allow_id, false, "dictionary %s not found", esctab);
 	} else dict = literal_hash(raw);
 	if (!dict) shriek(463, fmt("Unterminated argument%s", debug_tag()));	// or out of memory
@@ -243,8 +243,8 @@ void
 rule::debug()
 {
 	fprintf(STDDBG," rule: '%s' ",enum2str(code(),OPCODEstr));
-	fprintf(STDDBG,"par %s scope '%s' ", raw, enum2str(scope, scfg->unit_levels));
-	fprintf(STDDBG,"target '%s'\n", enum2str(target, scfg->unit_levels));
+	fprintf(STDDBG,"par %s scope '%s' ", raw, enum2str(scope, cfg->unit_levels));
+	fprintf(STDDBG,"target '%s'\n", enum2str(target, cfg->unit_levels));
 }
 
 
@@ -319,7 +319,7 @@ r_subst::apply(unit *root)
 
 	root->relabel(dict, method, target);
 
-	if (scfg->lowmemory) {
+	if (cfg->lowmemory) {
 		DEBUG(2,2,fprintf(STDDBG,"Hash table caching is disabled.\n");) //hashtabscache[rulist[i].param]->debug();
 		delete dict;
 		dict = NULL;
@@ -327,21 +327,21 @@ r_subst::apply(unit *root)
 }
 
 /************************************************
- r_diph   The following rule class constructs
- 	  the diphone layer according to diphone
+ r_seg   The following rule class constructs
+ 	  the segment layer according to segment
  **	  numbers found in the dictionary
  ************************************************/
 
 
-class r_diph: public hashing_rule
+class r_seg: public hashing_rule
 {
 	virtual OPCODE code() {return OP_DIPH;};
    public:
-		r_diph(char *param);
+		r_seg(char *param);
 	virtual void apply(unit *root);
 };
 
-r_diph::r_diph(char *param) : hashing_rule(param)
+r_seg::r_seg(char *param) : hashing_rule(param)
 {
 	if (!strcmp(param, UNDIPHONE)) {
 		free(raw);
@@ -350,30 +350,29 @@ r_diph::r_diph(char *param) : hashing_rule(param)
 }
 
 /************************************************
- r_diph::apply()
+ r_seg::apply()
  ************************************************/
 
 void
-r_diph::apply(unit *root)
+r_seg::apply(unit *root)
 {
-	if (!scfg->use_diph) return;
 	if (!dict) load_hash();
-	root->diphs(target, dict);
-	if (scfg->lowmemory) {
+	root->segs(target, dict);
+	if (cfg->lowmemory) {
 		DEBUG(2,2,fprintf(STDDBG,"Hash table caching is disabled.\n");) //hashtabscache[rulist[i].param]->debug();
 		delete dict;
 		dict=NULL;
 	}
 
-	DEBUG(1,2,fprintf(STDDBG,"Diphones w%s be dumped just after the DIPHONES rule\n", scfg->imm_diph?"ill":"on't");)
-	if (scfg->imm_diph) {
-		static diphone d[DIPH_BUFF_SIZE];   //every item is 16 bytes long
+	DEBUG(1,2,fprintf(STDDBG,"Diphones w%s be dumped just after the DIPHONES rule\n", cfg->imm_segs?"ill":"on't");)
+	if (cfg->imm_segs) {
+		static segment d[DIPH_BUFF_SIZE];   //every item is 16 bytes long
 		
 		int i=DIPH_BUFF_SIZE;
 		for (int k=0; i==DIPH_BUFF_SIZE; k+=DIPH_BUFF_SIZE) {
-			i=root->write_diphs(d,k,DIPH_BUFF_SIZE);
+			i=root->write_segs(d,k,DIPH_BUFF_SIZE);
 			for (int j=0;j<i;j++) 
-				fprintf(STDDBG,"diphone number=%3d f=%d t=%d i=%d\n", d[j].code, d[j].f, d[j].t, d[j].e);
+				fprintf(STDDBG,"segment number=%3d f=%d t=%d i=%d\n", d[j].code, d[j].f, d[j].t, d[j].e);
 		}
 	}
 }
@@ -407,7 +406,7 @@ r_prosody::apply(unit *root)
 	if (!dict) load_hash();
 	DEBUG(1,1,fprintf(STDDBG,"entering rules::sseg()\n");)
 	root->sseg(target, dict);
-	if (scfg->lowmemory) {
+	if (cfg->lowmemory) {
 		DEBUG(2,2,fprintf(STDDBG,"Hash table caching is disabled.\n");) //hashtabscache[rulist[i].param]->debug();
 		delete dict;
 		dict = NULL;
@@ -758,7 +757,7 @@ r_regex::r_regex(char *param) : rule(param)
 	
 	for(int i=0, j=0; ; i++,j++) {
 		if (param[i]==PAREN_OPEN || param[i]==PAREN_CLOS) {
-			if (scratch[j-1]==ESCAPE && j) j--;
+			if (j && scratch[j-1]==ESCAPE) j--;
 			else {
 				scratch[j++] = ESCAPE;
 				parens++;
@@ -944,7 +943,7 @@ r_with::r_with(char *param, text *file, hash *vars) : cond_rule(param, file, var
 	char *old = raw;
 
 	if (*raw == DQUOT) raw = strdup(raw);
-	else raw = compose_pathname(raw, this_lang->hash_dir, scfg->lang_base_dir);
+	else raw = compose_pathname(raw, this_lang->hash_dir, cfg->lang_base_dir);
 
 	free(old);
 	dict = NULL;
@@ -960,7 +959,7 @@ r_with::apply(unit *root)
 {
 	if (!dict) {
 		if (*raw == DQUOT) dict = literal_hash(raw);
-		else dict = new hash(raw, scfg->hash_full,
+		else dict = new hash(raw, cfg->hash_full,
 			0, 200, 3, DATA_EQUALS_KEY, false, "dictionary %s not found", esctab);
 	}
 	if (!dict) shriek(811, fmt("Unterminated argument%s", debug_tag()));	// or out of memory

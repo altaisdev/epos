@@ -36,7 +36,7 @@
 #define TTSCP_PORT	8778
 
 const char *COMMENT_LINES = "#;\n\r";
-const char *WHITESPACE = " \t";
+const char *WHITESPACE = " \t\r";
 
 // const char *output_file = "/dev/dsp";
 

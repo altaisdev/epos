@@ -16,10 +16,10 @@
 
 #include "common.h"
 
-#define QUESTION_MARK      '?'    // ignored context character (in diphone names)
+#define QUESTION_MARK      '?'    // ignored context character (in segment names)
 
 #define SSEG_QUESTION_LEN 32	        // see unit::sseg()
-#define OMEGA          10000            // Random infinite number, see unit::diph()
+#define OMEGA          10000            // Random infinite number, see unit::seg()
 
 
 unit EMPTY;
@@ -84,34 +84,62 @@ unit::unit()
 
 unit::~unit()
 {
-//	DEBUG(0,2,fprintf(STDDBG,"Disposing %c\n",cont);)
+	DEBUG(0,2,fprintf(STDDBG,"Disposing %c\n",cont);)
 	if (next) delete next;
 	if (firstborn) delete firstborn;
 }
 
 /****************************************************************************
- Dumps the diphones to an array of "struct diphone". Returns how many dumped.
+ Dumps the segments to an array of "struct segment". Returns how many dumped.
+ 
+ Note:	iucache,ifcache and ocache is a primitive one-line cache of
+ 	where to start dumping the segments.  If could speed up
+ 	the dumping of a very very long utterance (it is not trivial
+ 	to find the "first" segment in general, but it should be the
+ 	one following the last one dumped in the previous run).
+ 	So the cache hits if we just want to continue the dump.
+ 	
+ 	There's a catch in this scheme.  The iucache may be equal to "this"
+ 	also if iucache's storage has been freed and reused.  To avoid
+ 	very funny problems, YOU MUST ALWAYS DUMP WITH first==0 FIRST
+ 	(with any "this" you want ever to dump).  That clears the cache.
+ 	The cache is safe wrt multitasking, if you keep the above rule
+ 	and don't blatantly reallocate units during their lifetime.
+
+ 	If you can't keep the rule, just comment out the cache.
  ****************************************************************************/
 
 
 int
-unit::write_diphs(diphone *whither, int first, int n)
+unit::write_segs(segment *whither, int first, int n)
 {
 	bool tmpscope = scope;
 	int m;
 	unit *tmpu;
 	static unit *iucache; static int ifcache; static unit *ocache;
 	 
-	if (!whither) shriek (861, fmt("NULL ptr passed to write_diphs() n=%d", n));
+	if (!whither) shriek (861, fmt("NULL ptr passed to write_segs() n=%d", n));
 	scope = true;
-	if (first == ifcache && iucache == this) tmpu=ocache;
-	else for (m = first, tmpu = LeftMost(scfg->segm_level); m--; tmpu = tmpu->Next(scfg->segm_level));
-	for (m=0; m<n && tmpu != &EMPTY; m++, tmpu = tmpu->Next(scfg->segm_level)) {
+	if (first && first == ifcache && iucache == this) tmpu=ocache;
+	else for (m = first, tmpu = LeftMost(cfg->segm_level); m--; tmpu = tmpu->Next(cfg->segm_level));
+	for (m=0; m<n && tmpu != &EMPTY; m++, tmpu = tmpu->Next(cfg->segm_level)) {
 		tmpu->sanity();
 		whither[m].code = tmpu->cont;
 		whither[m].f = tmpu->effective(Q_FREQ);
 		whither[m].e = tmpu->effective(Q_INTENS);
 		whither[m].t = tmpu->effective(Q_TIME);
+		whither[m].nothing = 0;
+		whither[m].ll = 0;
+		if (cfg->label_sseg) {
+			unit *z;
+			int prelevel = 0;
+			for (z = tmpu; z && !z->next && z->father; z = z->father)
+				prelevel++;
+			int postlevel = 0;
+			for (z = tmpu; z && !z->prev && z->father; z = z->father)
+				postlevel++;
+			whither[m].ll = prelevel /* > postlevel ? prelevel : postlevel */;
+		}
 	}
 	scope = tmpscope;
 	iucache = this; ifcache = first+m; ocache = tmpu;
@@ -122,7 +150,7 @@ void
 unit::show_phones()
 {
 	unit *tmpu;
-	for (tmpu = LeftMost(scfg->phone_level); tmpu != &EMPTY; tmpu = tmpu->Next(scfg->phone_level))
+	for (tmpu = LeftMost(cfg->phone_level); tmpu != &EMPTY; tmpu = tmpu->Next(cfg->phone_level))
 		printf("%c %d %d %d\n", tmpu->cont,
 			tmpu->effective(Q_FREQ),
 			tmpu->effective(Q_INTENS),
@@ -141,13 +169,13 @@ unit::fout(char *filename)      //NULL means stdout
 	file *tmp;
 	outf = filename ? fopen(filename, "wt", "unit dump file") : cfg->stddbg;
 
-	tmp = claim(scfg->header_xscr, scfg->ini_dir, "", "rt", "transcription header", NULL);
+	tmp = claim(cfg->header_xscr, cfg->ini_dir, "", "rt", "transcription header", NULL);
 	fputs(tmp->data, outf);
 	unclaim(tmp);
 
 	fdump(outf);
 
-	tmp = claim(scfg->footer_xscr, scfg->ini_dir, "", "rt", "transcription footer", NULL);
+	tmp = claim(cfg->footer_xscr, cfg->ini_dir, "", "rt", "transcription footer", NULL);
 	fputs(tmp->data, outf);
 	unclaim(tmp);
 
@@ -179,41 +207,41 @@ unit::fdump(FILE *handle)        //this one does the real job
 	unit *tmpu;
     
 	sanity();
-	if (depth == scfg->phone_level) {
+	if (depth == cfg->phone_level) {
 		colorize (depth, handle);
-		if (cont != NO_CONT || !scfg->out_swallow__) fputs(fmtchar(cont), handle);
+		if (cont != NO_CONT || !cfg->out_swallow__) fputs(fmtchar(cont), handle);
 		colorize(-1, handle);
 		return;
 	}
-	if (scfg->out_prefix && !(cont == NO_CONT && scfg->out_swallow__)) {
+	if (cfg->out_prefix && !(cont == NO_CONT && cfg->out_swallow__)) {
 		colorize(depth, handle);   //If you wanna disable this, go to interf.cc::colorize()   
 		fputs(fmtchar(cont), handle);
 		colorize(-1, handle);
 	}
-	if (scfg->out_verbose && scfg->out_opening[depth]) {
+	if (cfg->out_verbose) {
 		colorize(depth, handle);   //If you wanna disable this, go to interf.cc::colorize()   
-		fputs(scfg->out_opening[depth], handle);
+		fputs(cfg->out_opening[depth], handle);
 		colorize(-1,handle);
 	}
 	if ((tmpu = firstborn)) {
 		tmpu->fdump(handle);
 		tmpu = tmpu->next;
 		while (tmpu) {
-			if (scfg->out_verbose && scfg->out_separ[depth-1]) {
+			if (cfg->out_verbose) {
 				colorize(depth-1, handle);	
-				fputs(scfg->out_separ[depth-1], handle);
+				fputs(cfg->out_separ[depth-1], handle);
 				colorize(-1, handle);
 			}
 			tmpu->fdump(handle);
 			tmpu = tmpu->next;
 		}
 	}
-	if (scfg->out_verbose && scfg->out_closing[depth]) {
+	if (cfg->out_verbose) {
 		colorize(depth,handle);
-		fputs(scfg->out_closing[depth],handle);
+		fputs(cfg->out_closing[depth],handle);
 		colorize(-1,handle);
 	} else fputc(' ', handle);	
-	if (scfg->out_postfix && !(cont == NO_CONT && scfg->out_swallow__)) { 
+	if (cfg->out_postfix && !(cont == NO_CONT && cfg->out_swallow__)) { 
 		colorize(depth, handle);   //If you wanna disable this, go to interf.cc::colorize()   
 		fputs(fmtchar(cont), handle);
 		colorize(-1, handle);
@@ -343,11 +371,11 @@ unit::gather(char *buffer_now, char *buffer_end, bool suprasegm)
 		buffer_now = tmpu->gather(buffer_now, buffer_end, suprasegm);
 		if (!buffer_now) return NULL;
 	}
-	if(buffer_now >= buffer_end) 
-		return NULL;
-	if (cont != NO_CONT && (depth == scfg->phone_level || suprasegm)) {
-		if (depth < scfg->phone_level) 
-			// shriek(811, "Cannot gather diphonized units (reorder rules)");
+	if (cont != NO_CONT && (depth == cfg->phone_level || suprasegm)) {
+		if(buffer_now >= buffer_end) 
+			return NULL;
+		if (depth < cfg->phone_level) 
+			// shriek(811, "Cannot gather segments (reorder rules)");
 			return buffer_now;
 		*(buffer_now++) = (char)cont; 
 	}
@@ -367,7 +395,7 @@ unit::gather(int *l, bool delimited, bool suprasegm)
 		if (delimited) *b++ = '^';
 		r = gather(b, gb + gbsize - 2, suprasegm);
 		if (!r) {
-			if (gbsize >= scfg->maxtext) shriek(456, "buffer grown too long");
+			if (gbsize >= cfg->maxtext) shriek(456, "buffer grown too long");
 			gbsize <<= 1;
 			gb = (char *)xrealloc(gb, gbsize);
 		}
@@ -483,31 +511,22 @@ unit::subst(hash *table, SUBST_METHOD method)
 
 	char *b;
 	
-//	unsigned int safe_grow;		/* Bytes that can be added in situ */
-	
 	sanity();
 	if ((method & M_LEFT) && !prev) return false;
 	if ((method & M_RIGHT) && !next) return false;
+	bool exact = ((method & M_PROPER) == M_EXACT);
 	for (int i = cfg->multi_subst; i; i--) {
-//		*_gather_buff='^';
-//		strend=gather(_gather_buff+1, _gather_buff+MAX_GATHER, (method&M_PROPER)!=M_EXACT);
-//		if (!strend) return false;	// gather overflow
-//		*strend=0;
-//		safe_grow = _gather_buff - strend + MAX_GATHER;
-		b = gather(&l, true, (method & M_PROPER) != M_EXACT);
-//		safe_grow = sbsize - l;
+		b = gather(&l, !exact, !exact);
 		strend = gb + l;
 
 		// if (safe_grow>300) shriek("safe_grow");	// fixme
 		DEBUG(1,3,fprintf(STDDBG,"inner unit::subst %s, method %d\n", gb + 1, method);)
 		sanity();
-		if ((method & M_PROPER) == M_EXACT) {
-			if (subst(table, l, NULL, NULL, gb + 1, NULL, NULL))
+		if (exact) {
+			if (subst(table, l, NULL, NULL, gb, NULL, NULL))
 				goto break_home;
 		}
 		if (b[l-1] == cont) --l;
-//		if (strend[-1]==cont) --strend;
-//		*strend='$';*++strend=0;
 		if (method & M_END)
 			for(tail = gb; *tail && tail - gb < gbsize; tail++)
 				if (subst(table, l, gb + 1, tail, tail, NULL, NULL))
@@ -560,7 +579,7 @@ unit::subst(hash *table, SUBST_METHOD method)
 bool
 unit::relabel(hash *table, SUBST_METHOD method, UNIT target)
 {
-	if (target == scfg->phone_level) return subst(table, method);
+	if (target == cfg->phone_level) return subst(table, method);
 
 	char	*r;
 	unit	*u;
@@ -819,14 +838,13 @@ unit::syllabify(UNIT target, char *sonor)
  unit::sseg    suprasegmentalia are found here
  ****************************************************************************/
 
-//#define SSEG_QUESTIONS 5
-//static char _sseg_question[SSEG_QUESTIONS][SSEG_QUESTION_LEN];
+#define SSEG_QUESTIONS 5
+static char _sseg_question[SSEG_QUESTIONS][SSEG_QUESTION_LEN];
 
 void
 unit::sseg(hash *templts, char symbol, int *quant)
 {
-	shriek(869, "no sseg");
-/*	int adj;
+	int adj;
 	
 	for (int i=0; i<SSEG_QUESTIONS; i++) {
 		*_sseg_question[i]=symbol;
@@ -837,14 +855,11 @@ unit::sseg(hash *templts, char symbol, int *quant)
 		*quant+=adj;
 		return;	
 	}
-*/
 }
 
 void
 unit::sseg(UNIT target, hash *templts)
 {
-	shriek(869, "no sseg 2");
-/*
 	unit *tmpu;
 	int  j,n;
 	
@@ -862,7 +877,6 @@ unit::sseg(UNIT target, hash *templts)
 		sseg(templts, 'i', &tmpu->i);
 		sseg(templts, 't', &tmpu->t);
 	}
-*/
 }
 
 /****************************************************************************
@@ -994,45 +1008,45 @@ unit::raise(bool *whattab, bool*whentab, UNIT whither, UNIT whence)
 }
 
 /****************************************************************************
- unit::diph    (innermost - creates a single "diphone" unit, if possible)
+ unit::seg     (innermost - creates a single "segment" unit, if possible)
  		The for (;;) cycle will normaly execute exactly once, if
- 		a diphone is found; otherwise, nothing happens, because
+ 		a segment is found; otherwise, nothing happens, because
  		a negative value is returned by translate_int(). 
 
- 		You may, however, add a multiply of OMEGA to the diphone
- 		number to have this diphone repeated a few times, whenever
+ 		You may, however, add a multiply of OMEGA to the segment
+ 		number to have this segment repeated a few times, whenever
  		it occurs in a given environment, in any .dph .
  ****************************************************************************/
 
-char _d_descr[4];       //this buffer is an implicit parameter to diph()
+char _d_descr[4];       //this buffer is an implicit parameter to seg()
 
 inline void 
-unit::diph(hash *dinven)   //_d_descr should contain a diphone name
+unit::seg(hash *dinven)   //_d_descr should contain a segment name
 {
 	int n;
 	for (n = dinven->translate_int(_d_descr); n >= 0; n -= OMEGA) {
 		DEBUG(1,5,fprintf(STDDBG,"Diphone number %d born\n", n % OMEGA);)
-		insert_end(new unit(scfg->segm_level, n % OMEGA), NULL);
+		insert_end(new unit(cfg->segm_level, n % OMEGA), NULL);
 		sanity();
 		DEBUG(1,5,fprintf(STDDBG,"...born and inserted\n");)
 	}
 }
 
 /****************************************************************************
- unit::diphs     (outer - public)    creates the diphones' layer
+ unit::segs      (outer - public)    creates the segments' layer
                  Basically, we'll try out "LX?" "?X?" "?XR" (in _d_descr),
-                 respectively, as the possible subdiphones of this phone
+                 respectively, as the possible subsegments of this phone
  ****************************************************************************/
  
 void
-unit::diphs(UNIT target, hash *dinven) 
+unit::segs(UNIT target, hash *dinven) 
 {
 	unit *tmpu;
 
-	DEBUG(0,5,fprintf(STDDBG,"Entering outer unit::diphs in depth %d cont %c tar %d\n", depth, cont,target);)
+	DEBUG(0,5,fprintf(STDDBG,"Entering outer unit::segs in depth %d cont %c tar %d\n", depth, cont,target);)
 	sanity();    
 	if (depth==target) {
-		DEBUG(1,5,fprintf(STDDBG,"unit::diphs %c %c %c\n",Prev(depth)->inside(), cont, Next(depth)->inside());)
+		DEBUG(1,5,fprintf(STDDBG,"unit::segs %c %c %c\n",Prev(depth)->inside(), cont, Next(depth)->inside());)
 		if (!dinven->items) {
 			delete firstborn, firstborn=lastborn=NULL;
 			return;
@@ -1041,17 +1055,17 @@ unit::diphs(UNIT target, hash *dinven)
 		_d_descr[2]=QUESTION_MARK;
 		_d_descr[1]=inside();
 		_d_descr[0]=Prev(depth)->inside();
-		diph (dinven);
+		seg (dinven);
 		_d_descr[0]=QUESTION_MARK;
-		diph (dinven);
+		seg (dinven);
 		_d_descr[2]=Next(depth)->inside();
-		diph (dinven);
+		seg (dinven);
 		_d_descr[0]=Prev(depth)->inside();
-		diph (dinven);
-		DEBUG(1,5,fprintf(STDDBG,"unit::diphs is done in: %c\n", cont);)
+		seg (dinven);
+		DEBUG(1,5,fprintf(STDDBG,"unit::segs is done in: %c\n", cont);)
 	}
-	else for (tmpu = firstborn; tmpu; tmpu = tmpu->next) tmpu->diphs(target, dinven);
-	DEBUG(1,5,fprintf(STDDBG,"Exiting outer unit::diphs tar %d (finished)\n", target);)
+	else for (tmpu = firstborn; tmpu; tmpu = tmpu->next) tmpu->segs(target, dinven);
+	DEBUG(1,5,fprintf(STDDBG,"Exiting outer unit::segs tar %d (finished)\n", target);)
 	sanity();
 }
 
@@ -1254,11 +1268,11 @@ unit::Prev(UNIT target)
 void
 unit::sanity()
 {
-	if (scfg->trusted) return;    
+	if (cfg->trusted) return;    
 	if (this == NULL)			  EMPTY.insane ("this non-NULL");
-//	if (!firstborn && depth > scfg->phone_level)	insane ("having content");
+//	if (!firstborn && depth > cfg->phone_level)	insane ("having content");
 	if (this == _unit_just_unlinked)		return;
-	if (depth > scfg->text_level && this != &EMPTY)	insane("depth");
+	if (depth > cfg->text_level && this != &EMPTY)	insane("depth");
 	if ((firstborn && 1) != (lastborn && 1))	insane("first == last");
 	if (firstborn && firstborn->depth+1 != depth)	insane("firstborn->depth");
 	if (lastborn && lastborn->depth+1 != depth)	insane("lastborn->depth");
@@ -1266,10 +1280,10 @@ unit::sanity()
 	if (lastborn && lastborn->next)			insane("lastborn->next");
 	if (prev && prev->next != this)			insane("prev->next");
 	if (next && next->prev != this)			insane("next->prev");
-	if (depth==scfg->text_level && father)		insane("TEXT.father");
-	if (cont < 0 || cont > 255 && depth > scfg->segm_level)	insane("content"); 
+	if (depth==cfg->text_level && father)		insane("TEXT.father");
+	if (cont < 0 || cont > 255 && depth > cfg->segm_level)	insane("content"); 
 
-        if (scfg->allpointers) return;
+        if (cfg->allpointers) return;
 	if (prev && (unsigned long int) prev<0x8000000) insane("prev");
 	if (next && (unsigned long int) next<0x8000000)  insane("next");
 	if (firstborn && (unsigned long int) firstborn<0x8000000) insane("firstborn");
@@ -1279,10 +1293,9 @@ unit::sanity()
 void
 unit::insane(const char *token)
 {
-	if (scfg->colored) fprintf(cfg->stdshriek,"\033[00;32mSanity check of \033[01;32m%s\033[00;32m failed. cont=%d depth=%d\033[37m. This is a bug; contact the authors.\n", token,cont,depth); 
+	if (cfg->colored) fprintf(cfg->stdshriek,"\033[00;32mSanity check of \033[01;32m%s\033[00;32m failed. cont=%d depth=%d\033[37m. This is a bug; contact the authors.\n", token,cont,depth); 
 	else fprintf(cfg->stdshriek,"Sanity check of %s failed. cont=%d depth=%d. This is a bug; contact the authors.\n", token,cont,depth); 
-	shriek(461, "TSR sanity check failed");
-//	user_pause();
+	user_pause();
     
     	if (father) father->fout(NULL);
 }
