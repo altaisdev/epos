@@ -1,7 +1,7 @@
 #
 #	(c) Jirka Hanika <geo@ff.cuni.cz>
 #
-# Naivní pravidla pro prosodické zpracování èe¹tiny
+# Naivní pravidla pro prosodické zpracování èeštiny
 
 $prosody = prosody
 
@@ -49,7 +49,7 @@ $prosody = prosody
 	smooth	f/30/40\30			word	phone
  }
 
- inside   ?	sent	; Následující jen pro otázky zji¹»ovací
+ inside   ?	sent	; Následující jen pro otázky zjišovací
  {
 	prosody   $prosody/fadeoutp.dic	sent	phone
 	prosody	  $prosody/fadeoutw.dic	sent	word

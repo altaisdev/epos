@@ -1,4 +1,4 @@
-# dosti neúplnı seznam slov obsa¾enıch ve zji¹»ovacích otázkách
+# dosti neúplnı seznam slov obsaenıch ve zjišovacích otázkách
 # upraveno a doplnìno podle Martina Petrisky
 
 ^kto$	ktoQ
@@ -49,15 +49,15 @@
 ^akımi$		akımiQ
 ^akej$		akejQ
 
-^koµkı$		koµkıQ
-^koµké$		koµkéQ
-^koµká$		koµkáQ
-^koµkého$	koµkéhoQ
-^koµkému$	koµkémuQ
-^koµkú$		koµkúQ
-^koµkom$	koµkomQ
-^koµkım$	koµkımQ
-^koµkí$		koµkíQ
+^ko¾kı$		ko¾kıQ
+^ko¾ké$		ko¾kéQ
+^ko¾ká$		ko¾káQ
+^ko¾kého$	ko¾kéhoQ
+^ko¾kému$	ko¾kémuQ
+^ko¾kú$		ko¾kúQ
+^ko¾kom$	ko¾komQ
+^ko¾kım$	ko¾kımQ
+^ko¾kí$		ko¾kíQ
 
 
 #...plus zapomenuté tvary
@@ -66,16 +66,16 @@
 ^odekdy$	odekdyQ
 ^dokedy$	dokedyQ
 ^kde$	kdeQ
-^kadiaµ$	kadiaµQ
-^odkiaµ$	odkiaµQ
+^kadia¾$	kadia¾Q
+^odkia¾$	odkia¾Q
 ^kam$	kamQ
-^koµko$	koµkoQ
-^koµkımi$	koµkımiQ
+^ko¾ko$	ko¾koQ
+^ko¾kımi$	ko¾kımiQ
 ^zaèo$	zaèoQ
 ^naèo$	naèoQ
 ^ak$	akQ
 ^preèo$	preèoQ
-^ako¾e$	ako¾eQ
+^akoe$	akoeQ
 ^akoto$	akotoQ
-^èo¾e$	èo¾eQ
+^èoe$	èoeQ
 ^oèo$	oèoQ

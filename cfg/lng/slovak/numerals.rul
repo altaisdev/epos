@@ -97,7 +97,7 @@ regex	/X//
 
 if   colloquial   text
 {
-	regex	/11/~jeden·sª/	colon
+	regex	/11/~jeden·sù/	colon
 	regex	/1/~jedna/	colon
 }
 

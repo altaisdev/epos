@@ -16,11 +16,12 @@
  *
  */
 
+#include "common.h"
+
 #ifdef HAVE_WINDOWS_H
 	#include <windows.h>
+	#include <windef.h>
 #endif
-
-#include "common.h"
 
 #define DIPH_BUFF_SIZE  1000 //unimportant
 
@@ -489,7 +490,7 @@ r_contour::~r_contour()
 
 void r_contour::apply(unit *root)
 {
-	root->contour(target, contour, l, padd_start, quantity, false);
+	root->contour(target, contour, l, padd_start, quantity, this_voice->additive_cont); //FIXME
 }
 
 
@@ -889,8 +890,9 @@ r_debug::apply(unit *root)
 {
 	if(strstr(raw,"tsrtool")) {
 #ifdef HAVE_MMSYSTEM_H		// The TSR debuging tool is up to now available only in the M$WIN port of the epos
-		HINSTANCE hDLL = LoadLibrary("tsrtool.dll");
-		if (hDLL != NULL)
+		static HINSTANCE hDLL = NULL;
+		if (!hDLL) hDLL = LoadLibrary("tsrtool.dll");
+		if (hDLL)
 		{
 			tsr_eval = (TSR_EVAL)GetProcAddress(hDLL,"_tsr_eval");
 			if (!tsr_eval) shriek(445, "cannot get 'tsr_eval' function from tsrtool.dll");

@@ -322,10 +322,14 @@ int main(int argc, char **argv)
 	if (WSAStartup(MAKEWORD(2,0), (LPWSADATA)scratch)) shriek(464, "No winsock");
 	charset = "cp1250";
 #endif
-	start_service();		/* Windows NT etc. only */
+	//start_service();		/* Windows NT etc. only */
 
-	ctrld = connect_socket(0, 0);
-	datad = connect_socket(0, 0);
+int k=0;
+
+cyk:
+
+	ctrld = connect_socket(0,0);
+	datad = connect_socket(0,0);
 	sputs("data ", datad);
 	ch = get_handle(ctrld);
 	sputs(ch, datad);
@@ -335,7 +339,7 @@ int main(int argc, char **argv)
 	sputs(charset, ctrld);
 	sputs("\r\n", ctrld);
 	get_result(ctrld);
-	send_cmd_line(argc, argv);
+	if(k==0) send_cmd_line(argc, argv);
 	dh = get_handle(datad);
 	get_result(datad);
 
@@ -363,9 +367,13 @@ int main(int argc, char **argv)
 	sputs(dh, ctrld);
 	sputs("\r\ndone\r\n", ctrld);
 	get_result(ctrld);
-	get_result(ctrld);
-	close(datad);
-	close(ctrld);
+	//get_result(ctrld);
+	async_close(datad);
+	async_close(ctrld);
+
+printf("%d\n",k++);
+goto cyk;
+
 	return 0;
 }
 

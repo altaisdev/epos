@@ -3,14 +3,14 @@
 #	(also thanks to Martin Petriska who wrote the previous version of
 #	the Slovak transcription)
 
-$lower_case = aáäbcèdïeéìfghiíjklµåmnòoóôpqrøàs¹t»uúùvwxyýz¾
-$upper_case = AÁÄBCÈDÏEÉÌFGHIÍJKL¥ÅMNÒOÓÔPQRØÀS©T«UÚÙVWXYÝZ®
+$lower_case = aáäbcèdïeéìfghiíjkl¾åmnòoóôpqrøàsštuúùvwxyýzž
+$upper_case = AÁÄBCÈDÏEÉÌFGHIÍJKL¼ÅMNÒOÓÔPQRØÀSŠTUÚÙVWXYÝZŽ
 $letter     = ${lower_case}${upper_case}
 
 $labial    = pbmvw
-$voiced    = bdïgvz¾Z®h
-$voiceless = pt»kfs¹cèx
-$VOICELESS = PT«KFS©CÈX
+$voiced    = bdïgvzžZŽh
+$voiceless = ptkfsšcèx
+$VOICELESS = PTKFSŠCÈX
 $nasal     = mnòN
 $sonant    = jlårà$nasal
 $SONANT    = JLÅRÀMNÒG	; do not use after nk-> Nk
@@ -33,7 +33,7 @@ regex  /\Z(\\.)([${upper_case}])/\1\2/	text
 regex    /\\((.\{1,12\})\\)/v~zátvorke~\1/				colon
 regex    /"(.\{1,12\})"/v~uvodzovkách~\1/				colon
 
-#  \d u¾ vydìlil parser, provizornì jako znak slovní úrovnì.  Úseky mezi
+#  \d už vydìlil parser, provizornì jako znak slovní úrovnì.  Úseky mezi
 #  výskyty tohoto znaku (napø. teèka v URL) se hláskují, pokud neobsahují
 #  samohlásku nebo slabikotvornou souhlásku.  Tato pravidla se mohou chovat
 #  nerozumnì v kombinaci s velkými písmeny.
@@ -96,8 +96,8 @@ regress   v>w($vowel_0$nonsonant)
 progress ä>e(!$labial_!)
 
 regress   h>x(c_!)                ; ch > x
-regress   z¾>Z®(d_!)              ; dz,d¾ > Z,®
-progress  cd>0(!_xZ®)
+regress   zž>ZŽ(d_!)              ; dz,dž > Z,Ž
+progress  cd>0(!_xZŽ)
 
 # Questions classified as yes/no or wh-questions
 
@@ -146,7 +146,7 @@ inside	 P			word
 progress  P>\ ($everywhere)	word	word
 
 
-subst     "^ná¹mu\$,ná¾mu    ^vá¹mu\$,vá¾mu    me\$,Me"	; may merge with main.dic
+subst     "^nášmu\$,nážmu    ^vášmu\$,vážmu    me\$,Me"	; may merge with main.dic
 regress   Q>0($voiced_!)	colon
 regress   $voiced>$voiceless(!_$voiceless&0')
 regress   $voiceless>$VOICELESS(!_0M)	syll
@@ -158,7 +158,7 @@ regress   Q>0(!_!)
 regress   QP>\ (!_!)	word	word
 
 subst     hard.dic
-regress   dtnl>ï»òµ(!_iíe)
+regress   dtnl>ïò¾(!_iíe)
 regress   Eyý>eií(!_!)
 
 regress   $sonant>$SONANT(0_!)
@@ -176,11 +176,11 @@ if  reduce_groups		; (c) Martin Petriska
 	progress Zdt>0(!_q)                 ; § 246
 	regress q>c($everywhere)
 
-	regress s>q(»tïd_t)		   ; »st,ïst,dst,tst-> ct
-	progress »tïd>0(!_q)
+	regress s>q(tïd_t)		   ; st,ïst,dst,tst-> ct
+	progress tïd>0(!_q)
 	regress q>c($everywhere)
  
-	regress »>0(!_ï)		  ; »ï->ï devä»desiat
+	regress >0(!_ï)		  ; ï->ï devädesiat
 }
 
 progress  n>N(!_kg)

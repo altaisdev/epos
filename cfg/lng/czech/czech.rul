@@ -1,16 +1,18 @@
 #
-#	prosodická pravidla Fonetického ústavu FF UK pro èe¹tinu, 1998
+#	prosodická pravidla Fonetického ústavu FF UK pro èeštinu, 1998
 #
 #	(c) 1998  Zdena Palková
 #	(c) 1998  Jirka Hanika
 #
-#	Tento soubor a zejména soubor lng/czech/prosody.rul vyu¾ívá výzkumu
-#	modelování prosodie èe¹tiny uskuteènìného s pøispìním grantu
+#	Tento soubor a zejména soubor lng/czech/prosody.rul využívá výzkumu
+#	modelování prosodie èeštiny uskuteènìného s pøispìním grantu
 #	GAÈR 405/96/0301.
 #
 #	(See doc/COPYING for info on copying and modifying this file.)
 #
 #
+
+subst	disertace.dic	text	; vìty pro disertaci
 
 # pøidat èárku pøed "a":
 with  "a"  word
@@ -23,9 +25,9 @@ regress \X>\ (!_!)	colon	word
 regress \X>a(!_!)
 
 #
-#  Následující odstavec je¹tì pøed transkripcí oznaèuje
-#  koncová monosylaba, která podléhají pozdìj¹ímu
-#  slévání do taktù. Po transkripci u¾ nelze rozli¹it
+#  Následující odstavec ještì pøed transkripcí oznaèuje
+#  koncová monosylaba, která podléhají pozdìjšímu
+#  slévání do taktù. Po transkripci už nelze rozlišit
 #  "mì" vs. "mnì".
 #
 
@@ -42,35 +44,51 @@ with "mi mì se si ho mu ti tì"
 @include "trans.rul"
 
 #
-#  Následující pravidla o¹etøují tøi teèky, støedník a pomlèku.
+#  Následující pravidla ošetøují tøi teèky, støedník a pomlèku.
 #
 
 inside	\~	sent
 {
-   6x	regress  0>\#(!_0)	sent	; vlo¾ení pausy po tøech teèkách
+   6x	regress  0>\#(!_0)	sent	; vložení pausy po tøech teèkách
 }
 regress  \~>.(!_!)	sent	sent
 regress  \;>.(!_!)	sent	sent
 regress  ->,(!_!)	sent	colon
 
-if   naive_prosody
+if use_prosody
 {
-	@include "naive.rul"
+	if   lpcprosody
+	{
+		@include "lpcpros.rul"
+		#@include "prosody.rul"
+	}
+	if   !lpcprosody
+	{
+		if   naive_prosody
+		{
+			@include "naive.rul"
+		}
+		if   !naive_prosody
+		{
+			@include "prosody.rul"
+		}
+	}
 }
-if   !naive_prosody
+
+if	tsr_tool
 {
-	@include "prosody.rul"
+#	debug tsrtool text
 }
 
 if    phr_break
 {
-	regress   0>\#(!_0)	colon	; vlo¾ení pausy
+	regress   0>\#(!_0)	colon	; vložení pausy
 	inside	\#	phone
 	{
 		contour   t/-65   phone
 		contour   i/-99   phone
 	}
-	5x  regress   0>\#(!_0)	sent	; vlo¾ení pausy
+	5x  regress   0>\#(!_0)	sent	; vložení pausy
 }
 
 if   kadlec_dph
@@ -97,15 +115,24 @@ if   !kadlec_dph
 }
 
 #
-#  mírné vyhlazování se zejména sna¾í, aby hranièní difony
+#  mírné vyhlazování se zejména snaží, aby hranièní difony
 #  mezi slabikami získávaly prosodické hodnoty èásteènì
-#  od obou slabik.  Pøedpokládá se, ¾e difon pøechodu mezi
-#  hláskami je pøipojen k hlásce prvé, proto se pøihlí¾í
+#  od obou slabik.  Pøedpokládá se, že difon pøechodu mezi
+#  hláskami je pøipojen k hlásce prvé, proto se pøihlíží
 #  pouze k pravému sousedu (váha 30%, vlastní hodnota
-#  má tedy váhu 70%). Ideologicky èistá øe¹ení jsou buïto
+#  má tedy váhu 70%). Ideologicky èistá øešení jsou buïto
 #  nevyhlazovat vùbec (pøiøadit difon doleva), nebo
 #  vyhlazovat f/50\50, tj. kvalifikovat difon jako spojovací.
 #
 
-smooth   f/70\30     word segment
+if	tsr_tool
+{
+#	debug tsrtool text
+}
 
+#smooth   f/70\30     word segment
+
+if	tsr_tool
+{
+	debug tsrtool text
+}

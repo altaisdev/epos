@@ -3,10 +3,10 @@
 #
 #
 
-$voiced    = bdgvzZh¾
-$voiceless = ptkfscx¹
-$fric      = sz¹¾fvhxß
-$afric     = cZè®
+$voiced    = bdgvzZhž
+$voiceless = ptkfscxš
+$fric      = szšžfvhxß
+$afric     = cZèŽ
 $stop      = ptkbdg
 $nasal     = mnN
 $sonant    = jlr$nasal
@@ -20,16 +20,16 @@ $sonority  = 0'<$fric$afric${stop}$nasal<lrj<$vowel
 
  regress   0>s(x_!)
  regress   u0>0v(q_!)
- regress   0>v(q_!)                ; Rozlo¾ení x,q na ks, kv
+ regress   0>v(q_!)                ; Rozložení x,q na ks, kv
  regress   xq>k($everywhere)
- regress   h>x(c_!)                ; Spøe¾ka ch > x
+ regress   h>x(c_!)                ; Spøežka ch > x
  progress  c>0(!_x)
- progress  s>¹(!_x)
- regress   x>0(¹_!)
+ progress  s>š(!_x)
+ regress   x>0(š_!)
  regress   i>í(!_e)
  regress   e>0(í_!)
 
- regress   s>¹(0$consonant_$voiceless)
+ regress   s>š(0$consonant_$voiceless)
  regress   z>c($everywhere)
  regress   s>ß(s_!)
  regress   s>0(!_ß)

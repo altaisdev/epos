@@ -1,8 +1,8 @@
 
-# pøíklad øe¹ení jednoduchıch znaèek
+# pøíklad øešení jednoduchıch znaèek
 
 +	~plus~
-\-	~a¾~
+\-	~a~
 \m	~mínus~
 =	~rovná~sa~
 /	~lomeno~
@@ -10,14 +10,14 @@
 ;	~bodkoèiarka~
 $$	~dolár~
 (	~zátvorka~
-)	~zátvorku~uzavrie»~
+)	~zátvorku~uzavrie~
 [	~hranatá~zátvorka~
-]	~hranatú~uzavrie»~
-{	~zlo¾ená~zátvorka~
-}	~zlo¾enú~uzavrie»~
+]	~hranatú~uzavrie~
+{	~zloená~zátvorka~
+}	~zloenú~uzavrie~
 &	~et~
 *	~hviezdièka~
-^^	~strie¹ka~
+^^	~strieška~
 %	~percent~
 _	~dolná~èiarka~
 '	~apostrof~
