@@ -1,6 +1,6 @@
 /*
  *	epos/src/text.cc
- *	(c) 1997-99 geo@cuni.cz
+ *	(c) 1997-00 geo@cuni.cz
  *
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,33 +16,17 @@
 
 #include "common.h"
 
-enum DIRECTIVE {DI_INCL, DI_WARN, DI_ERROR};
+//enum DIRECTIVE {DI_INCL, DI_WARN, DI_ERROR};
 
 #define PP_ESCAPE	'@'
 #define D_INCLUDE	"include"
+#define D_CHARSET	"charset"
 #define D_WARN		"warn"
 #define D_ERROR		"error"
 
-//#define DIRECTIVEstr "@include:@warn:@error:"
-//#define MAX_DIRECTIVE_LEN 16		//Keep in sync with text::getline's format string
-#define MAX_INCL_EMBED	32
-
 #define SPECIAL_CHARS "#;\n\\"
 
-// hash *_directive_prefices=NULL;
-
-/*
-
-void doneprefices()
-{
-	if (!cfg->lowmemory) return;	//will result in a small memory leak
-	delete _directive_prefices;
-	_directive_prefices=NULL;
-};
-
-*/
-
-void strip(char *s)
+bool strip(char *s)
 {
 	char *r;
 	char *t;
@@ -55,17 +39,21 @@ void strip(char *s)
 			case '\n':
 //				while (r>s && strchr(WHITESPACE, *--r));
 				*r = 0;
-				return;
+				return false;
 			case ESCAPE:
-				if (!*++t || *t=='\n') shriek(462, "text.cc still cannot split lines");
-				if (strchr(cfg->token_esc, *t)) *r = esctab[*t];
+				if (!*++t || *t=='\n') {
+					// shriek(462, "text.cc still cannot split lines");
+					*r = 0;
+					return true;
+				}
+				if (strchr(scfg->token_esc, *t)) *r = esctab->xlat(*t);
 				else t--;
-//				else r++;
 				break;
 			default:;
 		}
 	}
 	*r = 0;
+	return false;
 }
 
 struct textlink {
@@ -89,6 +77,7 @@ text::text(const char *filename, const char *dirname, const char *treename,
 	current = NULL;
 	current_file = NULL;
 	current_line = 0;
+	charset = cfg->charset;
 	subfile(base);
 }
 
@@ -98,32 +87,37 @@ text::subfile(const char *filename)
 	textlink *parent;
 
 
-	parent=current;
-	current=new textlink;
+	parent = current;
+	current = new textlink;
 	if (!current) shriek(422, "text::subfile out of memory");
 	if (!filename || !*filename) {
-		current->f=stdin;
+		current->f = stdin;
 	} else { 
-		char *pathname=compose_pathname(filename, dir, tree);
-		DEBUG(2,1,fprintf(STDDBG,"Text preprocessor opening %s\n", pathname);)
-		current->f=fopen(pathname, "r", tag);
+		char *pathname = compose_pathname(filename, dir, tree);
+		DBG(2,1,fprintf(STDDBG,"Text preprocessor opening %s\n", pathname);)
+		current->f = fopen(pathname, "r", tag);
 		free(pathname);
 	}
-	current->prev=parent;
-	current->filename=current_file;
-	current->line=current_line;
-	current_file=strdup(filename);
-	current_line=0;
-	if (++embed>MAX_INCL_EMBED) shriek(812, "infinite #include cycle");
+	current->prev = parent;
+	current->filename = current_file;
+	current->line = current_line;
+	current_file = strdup(filename);
+	current_line = 0;
+	if (++embed > scfg->max_nest) shriek(882, "infinite #include cycle");
 }
 
 void
 text::superfile()
 {
 	textlink *tmp;
-	free(current_file);
-	current_line=current->line;
-	current_file=current->filename;
+	if (current->filename) {
+		free(current_file);
+		current_file=current->filename;
+		current_line=current->line;
+		DBG(2,1,fprintf(STDDBG, "Text preprocessor returning to %s\n", current_file);)
+	} else {
+		DBG(2,1,fprintf(STDDBG, "Text preprocessor reached the end of %s\n" , current_file);)
+	}
 	fclose(current->f);
 	tmp=current;
 	current=tmp->prev;
@@ -137,86 +131,75 @@ text::exists()
 	return current && current->f;
 }
 
-inline bool begins(char *buffer, char *s)
+inline bool begins(const char *buffer, const char *s)
 {
 	return !strncasecmp(buffer + strspn(buffer, WHITESPACE) + 1, s, strlen(s));
 }
 
+inline char *get_quoted(char *buffer)
+{
+	char *tmp1;
+	char *tmp2;
+
+	tmp1=strchr(buffer+1, DQUOT);
+	if (!tmp1) shriek (812, fmt("%s:%d Forgotten quotes", global_current_file, global_current_line));
+	tmp2=strchr(++tmp1,DQUOT);
+	if (!tmp2) shriek (812, fmt("%s:%d Forgotten quotes", global_current_file, global_current_line));
+	*tmp2=0;
+	return tmp1;
+}
+	
 bool
 text::getline(char *buffer)
 {
-//	static char wordbuff[MAX_DIRECTIVE_LEN+1];
-	char *tmp1;
-	char *tmp2;
+	int l = 0;
 
 	if (!current) return false;	// EOF, again
 	
 	while (true) {
-		while(!fgets(buffer,cfg->max_line,current->f)) {
-			superfile();
+		while(!fgets(buffer + l, scfg->max_line - l, current->f)) {
+			if (l) shriek(462, fmt("Backslash at the end of %s", current_file));
+			else superfile();
 			if (!current) return false;
 		}
 		current_line++;
 		global_current_line = current_line;
 		global_current_file = current_file;
-		
-		DEBUG(1,1,fprintf(STDDBG,"text::getline processing %s",buffer);)
-//		*(int *)wordbuff = 0; sscanf(buffer,"%16s",wordbuff);
-		strip(buffer);
-//		buffer[strcspn(buffer, COMMENT_LINES)]=0;
-//		switch(_directive_prefices->translate_int(wordbuff)) {
-//		switch(str2enum(buffer + strspn(buffer, WHITESPACE), DIRECTIVEstr, 0)) {
-/*
-			case DI_INCL:
-				tmp1=strchr(buffer+1, DQUOT);
-				if (!tmp1) shriek (812, fmt("Forgotten quotes in file %s line %d", current_file, current_line));
-				tmp2=strchr(++tmp1,DQUOT);
-				if (!tmp2) shriek (812, fmt("Forgotten quotes in file %s line %d", current_file, current_line));
-				*tmp2=0;
-				subfile(tmp1);
-				continue;
-			case DI_WARN:
-				if (warn) fprintf(cfg->stdshriek,
-					"%s\n",buffer+1+strcspn(buffer+1, WHITESPACE));
-				continue;
-			case DI_ERROR:
-				tmp1=strchr(buffer+1, DQUOT);
-				if (!tmp1) shriek (812, fmt("Forgotten quotes in file %s line %d", current_file, current_line));
-				tmp2=strchr(++tmp1,DQUOT);
-				if (!tmp2) shriek (812, fmt("Forgotten quotes in file %s line %d", current_file, current_line));
-				*tmp2=0;
-				shriek(801, tmp1);
-			default:
-				DEBUG(0,1,fprintf(STDDBG,"text::getline default is %s\n",buffer);)
-				if (!buffer[strspn(buffer,WHITESPACE)]) continue;
-				return true;
-*/
-		if (buffer[strspn(buffer, WHITESPACE)] != PP_ESCAPE) {
-			DEBUG(0,1,fprintf(STDDBG,"text::getline default is %s\n",buffer);)
-			if (!buffer[strspn(buffer,WHITESPACE)]) continue;
-			return true;
+		DBG(0,1,fprintf(STDDBG,"text::getline processing %s",buffer);)
+		if ((int)strlen(buffer) + 1 >= scfg->max_line)
+			shriek(462, fmt("Line too long in %s:%d", current_file, current_line));
+		if (strip(buffer + l)) {
+			l = strlen(buffer);
+			continue;	/* continuation line */
 		}
+		
+		encode_string(buffer, charset, true);
+		
+		l = 0;
+
+		if (buffer[strspn(buffer, WHITESPACE)] != PP_ESCAPE) {
+			DBG(0,1,fprintf(STDDBG,"text::getline default is %s\n",buffer);)
+			if (!buffer[strspn(buffer,WHITESPACE)]) continue;
+			return true;	/* the common case */
+		}
+		
+		/* From now on, we know we found a directive.  Just handle it. */
+
 		if (begins(buffer, D_INCLUDE)) {
-			tmp1=strchr(buffer+1, DQUOT);
-			if (!tmp1) shriek (812, fmt("Forgotten quotes in file %s line %d", current_file, current_line));
-			tmp2=strchr(++tmp1,DQUOT);
-			if (!tmp2) shriek (812, fmt("Forgotten quotes in file %s line %d", current_file, current_line));
-			*tmp2=0;
-			subfile(tmp1);
+			subfile(get_quoted(buffer));
+			continue;
+		} else if (begins(buffer, D_CHARSET)) {
+			charset = load_charset(get_quoted(buffer));
+			if (charset == CHARSET_NOT_AVAILABLE)
+				shriek(812, fmt("%s:%d Charset not available", current_file, current_line));
 			continue;
 		} else if (begins(buffer, D_WARN)) {
 			if (warn) fprintf(cfg->stdshriek,
 				"%s\n",buffer+1+strcspn(buffer+1, WHITESPACE));
 			continue;
 		} else if (begins(buffer, D_ERROR)) {
-		
-			tmp1=strchr(buffer+1, DQUOT);
-			if (!tmp1) shriek (812, fmt("Forgotten quotes in file %s line %d", current_file, current_line));
-			tmp2=strchr(++tmp1,DQUOT);
-			if (!tmp2) shriek (812, fmt("Forgotten quotes in file %s line %d", current_file, current_line));
-			*tmp2=0;
-			shriek(801, tmp1);
-		} else shriek(812, fmt("Bad directive in file %s line %d", current_file, current_line));
+			shriek(801, get_quoted(buffer));
+		} else shriek(812, fmt("%s:%d Bad directive", current_file, current_line));
 	}
 }
 

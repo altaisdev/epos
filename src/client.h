@@ -1,5 +1,5 @@
 /*
- *	(c) 1998-99 Jirka Hanika <geo@cuni.cz>
+ *	(c) 1998-01 Jirka Hanika <geo@cuni.cz>
  *
  *	This single source file src/client.h, but NOT THE REST OF THIS PACKAGE,
  *	is considered to be in Public Domain. Parts of this single source file may be
@@ -29,7 +29,8 @@
  */
 
 int just_connect_socket(unsigned int ipaddr, int port);	// returns -1 if not connected
-int connect_socket(unsigned int ipaddr, int port);		// as above, check protocol, shriek if bad
+int connect_socket(unsigned int ipaddr, int port);	// as above, check protocol, shriek if bad
+bool running_at_localhost();
 
 /*
  *	getaddrbyname() converts an Internet host name (or address in the dotted
@@ -42,7 +43,7 @@ int getaddrbyname(const char *inet_name);
  *	xmit_option() send the "set" command appropriate for setting a named
  *	option to a specified value. 
  */
-void xmit_option(char *name, char *value, int sd);
+void xmit_option(const char *name, const char *value, int sd);
 
 /*
  *	get_handle() should be called before any TTSCP command is issued.
@@ -98,7 +99,7 @@ int sync_finish_command(int ctrld);	// wait for the completion code
 
 	inline void async_close(int fd)
 	{
-		int pid = cfg->asyncing ? fork() : -1;
+		int pid = scfg->asyncing ? fork() : -1;
 		switch(pid)
 		{
 			case -1:
@@ -123,14 +124,19 @@ int sync_finish_command(int ctrld);	// wait for the completion code
 		return read(fd, (char *)buffer, size);
 	}
 
-	#ifdef HAVE_WINSOCK2_H
+	#if defined(HAVE_WINSOCK2_H) || defined(HAVE_WINSOCK_H)
 		#error Funny - UNIX does not rhyme with winsock
 	#endif
 
 #else
 	#ifdef HAVE_WINSOCK2_H
 		#include <winsock2.h>
+	#else
+		#ifdef HAVE_WINSOCK_H
+			#include <winsock.h>
+		#endif
 	#endif
+	
 
 	#ifdef HAVE_IO_H
 		#include <io.h>

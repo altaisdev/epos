@@ -29,7 +29,7 @@
 #endif
 
 #define MBROLA_PATH "/home/geo/mbrola/mbrola"
-#define INV_PATH "/home/geo/mbrola/voices/tmp/de1/de1"
+#define INV_PATH "/home/geo/mbrola/cz/cz1"
 
 #define there there_pipe[1]
 #define back  back_pipe[0]
@@ -68,8 +68,11 @@ mbrsyn::~mbrsyn()
 }
 
 void
-mbrsyn::synssif(voice *, char *b, wavefm *)
+mbrsyn::synssif(voice *, char *b, wavefm *w)
 {
+	char wb[1024];
+	int l;
 	write(there, b, strlen(b));
-	// FIXME 
+	l = read(back, wb, 1024);
+	w->become(wb, l);
 }

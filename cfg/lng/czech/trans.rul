@@ -1,12 +1,13 @@
+
 #
 #	(c) Jirka Hanika <geo@ff.cuni.cz>
 #
 
 $voiced    = bdïgvz¾Z®hø
 $voiceless = pt»kfs¹cèxØ
-$fric      = sz¹¾fvhx
-$afric     = cZè®
-$stop      = pt»kbdïg
+# $fric      = sz¹¾fvhx
+# $afric     = cZè®
+# $stop      = pt»kbdïg
 $nasal     = mnòN
 $NASAL     = MQÒW
 $sonant    = jlr$nasal
@@ -15,16 +16,17 @@ $short     = aeiouyì
 $long      = áéíóúýì
 $diphtong  = OAE
 $vowel     = $short$long$diphtong
-$consonant=$voiced$voiceless$sonant
+$consonant = $voiced$voiceless$sonant
 $everywhere= !_!
 $numbers   = 1234567890
-$sonority  = 0'<$fric$afric${stop}øØ<$nasal<l<rjJ<$vowel   ;l<r viz "umrlec" etc. Ani systematické, ani bezpeèné.
+$sonority  = 0'<$voiceless$voiced$SONANT<$nasal<l<rj<$vowel   ;l<r viz "umrlec" etc. Ani systematické, ani bezpeèné.
 
 $lower_case = aábcèdïeéìfghiíjklmnòoópqrøs¹t»uúùvwxyýz¾
 $upper_case = AÁBCÈDÏEÉÌFGHIÍJKLMNÒOÓPQRØS©T«UÚÙVWXYÝZ®
+$letter = ${lower_case}${upper_case}
 
 #  \Z oznaèuje teèku oznaèující øadovou èíslovku.  Tu je nutno rozli¹it
-#  od teèky obyèejné, vìtu vydìlující, dokud se neztratí rozdíl mezi velkými
+#  od teèky obyèejné, vìtu vydìlující, ne¾li se ztratí rozdíl mezi velkými
 #  a malými písmeny.  Následuje-li toti¾ za teèkou velké písmeno, posuzuje
 #  se v¾dy jako konec vìty.
 #  Nìkteré významy teèky, jako napø. desetinná teèka, u¾ vyøe¹il parser,
@@ -34,16 +36,37 @@ inside .  sent
 {
 	regex /([0123456789])\$/\1\Z/	word
 }
-regex  /\Z(.[${upper_case}])/\1/	text
+regex  /(\Z)\\.([${lower_case}])/\1\2/	text
+regex  /\Z(\\.)([${upper_case}])/\1\2/	text
 
+#  \d u¾ vydìlil parser, provizornì jako znak slovní úrovnì.  Úseky mezi
+#  výskyty tohoto znaku (napø. teèka v URL) se hláskují, pokud neobsahují
+#  samohlásku nebo slabikotvornou souhlásku.  Tato pravidla se mohou chovat
+#  nerozumnì v kombinaci s velkými písmeny.
+
+inside \d  word
+{
+	regress 0>\d(!_0)
+}
+regress \d>\ (!_!)		word	word
+
+regress  lr>\X\Y(0_!)
+near  *!lr$vowel		word	phone
+{
+	regress ${lower_case}>${upper_case}(!_!) word
+	subst abbrurl.dic			 word
+}
+regress  \X\Y>lr(0_!)
 
 # Pravidla pro ètení zkratek apod.: velké písmeno na jiném,
 #   ne¾ prvním místì ve slovì indikuje zkratku a hláskuje se.
-#   Stejnì tak jednotlivé písmeno pøed cifrou nebo speciálním znakem.
+#   Stejnì tak jednotlivé písmeno pøed nebo za cifrou nebo
+#   speciálním znakem nebo hláskovanou èástí slova.
 
-regress	 ${lower_case}>${upper_case}(0_!${lower_case})			colon
 regress  ${upper_case}>${lower_case}(0_${lower_case})			word
 regress  ${upper_case}>${lower_case}(0_${lower_case})			colon
+regress	 ${lower_case}>${upper_case}(0_!${lower_case})			colon
+regress  ${lower_case}>${upper_case}(!${lower_case}_!$letter)		colon
 if	spellout
 {
 	regex	/^([^\Y\ ~]*)(.\?)\$/\1\Y\1\2/	word
@@ -91,7 +114,7 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
 	regress j>J(0_ds)	; fixme: random environment
  }
 
-
+ regress   i>j($vowel_0)   syll
  subst     syll.dic		; Rozsadit vokály
  regress   0>'(0_$vowel)	; Rázy
 
@@ -122,14 +145,24 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
  }
  progress  P>\ ($everywhere)	word	word
 
- prep	nonsyl.dic		syll
+ regress   b>0(!_b)	syll	; pochybný heuristický odstaveèek
+ regress   n>0(!_nò)	syll	; namíøený proti geminátám
+ regress   s>0(!_s)	syll
+ regress   t>0(!_t)	syll
+ regress   f>0(!_f)	syll
 
+ progress  ø>Ø($voiceless_!0) syll ; je u¾ zde kvùli "k øízení [gøízeòí]" "køeè [kØeè]"
+
+ regress   $sonant>$SONANT(0_!) syll
+ syll      $sonority		syll	; Rozklad_na_slabiky
+ regress   $SONANT>$sonant(!_!)
+
+ prep      nonsyl.dic		syll
 
 #   postp     postps.dic              ; jednou by se mìlo vrátit
 
  regress   h>0(t_!)		; pathologie, plethora, thanatos. Pochybné.
 
- progress  ø>Ø($voiceless_!0)
  regress   $voiced>${voiceless}(!_$voiceless&0')       	; Asimilace znìlosti
  regress   $voiceless>$voiced(!_$voiced!v)       colon
 
@@ -147,18 +180,19 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
  regress   ì>e($everywhere)
 
  progress  yý>ií($everywhere)
- progress  i>j($vowel_!) syll   ; slabièné èlenìní? Leda výjimeènì 
- progress  w>u($vowel_$consonant&0)
- progress  w>v($everywhere)     ; vìt¹inou ale "w" odstraní výjimky, øeknìme
+
+ progress  tkfslmn>TKFSLMN(i_0)
+ progress  i>j(oae_TKFSLMN)
+ progress  TKFSLMN>tkfslmn(!_!)
+
  progress  n>N(!_kg)
 
- regress   b>0(!_b)	syll	; pochybný heuristický odstaveèek
- regress   n>0(!_nò)	syll	; namíøený proti geminátám
- regress   s>0(!_s)	syll
- regress   t>0(!_t)	syll
- regress   f>0(!_f)	syll
+ progress  w>u($vowel_$consonant&0)
+ progress  w>v($everywhere)     ; vìt¹inou ale "w" odstraní výjimky, øeknìme
 
- syll      $sonority	syll	; Rozklad_na_slabiky
+				; zde bývala eliminace geminát
+				; zde býval rozklad na slabiky
+
 
  progress  oae>OAE(!_u)	syll	; Dvojhlásky
  regress   u>0(OAE_!)	syll
@@ -166,10 +200,6 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
  regress   Z®>DÏ(!_$vowel)	; toto by mìlo pøijít do inventáøe (traditnl.dph);
  regress   0>d(!_DÏ)		; rozkládá se zde dz, d¾ (representované Z,®)
  regress   DÏ>z¾(!_!)		; na d-z, d-¾, pokud následuje vokál.
-
-# progress  0>~($vowel_0) syll	; Oznaèení otevøených vokalických slabik tildou
-# raise     ~:!		 syll	; FIXME!!!! slabikotvorné
-# progress  ~>0($vowel_0) syll
 
 # Následující odstavec má za cíl oznaèit v¹echny otevøené slabiky tildou.
 #   Ve zavøených slabikách se objeví pøíznak "C" (coda), ten se pak posune

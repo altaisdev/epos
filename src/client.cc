@@ -1,5 +1,5 @@
 /*
- *	(c) 1998-99 Jirka Hanika <geo@cuni.cz>
+ *	(c) 1998-01 Jirka Hanika <geo@cuni.cz>
  *
  *	This single source file src/client.cc, but NOT THE REST OF THIS PACKAGE,
  *	is considered to be in Public Domain. Parts of this single source file may be
@@ -30,16 +30,17 @@
 
 #define SCRATCH_SPACE 16384
 
-struct pseudoconfiguration
+struct pseudo_static_configuration
 {
 	int asyncing;
 	int scratch;
 	int paranoid;
+	int listen_port;
 };
 
-pseudoconfiguration pseudocfg = {1, SCRATCH_SPACE, 0};
+pseudo_static_configuration pseudocfg = {1, SCRATCH_SPACE, 0, TTSCP_PORT};
 
-pseudoconfiguration *cfg = &pseudocfg;
+pseudo_static_configuration *scfg = &pseudocfg;
 
 char scratch[SCRATCH_SPACE + 2];
 
@@ -75,14 +76,25 @@ char scratch[SCRATCH_SPACE + 2];
 
 #ifdef HAVE_WINSOCK2_H
 	#include <winsock2.h>
+	#define HAVE_WINSOCK
+#else
+	#ifdef HAVE_WINSOCK_H
+		#include <winsock.h>
+		#define HAVE_WINSOCK
+	#endif
 #endif
 
 #ifdef HAVE_ERRNO_H
 	#include <errno.h>
 #endif
 
-#include <sys/types.h>
-#include <signal.h>
+#ifdef HAVE_SYS_TYPES_H
+	#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SIGNAL_H
+	#include <signal.h>
+#endif
 
 /*
  *	blocking sgets() 
@@ -110,6 +122,9 @@ int sgets(char *buffer, int buffer_size, int sd)
 
 int getaddrbyname(const char *inet_name)
 {
+#ifdef WANT_DMALLOC
+	return htonl(INADDR_LOOPBACK);
+#endif
 	hostent *he = gethostbyname(inet_name);
 	if (!he || he->h_addrtype != AF_INET || !he->h_addr_list[0])
 		shriek(472, "Unknown remote tcpsyn server");
@@ -128,7 +143,7 @@ int just_connect_socket(unsigned int ipaddr, int port)
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
 	if (!ipaddr) {
-//		gethostname(scratch, cfg->scratch);	// can be used instead of localhost
+//		gethostname(scratch, scfg->scratch);	// can be used instead of localhost
 		strcpy(scratch, "localhost");
 		ipaddr = getaddrbyname(scratch);
 	}
@@ -143,7 +158,7 @@ int connect_socket(unsigned int ipaddr, int port)
 	if (sd == -1) {
 		shriek(473, "Server unreachable\n");
 	}
-	if (!sgets(scratch, cfg->scratch, sd)) shriek(474, "Remote server listens but discards\n");
+	if (!sgets(scratch, scfg->scratch, sd)) shriek(474, "Remote server listens but discards\n");
 	if (strncmp(scratch, "TTSCP spoken here", 18)) {
 		scratch[15] = 0;
 		shriek(474, "Protocol not recognized");
@@ -151,10 +166,18 @@ int connect_socket(unsigned int ipaddr, int port)
 	return sd;
 }
 
+bool running_at_localhost()
+{
+	int j = just_connect_socket(0, scfg->listen_port);
+	if (j == -1) return false;
+	close(j);
+	return true;
+}
+
 char *get_handle(int sd)
 {
 	do {
-		sgets(scratch, cfg->scratch, sd);
+		sgets(scratch, scfg->scratch, sd);
 	} while (*scratch && strncmp(scratch, "handle: ", 8));
 	if (!*scratch) {
 		printf("NULL handle\n");
@@ -163,7 +186,7 @@ char *get_handle(int sd)
 	return strdup(scratch + 8);
 }
 
-void xmit_option(char *name, char *value, int sd)
+void xmit_option(const char *name, const char *value, int sd)
 {
 	sputs("setl ", sd);
 	sputs(name, sd);
@@ -176,8 +199,8 @@ void xmit_option(char *name, char *value, int sd)
 
 int sync_finish_command(int ctrld)
 {
-	while (sgets(scratch, cfg->scratch, ctrld)) {
-		scratch[cfg->scratch] = 0;
+	while (sgets(scratch, scfg->scratch, ctrld)) {
+		scratch[scfg->scratch] = 0;
 //		printf("Received: %s\n", scratch);
 		switch(*scratch) {
 			case '1': continue;

@@ -1,4 +1,5 @@
 
+
 <sect> Rules <label id="rules">
 <p>
 
@@ -37,7 +38,7 @@ Level name | written TSR semantics | spoken TSR semantics @
 <tt/word/ |	word	| stress unit	@
 <tt/syll/ |	word	| syllable	@
 <tt/phone/|	letter	| sound		@
-<tt/diphone/|		| diphone	@
+<tt/segment/|		| segment	@
 <hline>
 </tabular>
 <caption>
@@ -196,6 +197,12 @@ of the dictionary directly; this is done by encapsulating the contents
 in double quotes.  Dictionary items are whitespace-separated, the replacer
 and replacee are separated with a comma.
 
+The dictionary may either be parsed and loaded into memory at Epos startup
+or at the moment of the first use.  The former option's advantage is
+early error reporting, while the latter can sometimes completely avoid
+loading a huge unused dictionary.  Use the option <tt/paranoid/ to choose
+your preference.
+
 <sect2> Type <tt>subst</tt>
 <p>
 
@@ -204,7 +211,11 @@ and replacee are separated with a comma.
   process is iterated until no replacee occurs in the string.  It is required
   either to have a <tt>phone</tt> target, or to keep all the replacers
   and replacees of the same length, because it is not obvious how to handle the
-  children of the units affected.
+  children of the units affected.  Note also that to be considered a match
+  with the <tt>phone</tt> target, all characters other than phones also
+  have to match (must be found or not found on the same positions in both
+  the replacee and the occurrence in question) except for the terminating
+  scope-level separator (if any), which is invisible to this rule type.
 
   Any replacer may begin with a ^ or end with a &dollar;. That forces
   the substring being replaced to be at the beginning or the end
@@ -213,6 +224,11 @@ and replacee are separated with a comma.
   The replacer should not contain units of the scope level or higher.
   Unless the <tt/paranoid/ option is set, this is tolerated, but the
   replacer is truncated at the first such character.
+
+  With the <tt>phone</tt> target, this rule type will drop the
+  internal structure of the replaced text as soon as a match is found.
+  In other words: an affected scope unit with a replacer is parsed as
+  any other plain text.
 
   Infinitely looping substitutions are currently reported as an error
   condition.
@@ -240,29 +256,29 @@ and replacee are separated with a comma.
   name="More details below">.
 
 
-<sect2> Type <tt>diphones</tt>
+<sect2> Type <tt>segments</tt>
 <p>
 
-  Setup the diphone layer below the phone layer.
+  Setup the segment layer below the phone layer.
   The parameter names a file, which contains
-  phone to diphone mappings, again in the dictionary format.
+  phone to segment mappings, again in the dictionary format.
   The replacees each represent a three character
-  diphone identifier, the replacers are the respective diphone
+  segment identifier, the replacers are the respective segment
   codes (decimal).
   It is possible, and indeed typical to include multiple identifiers
-  for the same diphone number.
+  for the same segment number.
 
-  The middle character denotes the phone the resulting diphone will
+  The middle character denotes the phone the resulting segment will
   be assigned to.  The left hand and right hand characters may either
   be a question mark, or they may specify the right hand and/or left
   hand neighbors to match a specific character.  The question mark is
   therefore a kind of wildcard.
 
-  If both fully specified and partly specified diphones exist for
+  If both fully specified and partly specified segments exist for
   a given triplet of phones, they will be placed from left to right
   in this order: <tt/lt?, ?t?, ?tr, ltr/.
 
-A sentence may contain these diphones with the Czech diphone inventory
+A sentence may contain these segment with the Czech diphone inventory
 by Tomas Dubeda:
 
 <tscreen><verb>
@@ -270,7 +286,7 @@ by Tomas Dubeda:
   0p?   pl? ?lo   ?o? ou?  ?u?    ut? ?te  ?e?    ef? ?f0
 </verb></tscreen>
   
-or, with the traditional Czech diphone inventory:
+or, with the traditional Czech segment inventory:
 
 <tscreen><verb>
     p       l       o       u       t       e       f
@@ -278,23 +294,23 @@ or, with the traditional Czech diphone inventory:
 </verb></tscreen>
  
 (In this second example, for instance the diphones <tt/?pl/
-and <tt/?pt/ would actually share the diphone number and
+and <tt/?pt/ would actually share the segment number and
 would correspond to the <tt/p-any consonant/ diphone.)   
   
-There are more possibilities for representing a diphone
+There are more possibilities for representing a segment
 inventory; it is necessary to decide for the major diphone
 types, whether they should live in their initial or
 final sound.  That is unfortunate, but it is the way it is.
 Punctuation never plays a role of segments in Epos, and
 the same is true here.
 
-It is possible to repeat a diphone a few times.  This effect
+It is possible to repeat a segment a few times.  This effect
 can be controlled by adding 10000 times the number of extra
-repetitions to the diphone number.  Therefore, 
+repetitions to the segment number.  Therefore, 
 <tscreen><verb>
 ?e?	20241
 </verb></tscreen>
-generates three identical diphones number 241 for the stationary
+generates three identical segments number 241 for the stationary
 part of the specified vowel.
 
 <sect2> Type <tt>with</tt>
@@ -329,8 +345,9 @@ general <tt/subst/ rule, so they should be used whenever possible.
   "no element", and it can be used to insert new units, delete the old ones,
   and to limit the change to the beginning or the end of the scope unit,
   respectively.  On the other hand, if the contents of some unit is literal <tt>0</tt>
-  before the application of this rule, it will stay untouched.  Use e.g.
-  <tt>regex</tt> or <tt>subst</tt> rules to handle this case properly.
+  before the application of this rule, it should, in theory, stay untouched.  Use e.g.
+  <tt>regex</tt> or <tt>subst</tt> rules to handle this case properly, as Epos presently
+  confuses no-element zeroes and real zero characters.
 
   Examples:   
 <tscreen><verb>
@@ -365,7 +382,7 @@ with multiple levels of description simultaneously.
   Move a unit to another level of description, e.g. when a segment
   level unit should directly affect the prosody.  The parameter is of the form
   <tt>from:to</tt> (<tt>from</tt> and <tt>to</tt> are arbitrary strings,
-  they can employ the "except" operator (exclamation mark).  The tokens
+  they can employ the <ref id="except" name="except"> operator (exclamation mark).  The tokens
   in <tt>from</tt>, if found at the target
   level, are copied to the scope level, if the original scope token is listed
   in <tt>to</tt>.  It is also possible to omit the colon and the <tt>to</tt> string; the default
@@ -393,18 +410,22 @@ Example:
   Tokens not listed are considered least sonorous, order of tokens within
   the same sonority group (see the example) is irrelevant.
 
-  (It is possible (using the <tt>suppress&lowbar;side&lowbar;syll</tt> and
-  <tt>limit&lowbar;side&lowbar;syll</tt> options in conjunction) to forbid
-  the formation of a unit with an insufficiently sonorous
-  element at its first position.  This crude feature allows
-  us to avoid the unwanted "side syllables" in Czech and is
-  off by default.  A language independent solution is not
-  known, especially because the authors are not certain
-  about similar phenomena in other languages.  Please contact
-  us if you can comment on syllabification irregularities
-  in natural languages.  We'll be happy to replace this
-  "feature" with something generic.   See the source
-  (<tt>unit::syllabify</tt>) for any other details.)
+  As you can see from the example, the syllable boundaries are inserted
+  exactly once per every sequence of equivalent target units (e.g. equisonorous
+  phones) such that both preceding and following target units of the group
+  have higher sonority, and they're inserted either between the first and second
+  element of the group, or, if the group consists of a single unit, before
+  that unit.
+
+  This semantics is suitable for the syllabification task in all languages
+  known to us where syllabification is not primarily morphologically based,
+  but this rule type can also be used for other tasks involving a unit split
+  as some point defined by its contents, e.g. splitting a higher level
+  prosodic unit before or after certain words.  The authors are eager to
+  hear from you if you'd prefer an extension or simplification of this rule
+  type or if you can comment on syllabification issues over a wide range
+  of languages.
+
 
 <sect1> Prosody modeling rules <label id="prosody">
 <p>
@@ -421,13 +442,13 @@ structure units (possibly at multiple levels of description):
 
 Currently, these are values per cent, 100 being the neutral
 value.  <footnote> Epos doesn't currently provide sets
-of diphone inventories for multiple pitch ranges, therefore
+of segment inventories for multiple pitch ranges, therefore
 extreme values, such as 15 or 1500 may sound very unnatural.
 </footnote>  The prosody adjustments at different levels
 sum up for the actual values assigned to the generated
-diphones.  For example, a phone with the frequency (pitch)
+segments.  For example, a phone with the frequency (pitch)
 value of 130 in a word with the value of 120 will contain
-diphones (after the <tt/diphones/ rule is applied) with
+segments (after the <tt/segments/ rule is applied) with
 frequency of 150.  Alternatively, it is possible to multiply
 the values for pitch, volume and duration instead, by setting the
 <tt/pros_eff_multiply_f/, <tt/pros_eff_multiply_i/ and
@@ -524,7 +545,7 @@ units as necessary to stretch the contour over the scope unit.
 
    It is important to understand the difference between
    e.g. a syllable and its phones: the syllable can have an entirely
-   different prosodic value than its phones; for every given diphone,
+   different prosodic value than its phones; for every given segment,
    the value for any prosodic quantity is obtained by totalling
    the values for all of higher levels units it is contained in.
    This independence of levels of description might theoretically
@@ -702,11 +723,29 @@ rules with whitespace, but it is strongly recommended for readability.
 
   Apply a rule or a block of rules within certain units only.
   The parameter is a list of values at the scope level, wherein the
-  following rule should be applied; the "except" operator may be used.
+  following rule should be applied; the <ref id="except" name="except">
+  operator may be used.
 
   Every unit (a sentence, for example), which fulfills the criterion,
   is processed separately, therefore the scope of the following rule may
   be at most that of the <tt>inside</tt> rule itself.
+
+<sect2> Type <tt>near</tt>
+<p>
+
+  Apply a rule or a block of rules within units which contain
+  at least one of the specified units.  The parameter is a list
+  of values at the target level, which are looked up in a unit
+  of the scope level; the <ref id="except" name="except">
+  operator may be used.  If an occurence is found, the following
+  rule gets applied to the scope level unit.
+
+  If the parameter begins with an asterisk, the asterisk is treated
+  as an except operator and the test is negated.  In other words,
+  the following rule gets applied, if every target level unit contained
+  meets the set description with the leading asterisk ignored.
+  You can combine asterisk and an extra except operator to get tests of
+  the "contains no characters of this class" type.
 
 <sect2> Type <tt>with</tt> <label id="with-rule">
 <p>
@@ -751,15 +790,19 @@ if   !colloquial
 <p>
 
   Regular expression substitution.  The parameter is of the form
-  <tt>/regular&lowbar;expression/replacement/</tt>.  This rule type is similar to <tt>subst</tt>,
-  but it is more powerful and more arcane; it is not intended for end
-  wizards.  Skip it.
-  
-  For a regular expressions' overview  try <tt>man grep</tt>.  Note a difference:
+  <tt>/regular&lowbar;expression/replacement/</tt>.  This rule type is similar to <tt>subst</tt>
+  with only one dictionary item, but it is way more powerful and more arcane;
+  its use is not intended for end wizards nor trivial tasks.
+  For a regular expressions' overview, UNIX users can consult e.g. the <tt>grep</tt>
+  manual page, whereas Windows users can telnet to a nearby UNIX machine and
+  write <tt>man grep</tt> there.
+
+  Epos uses the extended regular expression syntax with the following difference:
   in "regular" regular expressions, parentheses match themselves, while
   the open group and close group operators are <tt>&bsol;(</tt> and <tt>&bsol;)</tt>, respectively.
   As we use groups heavily and next to none real parentheses, we decided
-  to do it the other way round.
+  to do it the other way round.  Also, <tt>sed</tt> users may be surprised
+  by the iterative behavior of the <tt/regex/ rule type in Epos.
   
   The replacement may contain escape sequences referring to the match of
   the <tt>n</tt>-th group within the regular expression: <tt>&bsol;1</tt> to <tt>&bsol;9</tt>.
@@ -771,6 +814,11 @@ if   !colloquial
   This is because we don't actually implement the regex parsing stuff; we leave it
   to your OS libraries.  In case you don't have such libraries installed, we use
   the glibc implementation (<tt>rx.c</tt> in the Epos distribution).
+
+  Note that if your system doesn't support locale setting nor provides
+  a usable regex library, you can't use named character classes such
+  as <tt>[:upper:]</tt> in your regular expressions.  This is the case
+  on Windows CE.
 
 <sect2> Type <tt>debug</tt> <label id="debug-rule">
 <p>
@@ -792,12 +840,13 @@ you can also make negative specifications, such as "all consonants except
 l and r".  To do this, use the exclamation mark serving as an "except" operator:
 <tt>&dollar;consonants!lr</tt> (The right operand is subtracted from the left one.)
 If there is no left operand, say in <tt>!x</tt>, the semantics is "all but x".
-You see that <tt>!</tt> alone means "everything".
+A consequence is that <tt>!</tt> alone means "everything".
 
 The operator is right-associative; <tt>!&dollar;vowels!ou</tt> means "all excluding vowels,
-but <tt>o</tt> and <tt>u</tt> don't count as vowels just now".
+but <tt>o</tt> and <tt>u</tt> don't count as vowels just now".  Therefore,
+<tt/o/ and <tt/u/ are included in this unordered list.
 
-Let us repeat that this operator will never work for ordered lists, not even
+Let us repeat that this operator will never work for ordered lists, nor
 for the <tt>syll</tt> rule sonority groups.
 
 

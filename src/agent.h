@@ -1,6 +1,6 @@
 /*
  *	epos/src/agent.h
- *	(c) 1998-99 geo@cuni.cz
+ *	(c) 1998-01 geo@cuni.cz
  *
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,6 +32,10 @@
 
 #ifdef HAVE_WINSOCK2_H
 	#include <winsock2.h>
+#else
+	#ifdef HAVE_WINSOCK_H
+		#include <winsock.h>
+	#endif
 #endif
 
 #ifdef HAVE_IO_H
@@ -70,7 +74,7 @@ class context
 
 class stream;
 
-enum DATA_TYPE {T_NONE, T_INPUT, T_TEXT, T_STML, T_UNITS, T_DIPHS, T_SSIF, T_WAVEFM};
+enum DATA_TYPE {T_NONE, T_INPUT, T_TEXT, T_STML, T_UNITS, T_SEGS, T_SSIF, T_WAVEFM};
 
 struct pend_ll
 {
@@ -111,7 +115,7 @@ class agent
 	DATA_TYPE out;
 	agent(DATA_TYPE typein, DATA_TYPE typeout);
 	virtual ~agent();
-	virtual void brk();	/* cancel your work to do, forget inb/outb	*/
+	virtual bool brk();	/* cancel your work to do, forget inb/outb, return whether brk did something	*/
 	void timeslice();	/* switch context and agent::run()	*/
 };
 
@@ -135,7 +139,7 @@ class stream : public agent
    public:
 	stream(char *, context *);
 	virtual ~stream();
-	virtual void brk();
+	virtual bool brk();
 	void apply(agent *ref, int bytes);
 	void release_agents();
 	bool foreground() {return callbk ? true : false; };
@@ -163,7 +167,7 @@ class a_ttscp : public a_protocol
 	char *handle;
 	a_ttscp(int sd_in, int sd_out);
 	virtual ~a_ttscp();
-	virtual void brk();
+	virtual bool brk();
 	virtual void disconnect();
 };
 
@@ -197,7 +201,7 @@ extern socky int select_fd_max;
 
 inline int my_fork()
 {
-	if (!cfg->forking) return -1;
+	if (!scfg->forking) return -1;
 	else return fork();
 }
 
@@ -211,7 +215,7 @@ extern char server_passwd[];
 
 /*
  *	make_rnd_passwd() generates a random password or handle consisting
- *	of lowercase and uppercase characters, digits, dash and underscore.
+ *	of lowercase and uppercase characters, digits, dashes and underscores.
  */
 
 void make_rnd_passwd(char *buffer, int size);
@@ -227,9 +231,9 @@ enum PAR_SYNTAX {PAR_REQ, PAR_FORBIDDEN, PAR_OPTIONAL};
 struct ttscp_cmd
 {
 //	char name[4];
-	int name;
+	int name;		/* tried const, Visual C++ then rejects initialization */
 	int(*impl)(char *param, a_ttscp *a);
-	char *short_help;
+	char *short_help;	/* was const, as above */
 	PAR_SYNTAX param;
 };
 

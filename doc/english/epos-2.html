@@ -47,7 +47,7 @@ Level name </TD><TD> written TSR semantics </TD><TD> spoken TSR semantics </TD><
 <CODE>word</CODE> </TD><TD>     word    </TD><TD> stress unit   </TD></TR><TR><TD>
 <CODE>syll</CODE> </TD><TD>     word    </TD><TD> syllable      </TD></TR><TR><TD>
 <CODE>phone</CODE></TD><TD>     letter  </TD><TD> sound </TD></TR><TR><TD>
-<CODE>diphone</CODE></TD><TD> </TD><TD> diphone </TD></TR><TR><TD>
+<CODE>segment</CODE></TD><TD> </TD><TD> segment </TD></TR><TR><TD>
 
 <CAPTION>       Available Text Structure Representation layers (an example)</CAPTION>
 </TD></TR></TABLE></CENTER>
@@ -194,6 +194,11 @@ them literally).
 of the dictionary directly; this is done by encapsulating the contents
 in double quotes.  Dictionary items are whitespace-separated, the replacer
 and replacee are separated with a comma.
+<P>The dictionary may either be parsed and loaded into memory at Epos startup
+or at the moment of the first use.  The former option's advantage is
+early error reporting, while the latter can sometimes completely avoid
+loading a huge unused dictionary.  Use the option <CODE>paranoid</CODE> to choose
+your preference.
 <P>
 <H3>Type <CODE>subst</CODE></H3>
 
@@ -203,13 +208,21 @@ of their respective replacees; longer matches are matched first; the
 process is iterated until no replacee occurs in the string.  It is required
 either to have a <CODE>phone</CODE> target, or to keep all the replacers
 and replacees of the same length, because it is not obvious how to handle the
-children of the units affected.
+children of the units affected.  Note also that to be considered a match
+with the <CODE>phone</CODE> target, all characters other than phones also
+have to match (must be found or not found on the same positions in both
+the replacee and the occurrence in question) except for the terminating
+scope-level separator (if any), which is invisible to this rule type.
 <P>Any replacer may begin with a ^ or end with a $. That forces
 the substring being replaced to be at the beginning or the end
 of the scope unit, respectively.
 <P>The replacer should not contain units of the scope level or higher.
 Unless the <CODE>paranoid</CODE> option is set, this is tolerated, but the
 replacer is truncated at the first such character.
+<P>With the <CODE>phone</CODE> target, this rule type will drop the
+internal structure of the replaced text as soon as a match is found.
+In other words: an affected scope unit with a replacer is parsed as
+any other plain text.
 <P>Infinitely looping substitutions are currently reported as an error
 condition.
 <P>
@@ -236,26 +249,26 @@ of prosodic adjustments to be applied.
 <A HREF="#prosody-rule">More details below</A>.
 <P>
 <P>
-<H3>Type <CODE>diphones</CODE></H3>
+<H3>Type <CODE>segments</CODE></H3>
 
 <P>
-<P>Setup the diphone layer below the phone layer.
+<P>Setup the segment layer below the phone layer.
 The parameter names a file, which contains
-phone to diphone mappings, again in the dictionary format.
+phone to segment mappings, again in the dictionary format.
 The replacees each represent a three character
-diphone identifier, the replacers are the respective diphone
+segment identifier, the replacers are the respective segment
 codes (decimal).
 It is possible, and indeed typical to include multiple identifiers
-for the same diphone number.
-<P>The middle character denotes the phone the resulting diphone will
+for the same segment number.
+<P>The middle character denotes the phone the resulting segment will
 be assigned to.  The left hand and right hand characters may either
 be a question mark, or they may specify the right hand and/or left
 hand neighbors to match a specific character.  The question mark is
 therefore a kind of wildcard.
-<P>If both fully specified and partly specified diphones exist for
+<P>If both fully specified and partly specified segments exist for
 a given triplet of phones, they will be placed from left to right
 in this order: <CODE>lt?, ?t?, ?tr, ltr</CODE>.
-<P>A sentence may contain these diphones with the Czech diphone inventory
+<P>A sentence may contain these segment with the Czech diphone inventory
 by Tomas Dubeda:
 <P>
 <BLOCKQUOTE><CODE>
@@ -264,7 +277,7 @@ by Tomas Dubeda:
   0p?   pl? ?lo   ?o? ou?  ?u?    ut? ?te  ?e?    ef? ?f0
 </PRE>
 </CODE></BLOCKQUOTE>
-<P>or, with the traditional Czech diphone inventory:
+<P>or, with the traditional Czech segment inventory:
 <P>
 <BLOCKQUOTE><CODE>
 <PRE>
@@ -273,24 +286,24 @@ by Tomas Dubeda:
 </PRE>
 </CODE></BLOCKQUOTE>
 <P>(In this second example, for instance the diphones <CODE>?pl</CODE>
-and <CODE>?pt</CODE> would actually share the diphone number and
+and <CODE>?pt</CODE> would actually share the segment number and
 would correspond to the <CODE>p-any consonant</CODE> diphone.)   
-<P>There are more possibilities for representing a diphone
+<P>There are more possibilities for representing a segment
 inventory; it is necessary to decide for the major diphone
 types, whether they should live in their initial or
 final sound.  That is unfortunate, but it is the way it is.
 Punctuation never plays a role of segments in Epos, and
 the same is true here.
-<P>It is possible to repeat a diphone a few times.  This effect
+<P>It is possible to repeat a segment a few times.  This effect
 can be controlled by adding 10000 times the number of extra
-repetitions to the diphone number.  Therefore, 
+repetitions to the segment number.  Therefore, 
 <BLOCKQUOTE><CODE>
 <PRE>
 ?e?     20241
 </PRE>
 </CODE></BLOCKQUOTE>
 
-generates three identical diphones number 241 for the stationary
+generates three identical segments number 241 for the stationary
 part of the specified vowel.
 <P>
 <H3>Type <CODE>with</CODE></H3>
@@ -325,8 +338,9 @@ interpretations of "corresponding".
 "no element", and it can be used to insert new units, delete the old ones,
 and to limit the change to the beginning or the end of the scope unit,
 respectively.  On the other hand, if the contents of some unit is literal <CODE>0</CODE>
-before the application of this rule, it will stay untouched.  Use e.g.
-<CODE>regex</CODE> or <CODE>subst</CODE> rules to handle this case properly.
+before the application of this rule, it should, in theory, stay untouched.  Use e.g.
+<CODE>regex</CODE> or <CODE>subst</CODE> rules to handle this case properly, as Epos presently
+confuses no-element zeroes and real zero characters.
 <P>Examples:   
 <BLOCKQUOTE><CODE>
 <PRE>
@@ -368,7 +382,8 @@ with multiple levels of description simultaneously.
 <P>Move a unit to another level of description, e.g. when a segment
 level unit should directly affect the prosody.  The parameter is of the form
 <CODE>from:to</CODE> (<CODE>from</CODE> and <CODE>to</CODE> are arbitrary strings,
-they can employ the "except" operator (exclamation mark).  The tokens
+they can employ the 
+<A HREF="#except">except</A> operator (exclamation mark).  The tokens
 in <CODE>from</CODE>, if found at the target
 level, are copied to the scope level, if the original scope token is listed
 in <CODE>to</CODE>.  It is also possible to omit the colon and the <CODE>to</CODE> string; the default
@@ -397,18 +412,21 @@ inserts the following (and other) syllable boundaries:
 </CODE></BLOCKQUOTE>
 <P>Tokens not listed are considered least sonorous, order of tokens within
 the same sonority group (see the example) is irrelevant.
-<P>(It is possible (using the <CODE>suppress_side_syll</CODE> and
-<CODE>limit_side_syll</CODE> options in conjunction) to forbid
-the formation of a unit with an insufficiently sonorous
-element at its first position.  This crude feature allows
-us to avoid the unwanted "side syllables" in Czech and is
-off by default.  A language independent solution is not
-known, especially because the authors are not certain
-about similar phenomena in other languages.  Please contact
-us if you can comment on syllabification irregularities
-in natural languages.  We'll be happy to replace this
-"feature" with something generic.   See the source
-(<CODE>unit::syllabify</CODE>) for any other details.)
+<P>As you can see from the example, the syllable boundaries are inserted
+exactly once per every sequence of equivalent target units (e.g. equisonorous
+phones) such that both preceding and following target units of the group
+have higher sonority, and they're inserted either between the first and second
+element of the group, or, if the group consists of a single unit, before
+that unit.
+<P>This semantics is suitable for the syllabification task in all languages
+known to us where syllabification is not primarily morphologically based,
+but this rule type can also be used for other tasks involving a unit split
+as some point defined by its contents, e.g. splitting a higher level
+prosodic unit before or after certain words.  The authors are eager to
+hear from you if you'd prefer an extension or simplification of this rule
+type or if you can comment on syllabification issues over a wide range
+of languages.
+<P>
 <P>
 <H2><A NAME="prosody"></A> <A NAME="ss2.8">2.8 Prosody modeling rules </A>
 </H2>
@@ -426,13 +444,13 @@ structure units (possibly at multiple levels of description):
 <P>Currently, these are values per cent, 100 being the neutral
 value.  
 <BLOCKQUOTE> Epos doesn't currently provide sets
-of diphone inventories for multiple pitch ranges, therefore
+of segment inventories for multiple pitch ranges, therefore
 extreme values, such as 15 or 1500 may sound very unnatural.</BLOCKQUOTE>
   The prosody adjustments at different levels
 sum up for the actual values assigned to the generated
-diphones.  For example, a phone with the frequency (pitch)
+segments.  For example, a phone with the frequency (pitch)
 value of 130 in a word with the value of 120 will contain
-diphones (after the <CODE>diphones</CODE> rule is applied) with
+segments (after the <CODE>segments</CODE> rule is applied) with
 frequency of 150.  Alternatively, it is possible to multiply
 the values for pitch, volume and duration instead, by setting the
 <CODE>pros_eff_multiply_f</CODE>, <CODE>pros_eff_multiply_i</CODE> and
@@ -528,7 +546,7 @@ for some lengths which have to be handled separately.
 adjustments for a certain unit, the adjustments are summed.
 <P>It is important to understand the difference between
 e.g. a syllable and its phones: the syllable can have an entirely
-different prosodic value than its phones; for every given diphone,
+different prosodic value than its phones; for every given segment,
 the value for any prosodic quantity is obtained by totalling
 the values for all of higher levels units it is contained in.
 This independence of levels of description might theoretically
@@ -709,10 +727,29 @@ rules with whitespace, but it is strongly recommended for readability.
 <P>
 <P>Apply a rule or a block of rules within certain units only.
 The parameter is a list of values at the scope level, wherein the
-following rule should be applied; the "except" operator may be used.
+following rule should be applied; the 
+<A HREF="#except">except</A>
+operator may be used.
 <P>Every unit (a sentence, for example), which fulfills the criterion,
 is processed separately, therefore the scope of the following rule may
 be at most that of the <CODE>inside</CODE> rule itself.
+<P>
+<H3>Type <CODE>near</CODE></H3>
+
+<P>
+<P>Apply a rule or a block of rules within units which contain
+at least one of the specified units.  The parameter is a list
+of values at the target level, which are looked up in a unit
+of the scope level; the 
+<A HREF="#except">except</A>
+operator may be used.  If an occurence is found, the following
+rule gets applied to the scope level unit.
+<P>If the parameter begins with an asterisk, the asterisk is treated
+as an except operator and the test is negated.  In other words,
+the following rule gets applied, if every target level unit contained
+meets the set description with the leading asterisk ignored.
+You can combine asterisk and an extra except operator to get tests of
+the "contains no characters of this class" type.
 <P>
 <H3><A NAME="with-rule"></A> Type <CODE>with</CODE> </H3>
 
@@ -755,14 +792,18 @@ the <CODE>if</CODE> rule itself.
 
 <P>
 <P>Regular expression substitution.  The parameter is of the form
-<CODE>/regular_expression/replacement/</CODE>.  This rule type is similar to <CODE>subst</CODE>,
-but it is more powerful and more arcane; it is not intended for end
-wizards.  Skip it.
-<P>For a regular expressions' overview  try <CODE>man grep</CODE>.  Note a difference:
+<CODE>/regular_expression/replacement/</CODE>.  This rule type is similar to <CODE>subst</CODE>
+with only one dictionary item, but it is way more powerful and more arcane;
+its use is not intended for end wizards nor trivial tasks.
+For a regular expressions' overview, UNIX users can consult e.g. the <CODE>grep</CODE>
+manual page, whereas Windows users can telnet to a nearby UNIX machine and
+write <CODE>man grep</CODE> there.
+<P>Epos uses the extended regular expression syntax with the following difference:
 in "regular" regular expressions, parentheses match themselves, while
 the open group and close group operators are <CODE>\(</CODE> and <CODE>\)</CODE>, respectively.
 As we use groups heavily and next to none real parentheses, we decided
-to do it the other way round.
+to do it the other way round.  Also, <CODE>sed</CODE> users may be surprised
+by the iterative behavior of the <CODE>regex</CODE> rule type in Epos.
 <P>The replacement may contain escape sequences referring to the match of
 the <CODE>n</CODE>-th group within the regular expression: <CODE>\1</CODE> to <CODE>\9</CODE>.
 <CODE>\0</CODE> represents the entire match, but this is probably unusable under the
@@ -772,6 +813,10 @@ library already installed and have <CODE>WANT_REGEX</CODE> enabled in <CODE>comm
 This is because we don't actually implement the regex parsing stuff; we leave it
 to your OS libraries.  In case you don't have such libraries installed, we use
 the glibc implementation (<CODE>rx.c</CODE> in the Epos distribution).
+<P>Note that if your system doesn't support locale setting nor provides
+a usable regex library, you can't use named character classes such
+as <CODE>[:upper:]</CODE> in your regular expressions.  This is the case
+on Windows CE.
 <P>
 <H3><A NAME="debug-rule"></A> Type <CODE>debug</CODE> </H3>
 
@@ -793,10 +838,11 @@ you can also make negative specifications, such as "all consonants except
 l and r".  To do this, use the exclamation mark serving as an "except" operator:
 <CODE>$consonants!lr</CODE> (The right operand is subtracted from the left one.)
 If there is no left operand, say in <CODE>!x</CODE>, the semantics is "all but x".
-You see that <CODE>!</CODE> alone means "everything".
+A consequence is that <CODE>!</CODE> alone means "everything".
 <P>The operator is right-associative; <CODE>!$vowels!ou</CODE> means "all excluding vowels,
-but <CODE>o</CODE> and <CODE>u</CODE> don't count as vowels just now".
-<P>Let us repeat that this operator will never work for ordered lists, not even
+but <CODE>o</CODE> and <CODE>u</CODE> don't count as vowels just now".  Therefore,
+<CODE>o</CODE> and <CODE>u</CODE> are included in this unordered list.
+<P>Let us repeat that this operator will never work for ordered lists, nor
 for the <CODE>syll</CODE> rule sonority groups.
 <P>
 <P>
@@ -814,6 +860,7 @@ themselves can be escaped in the same way.
 <P>In addition, special characters listed in
 <A HREF="epos-3.html#escapes">the table of escape sequences</A> can be inserted
 using the same mechanism.
+<P>
 <P>
 <P>
 <P>

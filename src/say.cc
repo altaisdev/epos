@@ -1,5 +1,5 @@
 /*
- *	(c) 1998-99 Jirka Hanika <geo@cuni.cz>
+ *	(c) 1998-01 Jirka Hanika <geo@cuni.cz>
  *
  *	This single source file src/say.cc, but NOT THE REST OF THIS PACKAGE,
  *	is considered to be in Public Domain. Parts of this single source file may be
@@ -7,7 +7,7 @@
  *
  *	Most files in this package are strictly covered by the General Public
  *	License version 2, to be found in doc/COPYING. Should GPL and the paragraph
- *	above come into any sort of legal conflict, GPL takes precendence.
+ *	above come into any sort of legal conflict, GPL takes precedence.
  *
  *	This file implements a simple TTSCP client. See doc/english/ttscp.sgml
  *	for a preliminary technical specification.
@@ -20,19 +20,40 @@
 
 #include "config.h"	/* You can usually remove this item */
 
+#ifdef HAVE_WINSVC_H
+	bool start_service();
+	bool stop_service();
+#else
+	bool start_service() { return true; }
+	bool stop_service() { return true; }
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
+
+#ifdef HAVE_ERRNO_H
+	#include <errno.h>
+#endif
 
 #define TTSCP_PORT	8778
 
 const char *COMMENT_LINES = "#;\r\n";
-const char *WHITESPACE = " \t";
+const char *WHITESPACE = " \t\r";
 
-const char *output_file = "#localsound";
+const char *output_file = NULL;
+
+const char *charset = "8859-2";
 
 bool chunking = false;
+bool show_segments = false;
+bool wavfile = false;
+bool wavstdout = false;
+
+struct segment {
+	short code; char nothing; char ll;
+	int f,e,t;
+};
 
 #define STDIN_BUFF_SIZE  550000
 
@@ -87,14 +108,45 @@ int get_result(int sd)
 	return 8;	/* guessing */
 }
 
+int size;
+
+char *get_data()
+{
+	char *b;
+	size = 0;
+	while (sgets(scratch, SCRATCH_SPACE, ctrld)) {
+		scratch[SCRATCH_SPACE] = 0;
+		if (strchr("2468", *scratch)) { 	/* all done, write result */
+			if (*scratch != '2') shriek(scratch);
+			if (!size) shriek("No processed data received");
+			b[size] = 0;
+			return b;
+		}
+		if (!strncmp(scratch, "123 ", 4)) {
+			int count;
+			sgets(scratch, SCRATCH_SPACE, ctrld);
+			scratch[SCRATCH_SPACE] = 0;
+			sscanf(scratch, "%d", &count);
+			b = size ? (char *)realloc(b, size + count + 1) : (char *)malloc(count + 1);
+			int limit = size + count;
+			while (size < limit)
+				size += yread(datad, b + size, limit - size);
+		}
+	}
+	if (size) shriek("Disconnect during transmit");
+	else shriek("Disconnect before transmit");
+	return NULL;
+}
+
 void say_data()
 {
-	if (!data) data = "No.";
+	if (!data) data = strdup("No.");
 	sputs("strm $", ctrld);
 	sputs(dh, ctrld);
 	if (chunking) sputs(":chunk", ctrld);
 	sputs(":raw:rules:diphs:synth:", ctrld);
-	sputs(output_file, ctrld);
+	if (wavfile || wavstdout) sputs("$", ctrld), sputs(dh, ctrld);
+	else sputs("#localsound", ctrld);
 	sputs("\r\n", ctrld);
 	sputs("appl ", ctrld);
 	sprintf(scratch, "%d", (int)strlen(data));
@@ -102,15 +154,25 @@ void say_data()
 	sputs("\r\n", ctrld);
 	sputs(data, datad);
 	if (get_result(ctrld) > 2) shriek("Could not set up a stream");
-	if (get_result(ctrld) > 2) shriek("Could not apply a stream to text");
+	char *b;
+	if (wavfile || wavstdout) {
+		b = get_data();
+		FILE *f = wavstdout ? stdout : fopen(output_file, "wb");
+		if (!f || !fwrite(b, size, 1, f)) shriek("Could not write waveform");
+		if (!wavstdout) fclose(f);
+		free(b);
+		return;
+	}
+	if (get_result(ctrld) > 2) shriek("Could not apply a stream");
 }
 
 void trans_data()
 {
-	if (!data) data = "No.";
+	if (!data) data = strdup("No.");
 	sputs("strm $", ctrld);
 	sputs(dh, ctrld);
-	sputs(":raw:rules:dump:$", ctrld);
+	if (show_segments) sputs(":raw:rules:diphs:$", ctrld);
+	else sputs(":raw:rules:print:$", ctrld);
 	sputs(dh, ctrld);
 	sputs("\r\n", ctrld);
 	sputs("appl ", ctrld);
@@ -119,25 +181,18 @@ void trans_data()
 	sputs("\r\n", ctrld);
 	sputs(data, datad);
 	get_result(ctrld);
-
-	while (sgets(scratch, SCRATCH_SPACE, ctrld)) {
-		scratch[SCRATCH_SPACE] = 0;
-		if (*scratch > '1') return;	// guessing
-		if (!strncmp(scratch, "122 ", 4)) {
-			int count;
-			sgets(scratch, SCRATCH_SPACE, ctrld);
-			scratch[SCRATCH_SPACE] = 0;
-			sscanf(scratch, "%d", &count);
-			char *b=(char *)malloc(count+1);
-			b[yread(datad, b, count)] = 0;
-			printf("%s\n", b);
-		}
+	
+	if (show_segments) {
+		segment *b = (segment *)get_data();
+		for (int i=1; i<b[0].code; i++)
+			printf("%4d - %3d %3d %3d\n", b[i].code, b[i].f, b[i].e, b[i].t);
+	} else {
+		char *b = get_data();
+		printf("%s\n", b);
 	}
-
-	get_result(ctrld);
 }
 
-void send_option(char *name, char *value)
+void send_option(const char *name, const char *value)
 {
 	xmit_option(name, value, ctrld);
 	get_result(ctrld);
@@ -148,14 +203,16 @@ void send_option(char *name, char *value)
 
 void dump_help()
 {
-	printf("usage: say [options] ['text to be processed']\n");
+	printf("usage: say [options] ['Text to be processed.']\n");
 	printf(" -b  bare format (no frills)\n");
 	printf(" -c  casual pronunciation\n");
-	printf(" -i  ironic pronunciation\n");
+	printf(" -d  show segments\n");
 	printf(" -k  shutdown Epos\n");
 	printf(" -l  list available languages and voices\n");
+	printf(" -m  write the waveform in mu law format to ./said.vox\n");
+	printf(" -o  write the waveform to the standard output\n");
 	printf(" -u  use utterance chunking\n");
-	printf(" -w  write output to said.wav (in the \"pseudo root\" directory)\n");
+	printf(" -w  write the waveform to ./said.wav\n");
 }
 
 void send_cmd_line(int argc, char **argv)
@@ -188,13 +245,16 @@ void send_cmd_line(int argc, char **argv)
 			for (j=ar+1; *j; j++) switch (*j) {
 				case 'b': send_option("out_verbose", "false"); break;
 				case 'c': send_option("colloquial", "true"); break;
-				case 'd': send_option("show_diphones", "true"); break;
+				case 'd': show_segments = true; break;
+//				case 'd': send_option("show_segments", "true"); break;
 				case 'H': send_option("long_help", "true");	/* fall through */
 				case 'h': dump_help(); exit(0);
-				case 'i': send_option("irony", "true"); break;
 				case 'k': FILE *f;
 					  f = fopen("/var/run/epos.pwd", "r");
-					  if (!f) shriek("Cannot open /var/run/epos.pwd");
+					  if (!f) {
+					  	stop_service();
+					  	shriek("Cannot open /var/run/epos.pwd");
+					  }
 					  sputs("pass ", ctrld);
 					  scratch[fread(scratch, 1, 1024, f)] = 0;
 					  sputs(scratch, ctrld);
@@ -208,21 +268,22 @@ void send_cmd_line(int argc, char **argv)
 					  printf("Voices available for the current language:\n");
 					  get_result(ctrld);
 					  exit(0);
-			//	case 'n': cfg->rules_file="nnet.rul";
-			//		  if (this_lang)
-			//			this_lang->rules_file = cfg->rules_file;
-			//		  cfg->neuronet=true; break;
+				case 'm': send_option("ulaw", "true");
+					  send_option("wave_header", "false");
+					  wavfile = true;
+					  output_file = "said.vox"; break;
+				case 'o': wavstdout = true; break;
 				case 'p': send_option("pausing", "true"); break;
-				case 's': send_option("play_diph", "true"); break;
 				case 'u': chunking = true; break;
 				case 'v': send_option("version", "true"); break;
 				case 'w': send_option("wave_header", "true");
-					  output_file = "/said.wav"; break;
+					  wavfile = true;
+					  output_file = "said.wav"; break;
 				case 'D':
 					send_option("use_debug", "true");
-			//		if (!cfg->use_dbg) cfg->use_dbg=true;
-			//		else if (cfg->warnings)
-			//			cfg->always_dbg--;
+			//		if (!scfg->use_dbg) cfg->use_dbg=true;
+			//		else if (scfg->warnings)
+			//			scfg->always_dbg--;
 					break;
 				default : shriek("Unknown short option");
 			}
@@ -247,23 +308,39 @@ void send_cmd_line(int argc, char **argv)
 	if (data) for(char *p=data; *p; p++) if (*p=='\n') *p=' ';
 }
 
+/*
+ *	main() implements what most TTSCP clients do: it opens two TTSCP connections,
+ *	converts one of them to a data connection dependent on the other one.
+ *	Then, commands in a file found using the TTSCP_USER environment variable
+ *	are transmitted and synthesis and transcription procedures invoked.
+ *	Last, general cleanup is done (the connections are gracefully closed.)
+ *
+ *	Note that the connection establishment code is less intuitive than it
+ *	it could be because of paralelism oriented code ordering.
+ */
 
 int main(int argc, char **argv)
 {
-#ifdef HAVE_WINSOCK2_H
+#ifdef HAVE_WINSOCK
 	if (WSAStartup(MAKEWORD(2,0), (LPWSADATA)scratch)) shriek(464, "No winsock");
+	charset = "cp1250";
 #endif
+	start_service();		/* Windows NT etc. only */
+
 	ctrld = connect_socket(0, TTSCP_PORT);
-	ch = get_handle(ctrld);
 	datad = connect_socket(0, TTSCP_PORT);
 	sputs("data ", datad);
+	ch = get_handle(ctrld);
 	sputs(ch, datad);
 	sputs("\r\n", datad);
 	free(ch);
+	sputs("setl charset ",ctrld);
+	sputs(charset, ctrld);
+	sputs("\r\n", ctrld);
+	get_result(ctrld);
+	send_cmd_line(argc, argv);
 	dh = get_handle(datad);
 	get_result(datad);
-	send_cmd_line(argc, argv);
-//	sputs("intr\r\n", ctrld);
 
 // #ifdef HAVE_GETENV
 	FILE *f = NULL;
@@ -283,7 +360,7 @@ int main(int argc, char **argv)
 /// #endif
 
 	say_data();
-	trans_data();
+	if (!wavstdout) trans_data();
 //	printf("\n");
 	sputs("delh ", ctrld);
 	sputs(dh, ctrld);
@@ -312,4 +389,5 @@ void terminate(void)
 }
 
 #endif
+
 

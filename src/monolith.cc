@@ -1,6 +1,6 @@
 /*
  *	epos/src/monolith.cc
- *	(c) 1996-99 geo@cuni.cz
+ *	(c) 1996-01 geo@cuni.cz
  *
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 
 #include "common.h"
 
+const bool is_monolith = 1;
+
 #ifdef HAVE_UNISTD_H		// fork() only
 	#include <unistd.h>
 #else
@@ -28,28 +30,29 @@ int submain()
 {
 	unit *root;
 
-	root = str2units(cfg->input_text);
+	root = str2units(scfg->input_text);
 	this_lang->ruleset->apply(root);
 //	fprintf(stdout,"*********************************************\n");
 	root->fout(NULL);
 
-	if (cfg->use_diph || cfg->show_phones) {
-		if (cfg->play_diph) {
-			if (cfg->forking) {
+
+	if (scfg->show_segs | scfg->play_segs | scfg->imm_segs | scfg->show_phones) {
+		if (scfg->play_segs) {
+			if (scfg->forking) {
 				switch (fork()) {
 					case 0:	//ds_used_cnt++;
-						play_diphones(root, this_voice);
+						play_segments(root, this_voice);
 						return 0;
-					case -1:play_diphones(root, this_voice);
+					case -1:play_segments(root, this_voice);
 					default:;
 				}
-			} else play_diphones(root, this_voice);
+			} else play_segments(root, this_voice);
 		}
-		if (cfg->show_phones) root->show_phones();
-		if (cfg->show_diph) show_diphones(root);
+		if (scfg->show_phones) root->show_phones();
+		if (scfg->show_segs) show_segments(root);
 	}
 
-	if (cfg->neuronet) root->nnet_out(cfg->nnet_file, cfg->matlab_dir);
+	if (scfg->neuronet) root->nnet_out(scfg->nnet_file, scfg->matlab_dir);
 	delete(root);
 //	fprintf(stdout,"***** The End. ******************************\n");
 	return 0;
@@ -58,13 +61,13 @@ int submain()
 int main(int argc, char **argv)
 {
 	try {
-		epos_init(argc, argv);
+		argc_copy = argc, argv_copy = argv;
+		epos_init();
 		submain();
 		epos_done();
 		return 0;
-	} catch (any_exception *e) {	// this one is preferred, however.
-//	} catch (old_style_exc *e) {	// this one is required by the g++ bugware
-//		printf("*****************\n");
+	} catch (any_exception *e) {
+		unuse(e->code);
 		return 4;
 	}
 }

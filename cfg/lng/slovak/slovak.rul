@@ -1,119 +1,38 @@
 #
-#	(c) Jirka Hanika <geo@ff.cuni.cz>
-#       (c) Martin Petriska <petriska@kre.elf.stuba.sk>
-# Pravidla pro zpracování slovenèiny
-
-$invent_dir	external
-$prosody_dir	external
-$base_dir	external
-
-$prosody   = ${base_dir}/${prosody_dir}
+#	(c) 2001 Jirka Hanika
+#
+#	Pravidla vytvoøená Martinem Petriskou se nacházejí v adresáøi slovak.prev
+#
+	
+if    a_colons	sent
+{
+	# pøidat èárku pøed "a":
+	with  "a"  word
+	{
+		regress a>\X(!_!)
+	}
+	raise	\X:!		word	phone
+	syll	\X<\ _		colon   word
+	regress \X>\ (!_!)	colon	word
+	regress \X>a(!_!)
+}
 
 @include "trans.rul"
 
- inside  .?:!	sent		; Pochybné - nemá zasáhnout vìty bez interpunkce
- {
-	 prosody	$prosody/accent.dic      word	syll
- }
+@include "../czech/prosody.rul"
 
- inside  ,    colon
- {
-	prosody	  $prosody/nonterm.dic	colon	phone
-#	smooth	f/5/40\35\15\5			colon   syll
- }
-
- if      irony		sent
- {
-	inside  ,- colon		; tohle nefunguje rozumnì
+if    phr_break
+{
+	regress   0>\#(!_0)	colon	; vlo¾ení pausy
+	inside	\#	phone
 	{
-		prosody  $prosody/ir_unter.dic colon phone
-#		debug pause
-		smooth f/10/20/40\20\10		word	phone
+		contour   t/-65   phone
 	}
-	regress   _>L(!_0)			sent    word
-	inside	  L				word	        ; poslední slovo
-	{
-		prosody	  $prosody/irony.dic	word	syll
-	}
-	regress   L>_($everywhere) 		sent	word
- }
-
- inside  .:\~   sent    ; Následující jen pro oznamovací vìty a doplòovací otázky
- {
-	inside   :   sent
-	{
-		prosody   $prosody/wh.dic		sent	syll
-	}
-#	prosody   ${prosody}/fadeoutp.dic	sent	phone
-	prosody   ${prosody}/fadeouts.dic	sent	syll
-
-	inside    .   sent
-	{
-		prosody   $prosody/fadeoutw.dic	sent	word
-	}
-
-	smooth	f/30/40\30			word	phone
- }
-
- inside   ?	sent	; Následující jen pro otázky zji¹»ovací
- {
-	prosody   $prosody/fadeoutp.dic	sent	phone
-	prosody	  $prosody/fadeoutw.dic	sent	word
-
-
-	regress   _>L(!_0)			sent    word
-	inside	  L				word	        ; poslední slovo
-		{
-		regress   _>L(0_0)		word	syll	; monosylabon
-		inside    L			syll
-		{
-			prosody   $prosody/questend.dic	syll	phone
-		}
-		regress   L>_($everywhere)	word	syll
-		smooth	  f/20/30\30\20		word	phone
-
-		prosody	  $prosody/questup.dic	word	syll
-		smooth	f/5/5/15/25/40\10	word	phone
-	}
-	regress   L>_($everywhere) 		sent	word
-
- }
-
- inside   \!	sent	; Vìtný dùraz pro vìty s vykøièníkem
- {
-	prosody   $prosody/exclaim.dic	sent	word
-	prosody   $prosody/exclafad.dic	sent	syll
- }
-
-#regress   0>\#(!_0)	colon	; vlo¾ení pausy
-
-# diphones  ${dph_file}	colon	    ; mìlo by být zhruba posledním pravidlem
-
-
-# Format vystupu transkripcie
-
-# A. SAMPA
-
-;subst sampa1.dic
-;subst sampa2.dic
-
-# B. prevod (SAV)
-
-;#include "SAV.rul"
-# subst SAV.dic
+	5x  regress   0>\#(!_0)	sent	; vlo¾ení pausy
+}
 
 if   kadlec_dph
-	diphones  kadlec.dph   colon
+	segments  ../czech/kadlec.dph   colon
 if  !kadlec_dph
-	diphones  traditnl.dph colon
-
-
-
-
-# diphones  traditnl.dph
- 
-# smooth    f/10/80\10	text diphone
-
-;--------------------  debug     elem,pause text
-
+	segments  traditnl.dph 		colon
 

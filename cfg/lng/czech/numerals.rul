@@ -102,6 +102,11 @@ if   colloquial   text
 	regex	/1/~jedna/	colon
 }
 
-subst  numsimple.dic
+if   !gen_ordinals
+{
+	regex /\Z//
+}
+
+subst  basenum.dic
 regex   /0//
 

@@ -14,7 +14,7 @@
  *
  *	This file defines the "main" structure we use as the internal structure
  *	for representing the text we're going to process. One instance of this 
- *	class can be a diphone, phone, syllable, ... , whole text (see UNIT
+ *	class can be a segment, phone, syllable, ... , whole text (see UNIT
  *	defined in common.h), depending on its "depth". Its contents is a
  *	bi-directional linked list between "firstborn" and "lastborn"; all of
  *	its elements have their "depth" lower by one. These and maybe other
@@ -43,7 +43,7 @@ class unit
 	unit *next, *prev;                //same layer
 	unit *firstborn, *lastborn;       //layer lower by one
 	unit *father;                     //layer greater by one
-	UNIT depth;        // 0=diphone 1=phone 2=syllable 3=word...
+	UNIT depth;        // 0=segment 1=phone 2=syllable 3=word...
 	int  cont;         // content (or terminating character)
 	void insert_begin(unit *member, unit*to);         //insert a train of units
 	void insert_end(unit *from, unit *member);        //insert as the last member
@@ -55,10 +55,10 @@ class unit
     
 	inline bool subst(hash *table, int total_length,
 		char*s1b,char*s1e,char*s2b,char*s3b,char*s3e); //inner, see implem.
-	void syll_break(char *sonority, unit *before);    //Implements the side-syllable hack
+	void syll_break(char *sonority, unit *before);
 	void syllabify(char *sonority);  //May split "father" just before "this", if sonority minimum
 //	void sseg(hash *templates, char symbol, int *quantity);
-	void diph(hash *diph_inventory);  //Will create up to one diphone. Go see it if curious.
+	void seg(hash *segm_inventory);  //Will create up to one segment. Go see it if curious.
     
 	void sanity();                    //check that this unit is sanely linked to the others
 	void insane(const char *token);   //called exclusively by sanity() in case of a problem
@@ -72,10 +72,10 @@ class unit
 		unit(UNIT layer, int content); 
 		unit();               //(empty unit) constructor
 		~unit();
-	int  write_diphs(diphone *whither, int starting_at, int max);
-                                      //Writes the diphones out to an array of
-                                      // struct diphone. Returns: how many written
-                                      // starting_at==0 for the first diphone
+	int  write_segs(segment *whither, int starting_at, int max);
+                                      //Writes the segments out to an array of
+                                      // struct segment. Returns: how many written
+                                      // starting_at==0 for the first segment
 	int write_ssif_head(char *whither); // ^ how many chars written
 	int write_ssif(char *whither, int starting_at, int bs);
 	void show_phones();	      // printf() the phones
@@ -85,7 +85,7 @@ class unit
 	char *gather(char *buffer_start, char *buffer_end, bool suprasegm);
 	char *gather(int *l, bool delimited, bool suprasegm);	// returns length in *l
              // gather() returns the END of the string (which is unterminated!)
-        void insert(UNIT target, bool backwards, char what, bool *left, bool *right);
+        void insert(UNIT target, bool backwards, char what, charclass *left, charclass *right);
 //	void subst(UNIT target, hash *table, SUBST_METHOD method);
 	inline void subst();          //replace this unit by sb
 	bool subst(hash *table, SUBST_METHOD method);
@@ -93,7 +93,7 @@ class unit
 #ifdef WANT_REGEX
 	void regex(regex_t *regex, int subexps, regmatch_t *subexp, const char *repl);
 #endif
-	void assim(UNIT target, bool backwards, char *fn, bool *left, bool *right);
+	void assim(UNIT target, bool backwards, charxlat *fn, charclass *left, charclass *right);
                                       //Will convert cont using fn[256] if left[Next]
                                       // and right[Prev] are both true. Backwards=regressive. 
 	void split(unit *before);         //Split this unit just before "before"
@@ -102,6 +102,7 @@ class unit
                                       // Will split units (syllables),
                                       // according to sonority[cont] of "target"
                                       // units (phones) contained there
+        bool contains(UNIT target, charclass *set);
 //        void sseg(UNIT target, hash *templates);
         			      // Take freq, time or intensity from the hash*
 	void prospoint(FIT_IDX what, int value, float position);
@@ -109,10 +110,10 @@ class unit
 			int padd_start, FIT_IDX what, bool additive);
         void smooth(UNIT target, int *ratio, int base, int len, FIT_IDX what);
         void project(UNIT target);
-        void raise(bool *what, bool *when, UNIT whither, UNIT whence);
+        void raise(charclass *what, charclass *when, UNIT whither, UNIT whence);
         			      // Move characters between levels
-	void diphs(UNIT target, hash *diph_inventory);
-                                      //Will create the diphones
+	void segs(UNIT target, hash *segm_inventory);
+                                      //Will create the segments
 	void unlink(REPARENT rmethod);//Delete this unit, possibly reparenting children 
 	int  forall(UNIT target, bool userfn(unit *patiens));
 				      //^how many times applied

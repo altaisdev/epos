@@ -16,10 +16,10 @@
 
 #include "common.h"
 
-#define QUESTION_MARK      '?'    // ignored context character (in diphone names)
+#define QUESTION_MARK      '?'    // ignored context character (in segment names)
 
 #define SSEG_QUESTION_LEN 32	        // see unit::sseg()
-#define OMEGA          10000            // Random infinite number, see unit::diph()
+#define OMEGA          10000            // Random infinite number, see unit::seg()
 
 
 unit EMPTY;
@@ -28,8 +28,8 @@ unit EMPTY;
 
 #include "marker.cc"
 
-SLABIFY(unit, unit_slab, 1024, shutdown_units)
-SLABIFY(marker, marker_slab, 1024, shutdown_unit_markers)
+SLABIFY(unit, unit_slab, 2048, shutdown_units)
+SLABIFY(marker, marker_slab, 2048, shutdown_unit_markers)
 
 /****************************************************************************
  This constructor will construct a unit at the "layer" level, 
@@ -45,7 +45,7 @@ unit::unit(UNIT layer, parser *parser)
 	t = 0;
 	m = NULL;
 	scope = false;
-	DEBUG(1,2,fprintf(STDDBG,"New unit %u, parser %u\n", layer, parser->level);)
+	DBG(1,2,fprintf(STDDBG,"New unit %u, parser %u\n", layer, parser->level);)
 
 	while (parser->level < layer) insert_end(new unit((UNIT) (layer-1), parser),NULL);
 	if    (parser->level == layer) {
@@ -57,7 +57,7 @@ unit::unit(UNIT layer, parser *parser)
 		cont = parser->gettoken();
 	}
 
-	DEBUG(1,2,fprintf(STDDBG,"Finished a unit with %c\n",cont);)
+	DBG(1,2,fprintf(STDDBG,"Finished a unit with %c\n",cont);)
 }
 
 /****************************************************************************
@@ -73,7 +73,7 @@ unit::unit(UNIT layer, int content)
 	t = 0;
 	m = NULL;
 	scope = false;
-	DEBUG(1,2,fprintf(STDDBG,"New unit %u, content %d\n", layer, content);)
+	DBG(1,2,fprintf(STDDBG,"New unit %u, content %d\n", layer, content);)
 }
 
 /****************************************************************************
@@ -93,34 +93,62 @@ unit::unit()
 
 unit::~unit()
 {
-	DEBUG(0,2,fprintf(STDDBG,"Disposing %c\n",cont);)
+//	DBG(0,2,fprintf(STDDBG,"Disposing %c\n",cont);)
 	if (next) delete next;
 	if (firstborn) delete firstborn;
 }
 
 /****************************************************************************
- Dumps the diphones to an array of "struct diphone". Returns how many dumped.
+ Dumps the segments to an array of "struct segment". Returns how many dumped.
+ 
+ Note:	iucache,ifcache and ocache is a primitive one-line cache of
+ 	where to start dumping the segments.  It can speed up
+ 	the dumping of a very very long utterance (it can be slow
+ 	to find the "first" segment in general, but it is likely to be the
+ 	one following the last one dumped in the previous run).
+ 	So the cache hits if we just want to continue the dump.
+ 	
+ 	There's a catch in this scheme.  The iucache may be equal to "this"
+ 	also if iucache's storage has been freed and reused.  To avoid
+ 	very funny problems, YOU MUST ALWAYS DUMP WITH first==0 FIRST
+ 	(with any "this" you want ever to dump).  That clears the cache.
+ 	The cache is safe wrt multitasking, if you keep the above rule
+ 	and don't blatantly reallocate units during their lifetime.
+
+ 	If you can't keep the rule, just comment out the cache.
  ****************************************************************************/
 
 
 int
-unit::write_diphs(diphone *whither, int first, int n)
+unit::write_segs(segment *whither, int first, int n)
 {
 	bool tmpscope = scope;
 	int m;
 	unit *tmpu;
 	static unit *iucache; static int ifcache; static unit *ocache;
 	 
-	if (!whither) shriek (861, fmt("NULL ptr passed to write_diphs() n=%d", n));
+	if (!whither) shriek (861, fmt("NULL ptr passed to write_segs() n=%d", n));
 	scope = true;
-	if (first == ifcache && iucache == this) tmpu=ocache;
-	else for (m = first, tmpu = LeftMost(cfg->segm_level); m--; tmpu = tmpu->Next(cfg->segm_level));
-	for (m=0; m<n && tmpu != &EMPTY; m++, tmpu = tmpu->Next(cfg->segm_level)) {
+	if (first && first == ifcache && iucache == this) tmpu=ocache;
+	else for (m = first, tmpu = LeftMost(scfg->segm_level); m--; tmpu = tmpu->Next(scfg->segm_level));
+	for (m=0; m<n && tmpu != &EMPTY; m++, tmpu = tmpu->Next(scfg->segm_level)) {
 		tmpu->sanity();
 		whither[m].code = tmpu->cont;
 		whither[m].f = tmpu->effective(Q_FREQ);
 		whither[m].e = tmpu->effective(Q_INTENS);
 		whither[m].t = tmpu->effective(Q_TIME);
+		whither[m].nothing = 0;
+		whither[m].ll = 0;
+		if (cfg->label_sseg) {
+			unit *z;
+			int prelevel = 0;
+			for (z = tmpu; z && !z->next && z->father; z = z->father)
+				prelevel++;
+			int postlevel = 0;
+			for (z = tmpu; z && !z->prev && z->father; z = z->father)
+				postlevel++;
+			whither[m].ll = prelevel /* > postlevel ? prelevel : postlevel */;
+		}
 	}
 	scope = tmpscope;
 	iucache = this; ifcache = first+m; ocache = tmpu;
@@ -152,9 +180,9 @@ unit::write_ssif(char *whither, int first, int len)
 	char *current = whither;
 	scope = true;
 	if (first == ifcache && iucache == this) tmpu=ocache;
-	else for (n = first, tmpu = LeftMost(cfg->phone_level); n--; tmpu = tmpu->Next(cfg->phone_level));
+	else for (n = first, tmpu = LeftMost(scfg->phone_level); n--; tmpu = tmpu->Next(scfg->phone_level));
 
-	for (; (current < whither + len - WSSIF_SAFETY) && tmpu != &EMPTY; tmpu = tmpu->Next(cfg->phone_level)) {
+	for (; (current < whither + len - WSSIF_SAFETY) && tmpu != &EMPTY; tmpu = tmpu->Next(scfg->phone_level)) {
 		int l = tmpu->write_ssif_head(scratch);
 		memcpy(current, scratch, l);
 		current += l;
@@ -177,7 +205,7 @@ void
 unit::show_phones()
 {
 	unit *tmpu;
-	for (tmpu = LeftMost(cfg->phone_level); tmpu != &EMPTY; tmpu = tmpu->Next(cfg->phone_level))
+	for (tmpu = LeftMost(scfg->phone_level); tmpu != &EMPTY; tmpu = tmpu->Next(scfg->phone_level))
 		printf("%c %d %d %d\n", tmpu->cont,
 			tmpu->effective(Q_FREQ),
 			tmpu->effective(Q_INTENS),
@@ -196,13 +224,13 @@ unit::fout(char *filename)      //NULL means stdout
 	file *tmp;
 	outf = filename ? fopen(filename, "wt", "unit dump file") : cfg->stddbg;
 
-	tmp = claim(cfg->header_xscr, cfg->ini_dir, "", "rt", "transcription header", NULL);
+	tmp = claim(scfg->header_xscr, scfg->ini_dir, "", "rt", "transcription header", NULL);
 	fputs(tmp->data, outf);
 	unclaim(tmp);
 
 	fdump(outf);
 
-	tmp = claim(cfg->footer_xscr, cfg->ini_dir, "", "rt", "transcription footer", NULL);
+	tmp = claim(scfg->footer_xscr, scfg->ini_dir, "", "rt", "transcription footer", NULL);
 	fputs(tmp->data, outf);
 	unclaim(tmp);
 
@@ -213,7 +241,7 @@ unit::fout(char *filename)      //NULL means stdout
  unit::fdump
  ****************************************************************************/
 
-inline char *
+inline const char *
 fmtchar(char c)
 {
 	static char b[2];
@@ -234,41 +262,41 @@ unit::fdump(FILE *handle)        //this one does the real job
 	unit *tmpu;
     
 	sanity();
-	if (depth == cfg->phone_level) {
+	if (depth == scfg->phone_level) {
 		colorize (depth, handle);
-		if (cont != NO_CONT || !cfg->out_swallow__) fputs(fmtchar(cont), handle);
+		if (cont != NO_CONT || !scfg->out_swallow__) fputs(fmtchar(cont), handle);
 		colorize(-1, handle);
 		return;
 	}
-	if (cfg->out_prefix && !(cont == NO_CONT && cfg->out_swallow__)) {
+	if (scfg->out_prefix && !(cont == NO_CONT && scfg->out_swallow__)) {
 		colorize(depth, handle);   //If you wanna disable this, go to interf.cc::colorize()   
 		fputs(fmtchar(cont), handle);
 		colorize(-1, handle);
 	}
-	if (cfg->out_verbose) {
+	if (scfg->out_verbose && scfg->out_opening[depth]) {
 		colorize(depth, handle);   //If you wanna disable this, go to interf.cc::colorize()   
-		fputs(cfg->out_opening[depth], handle);
+		fputs(scfg->out_opening[depth], handle);
 		colorize(-1,handle);
 	}
 	if ((tmpu = firstborn)) {
 		tmpu->fdump(handle);
 		tmpu = tmpu->next;
 		while (tmpu) {
-			if (cfg->out_verbose) {
+			if (scfg->out_verbose && scfg->out_separ[depth-1]) {
 				colorize(depth-1, handle);	
-				fputs(cfg->out_separ[depth-1], handle);
+				fputs(scfg->out_separ[depth-1], handle);
 				colorize(-1, handle);
 			}
 			tmpu->fdump(handle);
 			tmpu = tmpu->next;
 		}
 	}
-	if (cfg->out_verbose) {
+	if (scfg->out_verbose && scfg->out_closing[depth]) {
 		colorize(depth,handle);
-		fputs(cfg->out_closing[depth],handle);
+		fputs(scfg->out_closing[depth],handle);
 		colorize(-1,handle);
 	} else fputc(' ', handle);	
-	if (cfg->out_postfix && !(cont == NO_CONT && cfg->out_swallow__)) { 
+	if (scfg->out_postfix && !(cont == NO_CONT && scfg->out_swallow__)) { 
 		colorize(depth, handle);   //If you wanna disable this, go to interf.cc::colorize()   
 		fputs(fmtchar(cont), handle);
 		if (m) fputs("[", handle);
@@ -300,16 +328,16 @@ unit::set_father(unit *new_fath)
  ****************************************************************************/
 
 void
-unit::insert(UNIT target, bool backwards, char what, bool *left, bool *right)
+unit::insert(UNIT target, bool backwards, char what, charclass *left, charclass *right)
 {
 	unit *tmpu;
-	static unit *baby = NULL;	//check against infinite spawning
 
 	if (depth == target) {
-		DEBUG(1,4,fprintf(STDDBG,"inner unit::insert %c %c %c\n",Prev(depth)->inside(), cont, Next(depth)->inside());)
-		DEBUG(1,4,fprintf(STDDBG,"   env is %c %c\n",left[Prev(depth)->inside()]+'0',right[Next(depth)->inside()]+'0');)
-		if (this == baby) return;
-		if (left[cont] && right[Next(depth)->cont]) {
+		DBG(1,4,fprintf(STDDBG,"inner unit::insert %c %c %c\n",Prev(depth)->inside(), cont, Next(depth)->inside());)
+		DBG(1,4,fprintf(STDDBG,"   env is %c %c\n",
+				left->ismember(Prev(depth)->inside())+'0',
+				right->ismember(Next(depth)->inside())+'0');)
+		if (left->ismember(cont) && right->ismember(Next(depth)->cont)) {
 			tmpu = new unit(depth, what);
 			tmpu->prev = this;
 			if (next) {
@@ -323,8 +351,8 @@ unit::insert(UNIT target, bool backwards, char what, bool *left, bool *right)
 			tmpu->t = t;
 			tmpu->m = m->derived();
 		}
-		if (!prev && right[cont] && left[Prev(depth)->cont]) {
-			baby = tmpu = new unit(depth, what);
+		if (!prev && right->ismember(cont) && left->ismember(Prev(depth)->cont)) {
+			tmpu = new unit(depth, what);
 			tmpu->next = this;
 			father->firstborn = tmpu;
 			prev = tmpu;
@@ -334,13 +362,18 @@ unit::insert(UNIT target, bool backwards, char what, bool *left, bool *right)
 			tmpu->t = t;
 			tmpu->m = m->derived();
 		}
-		DEBUG(1,4,fprintf(STDDBG,"New contents: %c\n",cont);)
+		DBG(1,4,fprintf(STDDBG,"New contents: %c\n",cont);)
 		return;
 	}
-	baby = NULL;
-	if (depth > target) 
-		for (tmpu=(backwards?lastborn:firstborn);tmpu;tmpu=(backwards?tmpu->prev:tmpu->next))
+
+	if (depth > target)  {
+		tmpu = backwards ? lastborn : firstborn; 
+		while (tmpu) {
+			unit *todo = backwards ? tmpu->prev : tmpu->next;
 			tmpu->insert(target,backwards,what,left,right);
+			tmpu = todo;
+		}
+	}			
 	else shriek (861, "Out of turtles");
 }
 
@@ -405,17 +438,15 @@ char *
 unit::gather(char *buffer_now, char *buffer_end, bool suprasegm)
 {    
 	unit *tmpu;
-//	DEBUG(0,3,fprintf(STDDBG,"Chroust! %d %s\n", buffer_end - buffer_now, buffer_now - 3);)
+//	DBG(0,3,fprintf(STDDBG,"Chroust! %d %s\n", buffer_end - buffer_now, buffer_now - 3);)
 	for (tmpu = firstborn;tmpu && buffer_now < buffer_end; tmpu = tmpu->next) {
 		buffer_now = tmpu->gather(buffer_now, buffer_end, suprasegm);
 		if (!buffer_now) return NULL;
 	}
 	if(buffer_now >= buffer_end) 
 		return NULL;
-	if (cont != NO_CONT && (depth == cfg->phone_level || suprasegm)) {
-		if (depth < cfg->phone_level) 
-			// shriek(811, "Cannot gather diphonized units (reorder rules)");
-			return buffer_now;
+	if (cont != NO_CONT && (depth == scfg->phone_level
+				|| suprasegm && depth > scfg->phone_level)) {
 		*(buffer_now++) = (char)cont; 
 	}
 	return buffer_now;
@@ -434,7 +465,7 @@ unit::gather(int *l, bool delimited, bool suprasegm)
 		if (delimited) *b++ = '^';
 		r = gather(b, gb + gbsize - 2, suprasegm);
 		if (!r) {
-			if (gbsize >= cfg->maxtext) shriek(456, "buffer grown too long");
+			if (gbsize >= scfg->maxtext) shriek(456, "buffer grown too long");
 			gbsize <<= 1;
 			gb = (char *)xrealloc(gb, gbsize);
 		}
@@ -475,7 +506,7 @@ unit::subst()
 	unit   *tmpu;
 
 	parsie=new parser(sb);
-	DEBUG(0,3,fprintf(STDDBG,"innermost unit::subst - parser is ready\n");)
+	DBG(0,3,fprintf(STDDBG,"innermost unit::subst - parser is ready\n");)
 	tmpu=new unit(depth,parsie);
 	if (cfg->paranoid) parsie->done();
 	sanity();
@@ -484,7 +515,7 @@ unit::subst()
 		return;
 	}
 	delete firstborn;
-	DEBUG(0,3,fprintf(STDDBG,"innermost unit::subst - gonna relink after subst\n");)
+	DBG(0,3,fprintf(STDDBG,"innermost unit::subst - gonna relink after subst\n");)
 	firstborn = tmpu->firstborn;
 	lastborn  = tmpu->lastborn;
 	firstborn->set_father(this);
@@ -493,7 +524,7 @@ unit::subst()
 	tmpu->next = NULL;           //Paranoid
 	delete tmpu;
 	delete parsie;
-	DEBUG(0,3,fprintf(STDDBG,"innermost unit::subst - return to caller\n");)
+	DBG(0,3,fprintf(STDDBG,"innermost unit::subst - return to caller\n");)
 }
 
 /****************************************************************************
@@ -507,7 +538,7 @@ unit::subst(hash *table, int l, char *prefix, char *prefix_end, char *body, char
 	char *resultant;
 	int safe_grow;
 
-	DEBUG(0,3,fprintf(STDDBG,"innermost unit::subst called with PREFIX %s %s MAIN %s SUFFIX %s %s\n",prefix,prefix_end,body,suffix,suffix_end);)
+	DBG(0,3,fprintf(STDDBG,"innermost unit::subst called with PREFIX %s %s MAIN %s SUFFIX %s %s\n",prefix,prefix_end,body,suffix,suffix_end);)
 	sanity();
 	resultant = table->translate(body);
 	if (!resultant) return false;
@@ -527,10 +558,10 @@ unit::subst(hash *table, int l, char *prefix, char *prefix_end, char *body, char
 		*(sb + (prefix_end - prefix)) = 0;
 	} else *sb = 0;
 	strcat (sb, resultant);
-	DEBUG(1,3,fprintf(STDDBG,"innermost unit::subst result: %s\n",sb);)
+	DBG(1,3,fprintf(STDDBG,"innermost unit::subst result: %s\n",sb);)
     
 	if (suffix && suffix_end - suffix > 0) strncat(sb, suffix, suffix_end - suffix);
-	DEBUG(1,3,fprintf(STDDBG,"innermost unit::subst - subst found: %s Resultant: %s\n", sb, resultant);)
+	DBG(1,3,fprintf(STDDBG,"innermost unit::subst - subst found: %s Resultant: %s\n", sb, resultant);)
 	subst();
 	return true;
 }
@@ -550,31 +581,24 @@ unit::subst(hash *table, SUBST_METHOD method)
 
 	char *b;
 	
-//	unsigned int safe_grow;		/* Bytes that can be added in situ */
 	
 	sanity();
 	if ((method & M_LEFT) && !prev) return false;
 	if ((method & M_RIGHT) && !next) return false;
+	bool exact = ((method & M_PROPER) == M_EXACT);
+	char separ = cont; cont = NO_CONT;
 	for (int i = cfg->multi_subst; i; i--) {
-//		*_gather_buff='^';
-//		strend=gather(_gather_buff+1, _gather_buff+MAX_GATHER, (method&M_PROPER)!=M_EXACT);
-//		if (!strend) return false;	// gather overflow
-//		*strend=0;
-//		safe_grow = _gather_buff - strend + MAX_GATHER;
-		b = gather(&l, true, (method & M_PROPER) != M_EXACT);
-//		safe_grow = sbsize - l;
+		b = gather(&l, !exact, !exact);
 		strend = gb + l;
 
 		// if (safe_grow>300) shriek("safe_grow");	// fixme
-		DEBUG(1,3,fprintf(STDDBG,"inner unit::subst %s, method %d\n", gb + 1, method);)
+		DBG(1,3,fprintf(STDDBG,"inner unit::subst %s, method %d\n", gb + 1, method);)
 		sanity();
-		if ((method & M_PROPER) == M_EXACT) {
-			if (subst(table, l, NULL, NULL, gb + 1, NULL, NULL))
+		if (exact) {
+			if (subst(table, l, NULL, NULL, gb, NULL, NULL))
 				goto break_home;
 		}
 		if (b[l-1] == cont) --l;
-//		if (strend[-1]==cont) --strend;
-//		*strend='$';*++strend=0;
 		if (method & M_END)
 			for(tail = gb; *tail && tail - gb < gbsize; tail++)
 				if (subst(table, l, gb + 1, tail, tail, NULL, NULL))
@@ -595,16 +619,19 @@ unit::subst(hash *table, SUBST_METHOD method)
 						goto break_home;
 			}
 		}
+		cont = separ;
 		return i != cfg->multi_subst;
     
 		break_home:
-		DEBUG(1,3,fprintf(STDDBG,"inner unit::subst has made the subst, relinking l/r, method %d\n", method);)
+		cont = separ;
+		DBG(1,3,fprintf(STDDBG,"inner unit::subst has made the subst, relinking l/r, method %d\n", method);)
 		sanity();
 		if (method & (M_LEFT | M_RIGHT)) 
 			return unlink(method&M_LEFT ? M_LEFTWARDS : M_RIGHTWARDS), true;
 		if (method & M_ONCE) return true;
 	}
 	shriek(463, fmt("Infinite substitution loop detected on \"%s\"", gb));
+	cont = separ;
 	sanity();
 	return true;
 }
@@ -627,7 +654,7 @@ unit::subst(hash *table, SUBST_METHOD method)
 bool
 unit::relabel(hash *table, SUBST_METHOD method, UNIT target)
 {
-	if (target == cfg->phone_level) return subst(table, method);
+	if (target == scfg->phone_level) return subst(table, method);
 
 	char	*r;
 	unit	*u;
@@ -651,7 +678,7 @@ unit::relabel(hash *table, SUBST_METHOD method, UNIT target)
 	if ((method & M_LEFT) && !prev) return false;
 	if ((method & M_RIGHT) && !next) return false;
 	for (n=cfg->multi_subst; n; n--) {
-		DEBUG(1,3,fprintf(STDDBG,"unit::relabel %s, method %d\n", gb + 1, method);)
+		DBG(1,3,fprintf(STDDBG,"unit::relabel %s, method %d\n", gb + 1, method);)
 		sanity();
 		if ((method & M_PROPER) == M_EXACT) {
 			gb[--len] = 0; len--;
@@ -689,7 +716,7 @@ unit::relabel(hash *table, SUBST_METHOD method, UNIT target)
 	sanity();
 
 commit:
-	DEBUG(1,3,fprintf(STDDBG,"inner unit::relabel has made the subst, relinking l/r, method %d\n", method);)    
+	DBG(1,3,fprintf(STDDBG,"inner unit::relabel has made the subst, relinking l/r, method %d\n", method);)    
 	for (i = 1; v != &EMPTY; i++) {
 		v->cont = gb[i];
 		v = v->Next(target);
@@ -728,10 +755,10 @@ unit::regex(regex_t *regex, int subexps, regmatch_t *subexp, const char *repl)
 		strend = gb + l;
 //		if (!strend) return;	// gather overflow
 //		*strend=0;
-		DEBUG(1,3,fprintf(STDDBG,"unit::regex %s, subexps=%d\n", gb, subexps);)
+		DBG(1,3,fprintf(STDDBG,"unit::regex %s, subexps=%d\n", gb, subexps);)
 		if (regexec(regex, gb, subexps + 1, subexp, 0)) return;
 		sanity();
-		DEBUG(1,3,fprintf(STDDBG,"unit::regex matched %s\n", gb);)
+		DBG(1,3,fprintf(STDDBG,"unit::regex matched %s\n", gb);)
 		
 //		for (k = 0; k < subexp[0].rm_so; k++) sb[k] = gb[k];
 		k = subexp[0].rm_so;
@@ -777,23 +804,25 @@ unit::regex(regex_t *regex, int subexps, regmatch_t *subexp, const char *repl)
  ****************************************************************************/
 
 void 
-unit::assim(UNIT target, bool backwards, char *fn, bool *left, bool *right)
+unit::assim(UNIT target, bool backwards, charxlat *fn, charclass *left, charclass *right)
 {
 	unit *tmpu;
 
 	sanity();
 	if (depth == target) {
-		DEBUG(1,4,fprintf(STDDBG,"inner unit::assim %c %c %c\n",Prev(depth)->inside(), cont, Next(depth)->inside());)
-		DEBUG(1,4,fprintf(STDDBG,"   env is %c %c\n",left[Prev(depth)->inside()]+'0',right[Next(depth)->inside()]+'0');)
-		if (right[Next(depth)->inside()] && left[Prev(depth)->inside()]) {
+		DBG(1,4,fprintf(STDDBG,"inner unit::assim %c %c %c\n",Prev(depth)->inside(), cont, Next(depth)->inside());)
+		DBG(1,4,fprintf(STDDBG,"   env is %c %c\n",
+				left->ismember(Prev(depth)->inside())+'0',
+				right->ismember(Next(depth)->inside())+'0');)
+		if (right->ismember(Next(depth)->inside()) && left->ismember(Prev(depth)->inside())) {
 			if (cont == DELETE_ME) return;
-			cont = (unsigned char)fn[(unsigned char)cont];     // Digital UNIX once had trouble here
+			cont = (unsigned char)fn->xlat(cont);
 			if (cont == DELETE_ME) unlink(M_DELETE);
-			DEBUG(1,4,fprintf(STDDBG,"New contents: %c\n",cont);)
+			DBG(1,4,fprintf(STDDBG,"New contents: %c\n", cont);)
 		}
 		return;
 	}
-	if (depth>target) 
+	if (depth > target) 
 		for (tmpu = (backwards?lastborn:firstborn);tmpu;) {
 			unit *tmp_next = backwards ? tmpu->prev : tmpu->next;
 			tmpu->assim(target,backwards,fn,left,right);
@@ -811,7 +840,7 @@ unit::split(unit *before)
 {
 	unit *clone=new unit(*this);
 
-	DEBUG(1,5,fprintf(STDDBG,"Splitting in %c before %c, clone is %c\n", cont, before->inside(), clone->cont);
+	DBG(1,5,fprintf(STDDBG,"Splitting in %c before %c, clone is %c\n", cont, before->inside(), clone->cont);
 		fout(NULL);)
 	clone->scope=false;
 	if(!(lastborn=before->prev))
@@ -824,7 +853,7 @@ unit::split(unit *before)
 	clone->prev=this;
 	next=clone;
 	if (father && this==father->lastborn) father->lastborn=clone; 
-	DEBUG(1,5,fprintf(STDDBG,"is split in %c before %c, clone is %c\n", cont, before->inside(), clone->cont);
+	DBG(1,5,fprintf(STDDBG,"is split in %c before %c, clone is %c\n", cont, before->inside(), clone->cont);
 		father->fout(NULL);)
 	sanity();
 } 
@@ -841,8 +870,7 @@ unit::split(unit *before)
 		   by accident, so I decided to rewrite it completely.
 		   
 		   syll_break() is called to break the syllable before 
-		   the place given. Here the optional side-syllable 
-		   hack is implemented.
+		   the place given. 
  ****************************************************************************/
 
 char syll_pending;
@@ -850,8 +878,6 @@ char syll_pending;
 void
 unit::syll_break(char *sonor, unit *before)
 {
-	if (this_lang->syll_hack && prev==father->firstborn 
-		&& sonor[prev->inside()]<sonor[this_lang->syll_thr]) return;
 	father->split(before);
 	syll_pending=0;
 }
@@ -873,7 +899,7 @@ unit::syllabify(UNIT target, char *sonor)
 {
 	unit *tmpu, *tmpu_prev;
 	
-	DEBUG(0,5,fprintf(STDDBG,"unit::syllabify in level %d cont %c %c %c \n", depth,Prev(depth)->cont,cont,Next(depth)->cont);)
+	DBG(0,5,fprintf(STDDBG,"unit::syllabify in level %d cont %c %c %c \n", depth,Prev(depth)->cont,cont,Next(depth)->cont);)
 	syll_pending=0;
 	for (tmpu=RightMost(target);tmpu!=&EMPTY; ) {
 		tmpu_prev = tmpu->Prev(tmpu->depth);
@@ -881,13 +907,25 @@ unit::syllabify(UNIT target, char *sonor)
 		tmpu = tmpu_prev;
 	}
 }
+/****************************************************************************
+ unit::contains    returns whether a unit of certain content is contaigned
+ ****************************************************************************/
+ 
+bool
+unit::contains(UNIT target, charclass *set)
+{
+	for (unit *u = LeftMost(target); u != &EMPTY; u = u->Next(target)) {
+		if (set->ismember((unsigned char)u->cont)) return true;
+	}
+	return false;
+}
 
 /****************************************************************************
  unit::sseg    suprasegmentalia are found here
  ****************************************************************************/
 
-#define SSEG_QUESTIONS 5
-static char _sseg_question[SSEG_QUESTIONS][SSEG_QUESTION_LEN];
+//#define SSEG_QUESTIONS 5
+//static char _sseg_question[SSEG_QUESTIONS][SSEG_QUESTION_LEN];
 
 #ifdef REALLY_NEED_SSEG
 
@@ -901,7 +939,7 @@ unit::sseg(hash *templts, char symbol, int *quant)
 		adj=templts->translate_int(_sseg_question[i]);
 		if (adj==INT_NOT_FOUND) continue;
 
-		DEBUG(0,2,fprintf(STDDBG,"unit::sseg adjusts %c by %d in level %d\n", symbol, adj, depth);)
+		DBG(0,2,fprintf(STDDBG,"unit::sseg adjusts %c by %d in level %d\n", symbol, adj, depth);)
 		*quant+=adj;
 		return;	
 	}
@@ -913,11 +951,11 @@ unit::sseg(UNIT target, hash *templts)
 	unit *tmpu;
 	int  j,n;
 	
-	DEBUG(1,2,fprintf(STDDBG,"unit::sseg in level %d\n", depth);)
+	DBG(1,2,fprintf(STDDBG,"unit::sseg in level %d\n", depth);)
 	n=0;
 	for (tmpu = RightMost(target); tmpu != &EMPTY; tmpu = tmpu->Prev(target)) n++;
 	for (j=n, tmpu = RightMost(target); j>0; j--, tmpu = tmpu->Prev(target)) {
-		DEBUG(0,5,fprintf(STDDBG,"unit::sseg question n=%d j=%d\n", n, j);)
+		DBG(0,5,fprintf(STDDBG,"unit::sseg question n=%d j=%d\n", n, j);)
 		sprintf(_sseg_question[0], " /%d:%d", j, n);
 		sprintf(_sseg_question[1], " /%d:*", j);
 		sprintf(_sseg_question[2], " /%dlast:*", n-j+1);
@@ -947,7 +985,7 @@ unit::sseg(UNIT target, hash *templts)
 void
 unit::prospoint(FIT_IDX what, int value, float position)
 {
-	DEBUG(1,2,fprintf(STDDBG, "Adding prosody point at %d\n", depth);)
+	DBG(1,2,fprintf(STDDBG, "Adding prosody point at %d\n", depth);)
 	if (what == Q_TIME) t += value;
 	else m = new marker(what, true /* extent */, value, m, position);
 }
@@ -1007,7 +1045,7 @@ unit::smooth(UNIT target, int *recipe, int n, int rec_len, FIT_IDX what)
 	unit *u, *v;
 	int cq_wrap, j, k, avg;
 	
-	DEBUG(1,2,fprintf(STDDBG, "unit::smooth (%d:%d) %d %d ...\n", n, rec_len, recipe[0], recipe[1]);)
+	DBG(1,2,fprintf(STDDBG, "unit::smooth (%d:%d) %d %d ...\n", n, rec_len, recipe[0], recipe[1]);)
 	u=v=LeftMost(target);
 	for (j = 0; j < n; j++) smooth_cq[j] = FIT(u, what);
 	for ( ; j < rec_len && u->Next(target) != &EMPTY; j++, u = u->Next(target))
@@ -1027,7 +1065,7 @@ unit::smooth(UNIT target, int *recipe, int n, int rec_len, FIT_IDX what)
 	}
 #else
 //	shriek(899, "no smooth");
-	DEBUG(3,2,fprintf(STDDBG, "No smooth!\n");)	// FIXME
+	DBG(3,2,fprintf(STDDBG, "No smooth!\n");)	// FIXME
 #endif
 }
 
@@ -1068,7 +1106,7 @@ unit::project(UNIT target)			// FIXME optimize
 				if (m->next && !m->next->extent)
 					shriek(862, "Extent followed by a non-extent");
 				for (unit *u = firstborn; u; u = u->next) {
-					DEBUG(1,2,fprintf(STDDBG, "Moving prosody point to %d; q=%d, val=%d\n", u->depth, m->quant, m->par);)
+					DBG(1,2,fprintf(STDDBG, "Moving prosody point to %d; q=%d, val=%d\n", u->depth, m->quant, m->par);)
 					u->m->merge(m->derived(), &u->m);
 					u->project(target);
 				}
@@ -1102,68 +1140,68 @@ unit::project(UNIT target)			// FIXME optimize
  ****************************************************************************/
 
 void 
-unit::raise(bool *whattab, bool*whentab, UNIT whither, UNIT whence)
+unit::raise(charclass *whattab, charclass *whentab, UNIT whither, UNIT whence)
 {
 	if (whither != depth) shriek(861, "raise bad");
 	unit *tmpu, *tmpbig;
-	DEBUG(1,2,fprintf(STDDBG,"unit::raise moving from %d to %d\n",whence,whither);)
+	DBG(1,2,fprintf(STDDBG,"unit::raise moving from %d to %d\n",whence,whither);)
 	if  (whither<=whence) shriek(462, "Raising downwards...huh...");
 	for (tmpbig = LeftMost(whither); tmpbig != &EMPTY; tmpbig = tmpbig->Next(whither)) {
-		if (whentab[tmpbig->cont]) {
-			DEBUG(1,2,fprintf(STDDBG,"unit::raise searching %c\n",tmpbig->cont);)
+		if (whentab->ismember(tmpbig->cont)) {
+			DBG(1,2,fprintf(STDDBG,"unit::raise searching %c\n",tmpbig->cont);)
 			bool tmpscope = scope; scope = true;
 			for (tmpu = LeftMost(whence); tmpu != &EMPTY; tmpu = tmpu->Next(whence)) {
-				if (whattab[tmpu->cont]) {
-					DEBUG(0,2,fprintf(STDDBG,"unit::raise found %c\n",tmpu->cont);)
+				if (whattab->ismember(tmpu->cont)) {
+					DBG(0,2,fprintf(STDDBG,"unit::raise found %c\n",tmpu->cont);)
 					tmpbig->cont = tmpu->cont;
 				}
 			}
 			scope = tmpscope;
-		} else DEBUG(1,2,fprintf(STDDBG,"unit::raise NOT searching %c\n",tmpbig->cont););
+		} else DBG(1,2,fprintf(STDDBG,"unit::raise NOT searching %c\n",tmpbig->cont););
 
 	}
 }
 
 /****************************************************************************
- unit::diph    (innermost - creates a single "diphone" unit, if possible)
+ unit::seg     (innermost - creates a single "segment" unit, if possible)
  		The for (;;) cycle will normaly execute exactly once, if
- 		a diphone is found; otherwise, nothing happens, because
+ 		a segment is found; otherwise, nothing happens, because
  		a negative value is returned by translate_int(). 
 
- 		You may, however, add a multiply of OMEGA to the diphone
- 		number to have this diphone repeated a few times, whenever
+ 		You may, however, add a multiply of OMEGA to the segment
+ 		number to have this segment repeated a few times, whenever
  		it occurs in a given environment, in any .dph .
  ****************************************************************************/
 
-char _d_descr[4];       //this buffer is an implicit parameter to diph()
+char _d_descr[4];       //this buffer is an implicit parameter to seg()
 
 inline void 
-unit::diph(hash *dinven)   //_d_descr should contain a diphone name
+unit::seg(hash *dinven)   //_d_descr should contain a segment name
 {
 	int n;
 	for (n = dinven->translate_int(_d_descr); n >= 0; n -= OMEGA) {
-		DEBUG(1,5,fprintf(STDDBG,"Diphone number %d born\n", n % OMEGA);)
-		insert_end(new unit(cfg->segm_level, n % OMEGA), NULL);
+		DBG(1,5,fprintf(STDDBG,"Diphone number %d born\n", n % OMEGA);)
+		insert_end(new unit(scfg->segm_level, n % OMEGA), NULL);
 		sanity();
-		DEBUG(1,5,fprintf(STDDBG,"...born and inserted\n");)
+		DBG(1,5,fprintf(STDDBG,"...born and inserted\n");)
 	}
 }
 
 /****************************************************************************
- unit::diphs     (outer - public)    creates the diphones' layer
+ unit::segs      (outer - public)    creates the segments' layer
                  Basically, we'll try out "LX?" "?X?" "?XR" (in _d_descr),
-                 respectively, as the possible subdiphones of this phone
+                 respectively, as the possible subsegments of this phone
  ****************************************************************************/
  
 void
-unit::diphs(UNIT target, hash *dinven) 
+unit::segs(UNIT target, hash *dinven) 
 {
 	unit *tmpu;
 
-	DEBUG(0,5,fprintf(STDDBG,"Entering outer unit::diphs in depth %d cont %c tar %d\n", depth, cont,target);)
+	DBG(0,5,fprintf(STDDBG,"Entering outer unit::segs in depth %d cont %c tar %d\n", depth, cont,target);)
 	sanity();    
 	if (depth==target) {
-		DEBUG(1,5,fprintf(STDDBG,"unit::diphs %c %c %c\n",Prev(depth)->inside(), cont, Next(depth)->inside());)
+		DBG(1,5,fprintf(STDDBG,"unit::segs %c %c %c\n",Prev(depth)->inside(), cont, Next(depth)->inside());)
 		if (!dinven->items) {
 			delete firstborn, firstborn=lastborn=NULL;
 			return;
@@ -1172,17 +1210,17 @@ unit::diphs(UNIT target, hash *dinven)
 		_d_descr[2]=QUESTION_MARK;
 		_d_descr[1]=inside();
 		_d_descr[0]=Prev(depth)->inside();
-		diph (dinven);
+		seg (dinven);
 		_d_descr[0]=QUESTION_MARK;
-		diph (dinven);
+		seg (dinven);
 		_d_descr[2]=Next(depth)->inside();
-		diph (dinven);
+		seg (dinven);
 		_d_descr[0]=Prev(depth)->inside();
-		diph (dinven);
-		DEBUG(1,5,fprintf(STDDBG,"unit::diphs is done in: %c\n", cont);)
+		seg (dinven);
+		DBG(1,5,fprintf(STDDBG,"unit::segs is done in: %c\n", cont);)
 	}
-	else for (tmpu = firstborn; tmpu; tmpu = tmpu->next) tmpu->diphs(target, dinven);
-	DEBUG(1,5,fprintf(STDDBG,"Exiting outer unit::diphs tar %d (finished)\n", target);)
+	else for (tmpu = firstborn; tmpu; tmpu = tmpu->next) tmpu->segs(target, dinven);
+	DBG(1,5,fprintf(STDDBG,"Exiting outer unit::segs tar %d (finished)\n", target);)
 	sanity();
 }
 
@@ -1195,7 +1233,7 @@ unit *_unit_just_unlinked=NULL;		//used by unlink(), ::epos_done(), sanity()
 void
 unit::unlink(REPARENT rmethod)
 {
-	DEBUG(1,2,fprintf(STDDBG,"unlinking depth=%d\n",depth);)
+	DBG(1,2,fprintf(STDDBG,"unlinking depth=%d\n",depth);)
 	sanity();
 	if (next) next->prev=prev;
 		else if (father) father->lastborn=prev;
@@ -1206,17 +1244,17 @@ unit::unlink(REPARENT rmethod)
 		if (firstborn) delete firstborn;
 		break;
 	case M_RIGHTWARDS:
-		DEBUG(0,2,fprintf(STDDBG,"unlinking rightwards at level %d\n",depth);)
+		DBG(0,2,fprintf(STDDBG,"unlinking rightwards at level %d\n",depth);)
 		if (next) next->insert_begin(firstborn, lastborn);
 		else shriek(861, "reparent impossible in unit::unlink");
 		break;
 	case M_LEFTWARDS:    
-		DEBUG(0,2,fprintf(STDDBG,"unlinking leftwards at level %d\n",depth);)
+		DBG(0,2,fprintf(STDDBG,"unlinking leftwards at level %d\n",depth);)
 		if (prev) prev->insert_end(firstborn, lastborn);
 		else shriek(861, "reparent impossible in unit::unlink");
 		break;
 	}
-	DEBUG(0,2,fprintf(STDDBG," ...successfully unlinked\n");)
+	DBG(0,2,fprintf(STDDBG," ...successfully unlinked\n");)
 	firstborn = NULL;lastborn = NULL;
 	if (_unit_just_unlinked) {			// this could probably be simplified
 	        _unit_just_unlinked->next=NULL;		// to "delete this"
@@ -1225,10 +1263,10 @@ unit::unlink(REPARENT rmethod)
 	_unit_just_unlinked=this;
 
 	if (father && !father->firstborn) {
-		DEBUG(4,2,fprintf(STDDBG, "Unsafe unlink - may need more fixing\n"););	// as above
+		DBG(3,2,fprintf(STDDBG, "Unsafe unlink - may need more fixing\n"););	// as above
 		father->unlink(M_DELETE);
 	}
-	DEBUG(0,2,fprintf(STDDBG,"unit deleted, farewell\n");)
+	DBG(0,2,fprintf(STDDBG,"unit deleted, farewell\n");)
 }
 
 /****************************************************************************
@@ -1399,11 +1437,11 @@ unit::Prev(UNIT target)
 void
 unit::sanity()
 {
-	if (cfg->trusted) return;    
+	if (scfg->trusted) return;    
 	if (this == NULL)			  EMPTY.insane ("this non-NULL");
-//	if (!firstborn && depth > cfg->phone_level)	insane ("having content");
+//	if (!firstborn && depth > scfg->phone_level)	insane ("having content");
 	if (this == _unit_just_unlinked)		return;
-	if (depth > cfg->text_level && this != &EMPTY)	insane("depth");
+	if (depth > scfg->text_level && this != &EMPTY)	insane("depth");
 	if ((firstborn && 1) != (lastborn && 1))	insane("first == last");
 	if (firstborn && firstborn->depth+1 != depth)	insane("firstborn->depth");
 	if (lastborn && lastborn->depth+1 != depth)	insane("lastborn->depth");
@@ -1411,10 +1449,10 @@ unit::sanity()
 	if (lastborn && lastborn->next)			insane("lastborn->next");
 	if (prev && prev->next != this)			insane("prev->next");
 	if (next && next->prev != this)			insane("next->prev");
-	if (depth==cfg->text_level && father)		insane("TEXT.father");
-	if (cont < 0 || cont > 255 && depth > cfg->segm_level)	insane("content"); 
+	if (depth==scfg->text_level && father)		insane("TEXT.father");
+	if (cont < -128 || cont > 255 && depth > scfg->segm_level)	insane("content"); 
 
-        if (cfg->allpointers) return;
+        if (scfg->allpointers) return;
 	if (prev && (unsigned long int) prev<0x8000000) insane("prev");
 	if (next && (unsigned long int) next<0x8000000)  insane("next");
 	if (firstborn && (unsigned long int) firstborn<0x8000000) insane("firstborn");
@@ -1424,9 +1462,10 @@ unit::sanity()
 void
 unit::insane(const char *token)
 {
-	if (cfg->colored) fprintf(cfg->stdshriek,"\033[00;32mSanity check of \033[01;32m%s\033[00;32m failed. cont=%d depth=%d\033[37m. This is a bug; contact the authors.\n", token,cont,depth); 
+	if (scfg->colored) fprintf(cfg->stdshriek,"\033[00;32mSanity check of \033[01;32m%s\033[00;32m failed. cont=%d depth=%d\033[37m. This is a bug; contact the authors.\n", token,cont,depth); 
 	else fprintf(cfg->stdshriek,"Sanity check of %s failed. cont=%d depth=%d. This is a bug; contact the authors.\n", token,cont,depth); 
-	user_pause();
+	shriek(461, "TSR sanity check failed");
+//	user_pause();
     
     	if (father) father->fout(NULL);
 }

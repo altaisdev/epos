@@ -36,7 +36,7 @@
 #define TTSCP_PORT	8778
 
 const char *COMMENT_LINES = "#;\n\r";
-const char *WHITESPACE = " \t";
+const char *WHITESPACE = " \t\r";
 
 // const char *output_file = "/dev/dsp";
 
@@ -50,7 +50,7 @@ char *data = NULL;
 char *chandle[10];
 char *dhandle[10];
 
-char *testname = "";
+const char *testname = "";
 
 
 int connect_socket(unsigned int, int);
@@ -122,7 +122,7 @@ void spk_strm(int c, int d)
 	sputs("\r\n", ctrld[c]);
 }
 
-void spk_appl(int c, int d, char *data)
+void spk_appl(int c, int d, const char *data)
 {
 	sputs("appl ", ctrld[c]);
 	sprintf(scratch, "%d", (int)strlen(data));
@@ -190,12 +190,17 @@ Brejk je asi rozbitej. \
 Brejk je asi rozbitej. \
 Nechce brejkovat tento text.");
 	if (get_result(0) > 2) shriek("Could not set up a stream");
-	sleep(1);
+retry:	sleep(1);
 	spk_intr(1, 0);
-	if (get_result(1) > 2)
-		shriek("break failed");
-	if (get_result(0) == 2)
+	int tmp1, tmp0;
+	if ((tmp1 = get_result(1)) > 2) {
+		printf("break failed, retry\n");
+		goto retry;
+	}
+	if ((tmp0 = get_result(0)) == 2) {
+		printf("got codes: speaks %d interrupts %d\n", tmp1, tmp0);
 		shriek("break did not interrupt");
+	}
 }
 
 void long_strm_test()
@@ -241,7 +246,7 @@ void init()
 int main(int argc, char **argv)
 {
 	if (argc != 1) shriek("No arguments allowed");
-#ifdef HAVE_WINSOCK2_H
+#if defined(HAVE_WINSOCK_H) || defined(HAVE_WINSOCK2_H)
 	if (WSAStartup(MAKEWORD(2,0), (LPWSADATA)scratch)) shriek(464, "No winsock");
 #endif
 	init();

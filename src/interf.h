@@ -30,15 +30,12 @@ enum _DEBUG_AREA_ {_INTERF_, _RULES_, _ELEM_, _SUBST_, _ASSIM_, _SPLIT_,
 #define DEBUG_AREAstr "interf:rules:elem:subst:assim:split::parser::synth:cfg:daemon:"
 
 
-extern int argc;
-extern char** argv;
-
 void epos_init(int argc, char**argv);
 void epos_init();
 void epos_reinit();
 void epos_done();		// No real need to call, ever. Just to be 100% dmalloc correct.
 
-#define color(stream, seq) if (cfg->colored) fprintf(stream, seq)
+#define color(stream, seq) if (scfg->colored && seq) fprintf(stream, seq)
 void colorize(int level, FILE *handle);  // See this function in interf.cc for various #defines
 
 #define MAX_ERR_LINE 320	// No error nor warning message may be longer
@@ -49,6 +46,7 @@ void colorize(int level, FILE *handle);  // See this function in interf.cc for v
 
 char *fmt(const char *s, int userval);
 char *fmt(const char *s, int userval, int anotherval);
+char *fmt(const char *s, const char *t, int userval, const char *u);
 char *fmt(const char *s, const char *t, int userval);
 char *fmt(const char *s, const char *t);
 char *fmt(const char *s, const char *t, const char *u);
@@ -64,7 +62,6 @@ void shriek(int code, const char *msg)
 	__attribute__((__noreturn__))
 #endif
 					;
-
 char *split_string(char *string);	// 0-terminate the first word, return the rest
 
 FILE *fopen(const char *filename, const char *flags, const char *reason);
@@ -72,19 +69,10 @@ FILE *fopen(const char *filename, const char *flags, const char *reason);
 extern void *xmall_ptr_holder;
 #define OOM_HANDLER	(shriek(422, "Out of memory"), (void *)NULL)
 #define xmalloc(x)	(((xmall_ptr_holder = malloc((x)))) ? xmall_ptr_holder : OOM_HANDLER)
-//#define xrealloc(x,y)	(((xmall_ptr_holder = realloc((x),(y)))) ? xmall_ptr_holder : OOM_HANDLER)
 #define xrealloc(x,y)	((((xmall_ptr_holder = realloc((x),(y))))) && (x) ? xmall_ptr_holder : OOM_HANDLER)
 #define xcalloc(x,y)	(((xmall_ptr_holder = calloc((x),(y)))) ? xmall_ptr_holder : OOM_HANDLER)
 
-// inline void memhack(int size)
-// {
-// 	if (size > 8192) printf("memhack %d\n", size);
-// }
-
-// void *xmalloc(size_t);
-// void *xcalloc(size_t, size_t);
-// void *xrealloc(void *, size_t);
-
+void call_abort();
 
 #ifndef HAVE_STRDUP
 char *strdup(const char *src);   //Ultrix lacks it. Otherwise, we're just superfluous.
@@ -94,12 +82,13 @@ extern char *scratch;
 
 FIT_IDX fit(char c);		 // converts 'f', 'i' or 't' to 0, 1 or 2, respectively
 UNIT str2enum(const char *item, const char *list, int dflt);
-char *enum2str(int item, const char *list);
+const char *enum2str(int item, const char *list);
 // hash *str2hash(const char *list, unsigned int max_item_len);
 unit *str2units(const char *text);
-char *fntab(const char *s, const char *t); //will calloc and return 256 bytes not freeing s,t
+//char *fntab(const char *s, const char *t); //will calloc and return 256 bytes not freeing s,t
                                        //if len(s)!=len(t), ignore the rest if not cfg.paranoid
-bool *booltab(const char *s);          //will calloc and return 256 bytes not freeing s
+//bool *booltab(const char *s);          //will calloc and return 256 bytes not freeing s
+
 
 char *compose_pathname(const char *filename, const char *dirname, const char *treename);
 char *compose_pathname(const char *filename, const char *dirname);
@@ -122,10 +111,12 @@ void unclaim(file *);
 // void list_voices();
 
 class unit;
-void process_diphones(unit *root);
+void process_segments(unit *root);
 
-struct diphone {
-	int code;
+struct segment {
+	short code;
+	char nothing;
+	char ll;
 	int f,e,t;
 };
 
@@ -136,7 +127,7 @@ struct diphone {
 #define PSEUDOSPACE	'\377'
 
 
-extern char *esctab;
+extern charxlat *esctab;
 
 // extern FILE *stdshriek;
 // extern FILE *stdwarn;
@@ -162,11 +153,11 @@ extern char *current_debug_tag;
 bool debug_wanted(int lev, /*_DEBUG_AREA_*/ int area);
 void debug_prefix(int lev, int area);
 
-#define DEBUG(xxx,yyy,zzz) {if(debug_wanted(xxx,yyy)) {debug_prefix(xxx,yyy);zzz;fflush(STDDBG);};}
+#define DBG(xxx,yyy,zzz) {if(debug_wanted(xxx,yyy)) {debug_prefix(xxx,yyy);zzz;fflush(STDDBG);};}
 #define STDDBG  ::cfg->stddbg
 
 #else       // ifndef DEBUGGING
-#define DEBUG(xxx,yyy,zzz) ; 
+#define DBG(xxx,yyy,zzz) ; 
 #endif      // ifdef DEBUGGING
 
 

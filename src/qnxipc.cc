@@ -45,13 +45,13 @@
 
 void qipc_proxy_crashed(char *reason)
 {
-	FILE *hackfile = fopen("hackfile","a");
-	fprintf(hackfile, "qipc_proxy_crashed: ");
-	fprintf(hackfile, reason);
-	fprintf(hackfile, "\n");
-	fclose(hackfile);
+	FILE *h = fopen("epos.err","a");
+	fprintf(h, "qipc_proxy_crashed: ");
+	fprintf(h, reason);
+	fprintf(h, "\n");
+	fclose(h);
 
-	abort();
+	call_abort();
 }
 
 static inline void sync_finish_command(int fd, char *reason)

@@ -36,7 +36,18 @@
 #undef	_GNU_SOURCE
 #define _GNU_SOURCE
 
+#ifdef DEBUG
+	#undef DEBUG
+#endif
+
 #include "config.h"
+
+#ifdef BROKEN_LOCALE
+	int isupper(int c) { return 0; }
+	int isdigit(int c) { return c <= '9' && c >= '0'; }
+#endif
+
+
 
 #ifndef const
 #define const		/* Visual C++ for example dislikes free()ing const data */
@@ -95,6 +106,15 @@ char *malloc ();
 char *realloc ();
 void free(void *ptr);
 #endif
+
+static void call_abort(void)
+{
+#ifdef HAVE_ABORT
+	abort();
+#else
+	while (1) ;
+#endif
+}
 
 /* When used in Emacs's lib-src, we need to get bzero and bcopy somehow.
    If nothing else has been done, use the method below.  */
@@ -1217,10 +1237,17 @@ typedef struct
    declared.
 
    Does `return FAILURE_CODE' if runs out of memory.  */
+   
+/* following is a mini hack by geo */
+#ifdef REGEX_MALLOC
+	#define DECL_DESTINATION_PLEASE /**/
+#else
+	#define DECL_DESTINATION_PLEASE  char *destination;
+#endif
 
 #define PUSH_FAILURE_POINT(pattern_place, string_place, failure_code)	\
   do {									\
-    char *destination;							\
+    DECL_DESTINATION_PLEASE						\
     /* Must be int, so when we don't save any registers, the arithmetic	\
        of 0 + -1 isn't done as unsigned.  */				\
     /* Can't be int, since there is not a shred of a guarantee that int	\
@@ -1252,7 +1279,7 @@ typedef struct
     DEBUG_PRINT1 ("\n");						\
 									\
     if (1)								\
-      for (this_reg = lowest_active_reg; this_reg <= highest_active_reg; \
+      for (this_reg = lowest_active_reg; this_reg <= (s_reg_t) highest_active_reg; \
 	   this_reg++)							\
 	{								\
 	  DEBUG_PRINT2 ("  Pushing reg: %d\n", this_reg);		\
@@ -1377,7 +1404,7 @@ typedef struct
   DEBUG_PRINT2 ("  Popping  low active reg: %d\n", low_reg);		\
 									\
   if (1)								\
-    for (this_reg = high_reg; this_reg >= low_reg; this_reg--)		\
+    for (this_reg = high_reg; this_reg >= (s_reg_t)low_reg; this_reg--)		\
       {									\
 	DEBUG_PRINT2 ("    Popping reg: %d\n", this_reg);		\
 									\
@@ -1392,7 +1419,7 @@ typedef struct
       }									\
   else									\
     {									\
-      for (this_reg = highest_active_reg; this_reg > high_reg; this_reg--) \
+      for (this_reg = highest_active_reg; this_reg > (s_reg_t)high_reg; this_reg--) \
 	{								\
 	  reg_info[this_reg].word.integer = 0;				\
 	  regend[this_reg] = 0;						\
@@ -2193,6 +2220,9 @@ regex_compile (pattern, size, syntax, bufp)
                        the leading `:' and `[' (but set bits for them).  */
                     if (c == ':' && *p == ']')
                       {
+#ifdef BROKEN_LOCALE
+			FREE_STACK_RETURN(REG_ECTYPE);
+#else
 #if defined _LIBC || (defined HAVE_WCTYPE_H && defined HAVE_WCHAR_H)
                         boolean is_lower = STREQ (str, "lower");
                         boolean is_upper = STREQ (str, "upper");
@@ -2269,6 +2299,7 @@ regex_compile (pattern, size, syntax, bufp)
                           }
                         had_char_class = true;
 #endif	/* libc || wctype.h */
+#endif  /* BROKEN_LOCALE */
                       }
                     else
                       {
@@ -3357,7 +3388,7 @@ re_compile_fastmap (bufp)
 
 
 	default:
-          abort (); /* We have listed all the cases.  */
+          call_abort (); /* We have listed all the cases.  */
         } /* switch *p++ */
 
       /* Getting here means we have found the possible starting
@@ -5064,7 +5095,7 @@ re_match_2_internal (bufp, string1, size1, string2, size2, pos, regs, stop)
 #endif /* not emacs */
 
         default:
-          abort ();
+          call_abort ();
 	}
       continue;  /* Successfully executed one pattern command; keep going.  */
 
@@ -5694,7 +5725,7 @@ regerror (errcode, preg, errbuf, errbuf_size)
        to this routine.  If we are given anything else, or if other regex
        code generates an invalid error code, then the program has a bug.
        Dump core so we can fix it.  */
-    abort ();
+    call_abort ();
 
   msg = gettext (re_error_msgid[errcode]);
 

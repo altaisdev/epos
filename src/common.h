@@ -27,7 +27,7 @@
 
 #define MAINTAINER  "Jirka Hanika"
 #define MAIL        "geo@cuni.cz"
-#define VERSION     "2.5.-2"
+#define VERSION     "2.5.1"
 
 #include "config.h"
 
@@ -54,13 +54,12 @@ char *strdup(const char *);
 #endif
 
 #ifdef WANT_DMALLOC
-	#include <dmalloc.h>  // Unimportant debugging hack. Throw it out.
+	#include <dmalloc.h>
 #endif			      // new and delete are overloaded in interf.cc !
 
 #ifndef  IGNORE_REGEX_RULES
 	#define WANT_REGEX    // About always, we want to use the regex code
 #endif
-
 
 #ifdef WANT_REGEX
    extern "C" {
@@ -68,8 +67,7 @@ char *strdup(const char *);
 		#include <rx.h>
 	#else
 	    #ifdef HAVE_REGEX_H
-//		#include <regex.h>
-		#include "rx.h"
+		#include <regex.h>
 	    #else
 		#include "rx.h"
 	    #endif
@@ -80,7 +78,6 @@ char *strdup(const char *);
 #define TTSCP_PORT	8778
 
 
-enum SYMTABLE {ST_ROOT, ST_RAW, ST_EMPTY};
 enum SUBST_METHOD {M_EXACT=0, M_END=1, M_BEGIN=2, M_BEGIN_OR_END=3, M_SUBSTR=4, M_PROPER=7, M_LEFT=8, M_RIGHT=16, M_ONCE=32};
 enum REPARENT {M_DELETE, M_RIGHTWARDS, M_LEFTWARDS};
 enum FIT_IDX {Q_FREQ, Q_INTENS, Q_TIME};
@@ -88,8 +85,6 @@ enum FIT_IDX {Q_FREQ, Q_INTENS, Q_TIME};
 #define BOOLstr "false:true:off:on:no:yes:disabled:enabled:-:+:n:y:0:1:non::"
 #define LIST_DELIM	 ':'
 
-// enum UNIT {U_DIPH, U_PHONE, U_SYLL, U_WORD, U_COLON, U_SENT, U_TEXT, U_INHERIT, U_DEFAULT, U_ILL=255, U_VOID=127};
-// #define UNITstr "diphone:phone:syll:word:colon:sent:text:inherit:default:"
 typedef char UNIT;
 #define UNIT_MAX 12
 #define U_ILL		127
@@ -97,10 +92,10 @@ typedef char UNIT;
 #define U_INHERIT	125
 #define U_VOID		120
 
-
-// #define unuse(x) if (((1&(int)(x))*(1&(int)(x)))<0) shriek(862, "I'm drunk");
 extern int unused_variable;
 #define unuse(x) (unused_variable = (int)(x));
+
+extern const bool is_monolith;
 
 struct file;
 struct option;
@@ -108,20 +103,22 @@ class  unit;
 
 class stream;
 
+typedef char wchar;
+
 #include "defaults.h"
 #include "exc.h"
-// #include "slab.h"
 #include "hash.h"
 #include "text.h"
 #include "voice.h"
-#include "interf.h"             //See interf.h and even interf.cc for other headerities
+#include "function.h"
+#include "interf.h"
 #include "options.h"
-//#include "client.h"
 #include "parser.h"
 #include "unit.h"
 #include "rule.h"              //See rules.h for additional #defines and enums
 #include "waveform.h"
 #include "synth.h"
+#include "encoding.h"
 
 #define MAX_PATHNAME       256	  // only load_language uses this
 
@@ -136,7 +133,8 @@ class stream;
 	#define MODE_MASK	   (S_IREAD | S_IWRITE)
 #endif
 
-#ifdef HAVE_WINSOCK2_H
+#if defined(HAVE_WINSOCK_H) || defined(HAVE_WINSOCK2_H)
+	#define HAVE_WINSOCK
 	#define socky unsigned
 #else
 	#define socky signed

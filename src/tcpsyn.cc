@@ -39,7 +39,10 @@
 	#include <sys/time.h>
 #endif
 
-#include <fcntl.h>
+#ifdef HAVE_FCNTL_H
+	#include <fcntl.h>
+#endif
+
 // #include <netdb.h>
 
 #define LANGNAMESEP	'.'
@@ -70,15 +73,15 @@ void *tcpsyn_appl(int bytes, int ctrld, int datad, int *size)
 	sputs(scratch, ctrld);
 	sputs("\r\n", ctrld);
 	do {
-		sgets(scratch, cfg->scratch, ctrld);
+		sgets(scratch, scfg->scratch, ctrld);
 		if (!strncmp("122 ", scratch, 4)) {
-			sgets(scratch, cfg->scratch, ctrld);
+			sgets(scratch, scfg->scratch, ctrld);
 			sscanf(scratch, " %d", &bytes);
 			if (bs != bytes) rec = rec ? (char *)xrealloc(rec, bytes)
 						   : (char *)xmalloc(bytes);
 		}
 		if (!strncmp("123 ", scratch, 4)) {
-			sgets(scratch, cfg->scratch, ctrld);
+			sgets(scratch, scfg->scratch, ctrld);
 			sscanf(scratch, " %d", &bytes);
 			sum += bytes;
 			if (sum > bs) rec = rec ? (char *)xrealloc(rec, sum)
@@ -120,7 +123,7 @@ static int tcpsyn_connect_socket(unsigned int ipaddr, int port)
 	timeval tv; tv.tv_sec = cfg->deadlk_timeout; tv.tv_usec = ZERO_DEADLK_TIMEOUT;
 	if (select(sd+1, &fds, NULL, NULL, &tv) < 1) shriek(476, "Timed out - tcpsyn deadlock");
 
-	sgets(scratch, cfg->scratch, sd);
+	sgets(scratch, scfg->scratch, sd);
 	if (strncmp(scratch, "TTSCP spoken here", 18)) {
 		scratch[15] = 0;
 		shriek(474, "Protocol not recognized");
@@ -128,13 +131,13 @@ static int tcpsyn_connect_socket(unsigned int ipaddr, int port)
 	return sd;
 }
 
-static inline void tcpsyn_chk_cmd(int cd, char *tag, char *par)
+static inline void tcpsyn_chk_cmd(int cd, const char *tag, const char *par)
 {
 	int err = sync_finish_command(cd);
 	if (err) shriek(475, fmt("Remote returned %d for %s %s", err, tag, par));
 }
 
-static inline void tcpsyn_send_cmd(int cd, char *tag, char *par)
+static inline void tcpsyn_send_cmd(int cd, const char *tag, const char *par)
 {
 	sputs(tag, cd);
 	sputs(" ", cd);
@@ -172,7 +175,7 @@ tcpsyn::tcpsyn(voice *v)
 	
 	cd = tcpsyn_connect_socket(a, port);
 	dd = tcpsyn_connect_socket(a, port);
-	DEBUG(1,9,fprintf(STDDBG, "tcpsyn uses port %d ctrl fd %d data fd %d\n", port, cd, dd);)
+	DBG(1,9,fprintf(STDDBG, "tcpsyn uses port %d ctrl fd %d data fd %d\n", port, cd, dd);)
 
 	char *ctrl_handle = get_handle(cd);
 	sputs("data ", dd);
@@ -194,7 +197,7 @@ tcpsyn::tcpsyn(voice *v)
 	if (voicename)
 		tcpsyn_send_cmd(cd, "setl voice", voicename);
 	free(remote_server);
-	DEBUG(1,9,fprintf(STDDBG, "tcpsyn initialised\n");)
+	DBG(1,9,fprintf(STDDBG, "tcpsyn initialised\n");)
 }
 
 tcpsyn::~tcpsyn()
@@ -214,19 +217,19 @@ tcpsyn::~tcpsyn()
 }
 
 void
-tcpsyn::syndiph(voice *, diphone, wavefm *)
+tcpsyn::synseg(voice *, segment, wavefm *)
 {
-	shriek(861, "abstract tcpsyn::syndiph");
+	shriek(861, "abstract tcpsyn::synseg");
 }
 
 void
-tcpsyn::syndiphs(voice *, diphone *d, int count, wavefm *w)
+tcpsyn::synsegs(voice *, segment *d, int count, wavefm *w)
 {
 	int size;
 	void *b;
 
-	ywrite(dd, d - 1,sizeof(diphone) * ++count);
-	b = tcpsyn_appl(sizeof(diphone) * count, cd, dd, &size);
+	ywrite(dd, d - 1,sizeof(segment) * ++count);
+	b = tcpsyn_appl(sizeof(segment) * count, cd, dd, &size);
 	w->become(b, size);
 	free(b);
 }

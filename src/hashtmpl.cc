@@ -21,9 +21,10 @@
 some_key  this;is;the;replacement   ;this is a comment; why not.
  *
  *	where ';' is a comment-out character. If you need an initial ";" or
- *	a " ;" substring in the replacement, you're hooked. You might also
- *	consider changing the exported variable COMMENT_LINES to "\n" only,
- *	if exceptionproofness is needed whereas comments are not.
+ *	a " ;" substring in the replacement, you might consider changing
+ *	the exported variable COMMENT_LINES to "\n" only and refrain from
+ *	using comments at all.  Or, use COMMENT_LINES to choose another
+ *	comment-out character.
  *
  */
 
@@ -42,10 +43,13 @@ some_key  this;is;the;replacement   ;this is a comment; why not.
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+
+#ifdef HAVE_ERRNO_H
+	#include <errno.h>
+#endif
 
 #ifdef WANT_DMALLOC
-	#include <dmalloc.h>          // Unimportant debugging hack. Throw it out.
+	#include <dmalloc.h>
 #endif
 
 #define key_t  hash_key_t
@@ -290,7 +294,7 @@ hash_table<key_t, data_t>::~hash_table()
 #ifdef HASH_CAN_READ_FILES    //to be defined in default.h
 
 const char* COMMENT_LINES = "#;\n";    //these characters can start a comment
-const char* WHITESPACE    = " \t";     //i.e. space and tab
+const char* WHITESPACE    = " \t\r";     //i.e. space and tab
 
 int hash_max_line = 1024;
 
@@ -303,7 +307,7 @@ int hash_max_line = 1024;
 hash::hash(const char *filename,
 		int perc_full, int perc_downsize, int perc_upsize,
 		int max_tree_depth, const char * no_data, bool multi_data,
-		const char *not_found, char *esctab): hash_table<char, char>(0)
+		const char *not_found, char esc(char)): hash_table<char, char>(0)
 {
 	FILE *hashfile;
 	char *buff;
@@ -338,14 +342,14 @@ printf("hash::hash: using file %s\n", filename);
 	capacity = l*100/perc_full | 1;
 	cfg_rehash(perc_downsize, perc_upsize, max_tree_depth);
 	ht = (hsearchtree<char, char> **)xcalloc(capacity,sizeof(hsearchtree<char, char>*));
-	rewind(hashfile);
+	fseek(hashfile, 0, SEEK_SET);
 	l = 0;
 	while (l++, fgets(buff, hash_max_line, hashfile)) {
 		if (strchr(COMMENT_LINES, *buff)) continue;
 		for (tmp = dst = buff; !strchr(COMMENT_LINES, tmp[1]) ||
 				!strchr(WHITESPACE, tmp[0]) && tmp[1] && tmp[1] != '\n';
 				tmp++, dst++) {
-			if (esctab && tmp[0] == ESCAPE) *dst = esctab[(unsigned char)*++tmp];
+			if (esc && tmp[0] == ESCAPE) *dst = esc(*++tmp);
 			else *dst = *tmp;
 		}
 		*dst = *tmp;

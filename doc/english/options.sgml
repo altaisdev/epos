@@ -1,44 +1,47 @@
 
+
 <sect> Options
 <p>
 
 Most aspects of the operation can be customized by changing options.
 This can be enforced by TTSCP commands, in configuration files and
-on the command line. Basically, an option is an option name/option value
+on the command line.  Basically, an option is an option name/option value
 pair. There are a few possible option types: number, string, yes/no,
 character, and a few enumerated types.
 
 Almost all individual options are documented in <ref id="indivopts"
-name="this document">. 
-The reliable list of all built-in long options can be found in <tt>src/options.lst</tt>.
-(See approximately line 320 and below. Every line represents at most one
-option for every option class as explained below. The option name is
-quoted; its semantics is usually explained following the option.)
-You can also list their names and types using <tt>epos -H</tt>.
+name="this document">.  If you strongly suspect this section of
+documentation to be out-of date, the reliable list of all built-in
+long options can be found in <tt>src/options.lst</tt>.  (See approximately
+line 320 and below. Every line represents at most one option for every
+option class as explained below. The option name is quoted; its
+semantics is usually explained following the option.)  You can also
+list the option names and types using <tt>epos -H</tt>.
 
 <sect1> Option classes
 <p>
 
-Basically, there are three major classes of options: global options,
+There are four classes of options: static options, global options,
 language options and voice options. For instance, switching a voice
-means switching to another set of voice options, while the language
-options and global options stay the same.
+in fact means switching to another set of voice options, while the language
+options, global options and static options stay the same.
 
 Every voice is language specific (implies a specific language).
 That's why switching the language automatically switches the voice
-to the voice defined as default for this particular language.
-(It is however possible to use the same configuration file to setup
+to the voice defined as default or the last active one for this particular language.
+(It is of course possible to use the same configuration file to setup
 a similarly sounding voice for every language if desired.)
 It is also important to distinguish between a voice and an inventory.
 An <em/inventory/ is a set of speaker-dependent files used
 to base a <em/voice/, that is, a mode of speech, on.  Multiple
 different voices may use the same inventory, and may even sound
 quite different depending on various configuration options.
-The average user may expect to be able to modify the voice dependent
+The average expert user may expect to be able to modify the voice dependent
 configuration files, but not inventory files.  Also, the inventories
 may often be distributed externally to Epos, while sample voices
 based on them may either be included with Epos, or with the
-diphone inventory, or their creation may be left to the user.
+segment inventory, or their creation may be completely left
+to the user.
 
 A set of voice options should completely describe a voice.
 A set of language options should completely describe a language,
@@ -46,7 +49,7 @@ except for voice-specific behavior. A set of global options
 should cover language independent aspects of operation.
 It should be understood that a set of options may employ various
 references to other information, especially filenames (of language
-dependent transcription rules, voice dependent diphone inventories
+dependent transcription rules, voice dependent segment inventories
 etc.)
 
 Some language and/or voice specific options may have suitable defaults
@@ -57,11 +60,22 @@ to default to. Therefore, adding a new language or voice options
 doesn't necessarily imply adding them to each language or voice
 configuration file, if a reasonable default can be suggested.
 
+<label id="static">
+The difference between global and static options is subtler
+and not that important for most users.  All voice specific,
+language specific and also global options are implemented
+as user specific, that is, each TTSCP control connection may assign
+a different value to them at the same time.  For some options
+however, which are of even more global impact, this may make
+little sense.  These are termed static.  Assigning a value
+to a static option causes the value to change even for
+other concurrent users.
+
 Whenever an option name is given, it is first understood as a voice option
 (of the current voice); if there is no such voice option, the name
-is treated as a language option, then as a global option. To override
-this order, you can prefix an option with "C:", "L:" or "V:". This will
-restrict the search to global, language or voice options, respectively.
+is treated as a language option, then as a global/static option. To override
+this order, you can prefix an option with "S:", "C:", "L:" or "V:". This will
+restrict the search to static, global, language or voice options, respectively.
 (This is automatically done with configuration files, because every
 configuration file describes either a language or a voice, or it is unrelated
 to the current language and voice altogether.)
@@ -76,12 +90,18 @@ at configure/compile time or
 with the <tt>--base&lowbar;dir</tt> option on the command line). By convention,
 configuration file names have the ".ini" suffix.
 
+(On a Windows NT-like operating system, you can use the
+<tt>HKEY_LOCAL_MACHINE&bsol;SOFTWARE&bsol;Epos&bsol;Setup</tt>
+registry key to set the value of <tt>Path</tt> to a path leading
+to the configuration files.  This value can still be overridden
+by the command line.)
+
 Unless overridden, three files in <tt>/usr/lib/epos/cfg</tt> will be processed
 to setup the global configuration: <tt>fixed.ini</tt>, <tt>epos.ini</tt> and
 either <tt>ansi.ini</tt> or <tt>rtf.ini</tt> (depending on the preferred
 output format if colored output is turned on -- either ANSI escape sequences
 or RTF are supported at the moment; other markup formats can be added easily).
-By convention, <tt>fixed.ini</tt> contains the standard global configuration
+By convention, <tt>fixed.ini</tt> contains the standard global and static configuration
 values used by a given installation and rarely or never changes, while
 <tt>epos.ini</tt> contains less permanent parameters and temporary values.
 The global parameters include a list of <em>languages</em>, or language
@@ -92,9 +112,6 @@ are located under <tt>/usr/lib/epos/lng/*/*.ini</tt>, voice configuration files
 under <tt>/usr/lib/epos/inv/*/*.ini</tt>, where <tt>*</tt> represents any string
 listed in the list of languages (or voices for a language). Go see the real
 files under <tt>/usr/lib/epos/cfg/*.ini</tt> for an example.
-
-If a <tt>EPOSCFGFILE</tt> environment variable is set upon the main program startup,
-its value is a file name to be parsed instead of <tt>epos.ini</tt>.
 
 <sect2> Configuration file format overview
 <p>
@@ -164,6 +181,26 @@ main <tt>.ini</tt> file. These includes can be nested to any finite depth; if no
 relative path is specified, the directory which holds the topmost file is used for
 the lookup.
 
+<sect2> Character encoding
+<p>
+
+Sometimes it is not convenient or possible to encode all configuration files
+in the same character encoding.  For example, character encoding may be
+language dependent.  But it is even possible for different lines of the
+same file to use different encodings.  You can switch character encodings
+for the same file using the <tt>&commat;charset</tt> directive.
+Charset name must be specified as a parameter and it must be enclosed in
+parentheses.  Epos attempts to load the corresponding unicode character
+mapping file and immediately switches the charset number for the current
+file.  Please note two differences from the <tt/charset/ option:
+the directive only affects the current "logical" file (including included
+files as well as any files it has been included from using the
+<tt>&commat;include</tt> directive), whereas the option doesn't affect it at
+all, but it affects all subsequent files (e.g. for the given language).
+
+<sect2> Other directives
+<p>
+
 Two more directives, <tt>&commat;warn</tt> and <tt>&commat;error</tt> with obvious semantics
 are available for diagnostic purposes.
 
@@ -225,13 +262,13 @@ unless the current language or voice is switched during the processing.
 An example:
 
 <tscreen><verb>
-say --language german --pausing "Wie geht es?" --show_diphones
+say --language german --pausing "Wie geht es?" --show_segments
 </verb></tscreen>
 
 This sets the default language to German, enables pausing after each
 transformation rule is applied to the text (sets the <tt/pausing/ option
-to <tt/true/, in other words) and prints the diphone string generated
-in the process (sets the <tt/show&lowbar;diphones/ option to <tt/true/). The string
+to <tt/true/, in other words) and prints the segment string generated
+in the process (sets the <tt/show&lowbar;segments/ option to <tt/true/). The string
 to be transcribed and synthesized is given on the command line as well
 (it must be quoted unless it consists of a single word).
 
@@ -253,7 +290,7 @@ is equivalent to
 say --show_transcript off "Say this, do not show the transcription"
 </verb></tscreen>
 
-Refer to the <ref id="indivopts" name="individual options"> subsection
+Refer to the <ref id="indivopts" name="individual options"> section
 for documentation on available long options.
 
 <sect2> Language and voice switching
@@ -310,6 +347,9 @@ short options understood by the <tt/say/ utility can be obtained with
 <tt>say -h</tt>.  Such list however includes undocumented options
 which may disappear in the next releases.
 
+Please keep in mind that the say utility is only an example of a TTSCP
+client and not a full-fledged controlling interface to Epos.
+
 <sect3> Server short options
 <p>
 
@@ -324,7 +364,8 @@ which may disappear in the next releases.
 	Show Epos version.
 <tag>-D</tag>
 	Turn on debugging output.  Multiple <tt/-D/ options cause the output to be more
-	verbose.  
+	verbose: this is equivalent to lowering the <tt/always_dbg/ option to four
+	minus number of occurences.
 <tag>-H</tag>
 	In addition to a summary of short options, show also a list of all available
 	long options.
@@ -338,11 +379,18 @@ which may disappear in the next releases.
 	Shut down the server.
 <tag>-l</tag>
 	List all available languages and available voices for the current language.
+<tag>-m</tag>
+	Write the waveform to a file (said.vox in the client's current directory)
+	instead of writing it to the local sound card; the output doesn't
+	include any header and is in the mu law format.
+<tag>-o</tag>
+	Write the waveform to the standard output.  In this case, no transcription
+	is performed.
 <tag>-u</tag>
 	Turn on utterance chunking.  This option has unintuitive consequences
 	when combined with <tt/-w/.
 <tag>-w</tag>
-	Write the output to a file (usually /usr/lib/epos/root/said.wav) instead
+	Write the waveform to a file (said.wav in the client's directory) instead
 	of writing it to the local sound card.
 </descrip>
 
@@ -364,7 +412,7 @@ It is authentication and limiting access to specified options
 for some or all users.
 
 By default, all settable parameters can be changed by any outside connection
-(this doesn't affect any other connections in any way). 
+(this doesn't affect the value in use for any other connection in any way). 
 You can control this privilege by restricting it in <tt>cfg/restr.ini</tt>.
 
 Every line of that file is in the form
@@ -435,6 +483,13 @@ This example will adjust the preferred pitch and volume for a certain
 Czech voice; it will also set the default language to Slovak. See
 the <ref id="ttscp" name="TTSCP specification"> for more info.
 
+<label id="reinitialization">
+<sect1> Reloading configuration files
+<p>
+
+Under UNIX, Epos reinitializes itself upon a hangup signal (SIGHUP).
+Existing TTSCP connections are terminated and configuration is reloaded.
+
 <sect1> Soft options <label id="soft-options">
 <p>
 
@@ -463,11 +518,11 @@ boolean, the default <tt>default</tt> is an empty string.
 An example:
 
 <tscreen><verb>
-	soft_options   "colloquial=false:diphone_listing_file(s)=traditnl.dph"
+	soft_options   "colloquial=false:segment_listing_file(s)=traditnl.dph"
 </verb></tscreen>
 
 This example defines two options, a boolean <tt>colloquial</tt> and
-a string <tt>diphone&lowbar;listing&lowbar;file</tt>.
+a string <tt>segment&lowbar;listing&lowbar;file</tt>.
 
 The sets of soft options for individual languages are independent and never
 clash with each other. However, built-in option names may not be used
@@ -535,6 +590,9 @@ with these options changed, but they can be useful in some special
 configurations.  They also get added to resolve some simple software
 engineering dilemmata.
 
+The options in this subsection are not <ref id="static" name="static">
+unless specified otherwise.
+
 <descrip>
 <tag>--comma <sl/delimiter/</tag>
 	This is the delimiter for Epos-generated lists, especially
@@ -564,6 +622,13 @@ engineering dilemmata.
 	Turn on to allow forking and fully detaching the Epos daemon.
 	Usable only on unices.  If off, some debugging information will
 	be written to <tt/stdout/ in some configurations.
+<tag>--init_time <sl/n/ </tag>
+	If set to a non-zero value under a UNIX, the parent process will
+	wait for at most <sl/n/ seconds for the daemon process to start
+	accepting connections.  One second is likely to be more than enough
+	except when the machine is severely overloaded.  Note that most
+	Epos initialization takes place before the fork, whereas this
+	option is only used after the fork.
 <label id="ml-option">
 <tag>--markup&lowbar;language <sl/ml/</tag>
 	The parameter is either "ansi", "rtf" or "none". This parameter
@@ -575,14 +640,14 @@ engineering dilemmata.
 	either the ANSI escape sequences (ISO 6429) or the Rich Text
 	Format; they use colors to distinguish between symbols of different
 	levels of description.
-<tag>--pend_max <sl/n/ </tag>
+<tag>--pend&lowbar;max <sl/n/ </tag>
 	The maximum number of subtasks waiting in an input queue for
 	a single agent.  If this limit is reached, the preceding
 	agent stops processing further input until only <tt/pend_min/
 	subtasks are left in the queue.  Setting this limit higher
 	will consume additional memory, as more processing can happen
 	in advance, but setting it too low may cause unnecessary delays.
-<tag>--pend_min <sl/n/ </tag>
+<tag>--pend&lowbar;min <sl/n/ </tag>
 	The minimum desired number of subtasks waiting in an input
 	queue for a single agent.  If the queue length decrements
 	to this limit and the preceding agent has enough input
@@ -601,6 +666,7 @@ engineering dilemmata.
 	various kinds of input files than without.  It will rather
 	try to reject suspicious or formally incorrect inputs,
 	than to do something reasonable with them. Useful for debugging.
+	This option is not static.
 <tag>--pausing</tag>
 	With this option on, Epos will pause and wait for a keypress
 	after every rule is applied.  Of course, this is incompatible
@@ -618,11 +684,33 @@ engineering dilemmata.
 	any text which contains an unknown character (not listed in on of the
 	<tt/perm_*/ options).  This option replaces such characters with
 	the value of the <tt/default_char/ option before they're classified.
+	This option is not static.
 <tag>--show_rule</tag>
 	Print each rule before it is applied.  This is useful mostly for
 	debugging situations (when a text is parsed in an unexpected way
 	and the user is trying to find out which rule has escaped his
 	attention). This option may not work with all setups.
+<tag>--profile <sl/filename/ </tag>
+	Setting this option to a file name causes profiling information
+	to be recorded to the file named.  The file is created in the
+	current directory of the server if a relative pathname is given.
+	Each line of the profile log corresponds to one timeslice of
+	an agent.  First, the time spend before running the agent
+	(after the last agent has finished).  Second, agent type.
+	Third, time spent by the agent.  Both time intervals are given
+	is microseconds and their accuracy depends on the
+	<tt/gettimeofday/ system call.  Using the profiler on a loaded
+	machine is going to give almost meaningless results.
+<tag>--debug_password <sl/password/ </tag>
+	An alternative password for server-level authentication.  Can be
+	useful when debugging the TTSCP implementation, with the obvious
+	security implications.
+<tag>--handle_size <sl/n/ </tag>
+	The TTSCP handle length in character.  The handles are always
+	generated randomly using a 64 character alphabet.  Use small
+	values for debugging the TTSCP implementation manually (and accept
+	the risk of a handle-guessing attack); use higher values in a
+	production environment.
 <tag>--shriek_art number</tag>
 	The picture to be printed to <tt/stdshriek/ in case of an error.
 	May or may not work.  Small integers such as 0, 1 or 2 are possible.
@@ -636,6 +724,19 @@ engineering dilemmata.
 	When the rules are dumped with the <tt/debug/ rule type and this
 	option is set, all of them will be displayed.  Otherwise only the
 	current rule is displayed.  That's all.
+
+<tag>--localsound</tag>
+	Enables the use of the TTSCP <tt>&num;localsound</tt> output module.
+<tag>--readfs</tag>
+	Enables the use of file system based TTSCP input modules.  See
+	the <ref id="pseudorootdir-option" name="pseudo_root_dir option">
+	for more details.  Note that this option can not be turned on
+	unless the underlying operating system has a fully functional
+	implementation of the <tt/select/ call.
+<tag>--writefs</tag>
+	Enables the use of file system based TTSCP output modules. See
+	the <ref id="pseudorootdir-option" name="pseudo_root_dir option">
+	for more details.
 
 <tag>--unit_levels</tag>
 	Levels of description.  Must be a colon separated list which includes
@@ -668,20 +769,21 @@ are some options related to the output formats produced by the monolithic
 binary (executable).  There are also some conventional informative outputs
 that can be produced by the monolithic and server binaries equally.
 
+All options in this subsection are <ref id="static" name="static">.
+
 <descrip>
 <tag>--show_phones</tag>
 	Print the sequence of sounds generated from the text processed.
 	Monolithic binary only.
-<tag>--show_diphones</tag>
-	Print the sequence of diphones generated from the text processed.
+<tag>--show_segments</tag>
+	Print the sequence of segments generated from the text processed.
 	Monolithic binary only.
-<tag>--show_raw_diphs</tag>
-	When used in conjunction with the <tt/show_diphones/ option, the diphones
+<tag>--show_raw_segs</tag>
+	When used in conjunction with the <tt/show_segments/ option, the segments
 	will be not only listed by name, but they will also include the actual
 	numbers generated.  Monolithic binary only.
-<tag>--play_diphones</tag>
-	Synthesize the waveform and say it through the sound card or write it to
-	a file, as pointed to by the <tt/wave&lowbar;file option/ option.
+<tag>--play_segments</tag>
+	Synthesize the waveform and say it through the sound card.
 	Monolithic binary only.
 <tag>--wave_header</tag>
 	When dumping the waveform into a file or a TTSCP data connection,
@@ -691,10 +793,35 @@ that can be produced by the monolithic and server binaries equally.
 	the usual ioctls).  TTSCP requires this option be always set
 	to <tt/on/; consequently, the option is only reasonably useful with the
 	monolithic binary.
-<tag>--immed_diphones</tag>
-	Print the sequence of diphones generated from the text processed
-	just after the <tt/diphones/ rule.  This is useful especially
-	in conjunction with the <tt/neuronet/ option where the diphone layer
+<tag>--ulaw</tag>
+	Generated waveform uses mu law sample encoding instead of linear encoding.
+<tag>--out_sampling_rate <sl/Hz/ </tag>
+	Voice dependent option.  May be used to downsample the output by one half.
+<tag>--autofilter</tag>
+	If this option is enabled, an appropriate low band filter is used whenever
+	downsampling.  This is necessary to avoid phantom sounds in the output.
+<tag>--label_seg</tag>
+	Output segment (diphone) labels in the output waveform using the appropriate
+	RIFF WAVE chunks.
+<label id="labelphones-option">
+<tag>--label_phones</tag>
+	Output phone labels in the output waveform.  This is only possible if
+	phone boundary information is made available for the inventory using
+	the <ref id="snlfile-option" name="snl_file option">.  For other voices,
+	this option has no effect.
+<tag>--label_sseg</tag>
+	Very experimental.  If used in conjunction with the <tt/label_phone/,
+	the phone labels are assigned not the phone level, but the highest
+	level whose boundary is detected at this place.  If you do use this
+	option, be aware that Epos will use a (very slightly) TTSCP 0
+	non-compatible internal representation for the segment (diphone) stream
+	to preserve the necessary suprasegmental unit boundary information.
+	Consequently, network voices provided by different TTSCP servers may
+	fail reporting unexpected segment numbers.
+<tag>--immed_segments</tag>
+	Print the sequence of segments generated from the text processed
+	just after the <tt/segments/ rule.  This is useful especially
+	in conjunction with the <tt/neuronet/ option where the segment layer
 	is created, but later to be discarded by the rules.
 	Monolithic binary only.
 <tag>--neuronet</tag>
@@ -737,9 +864,11 @@ to the user.  The model we use is assigning a few colors consistently
 to the individual levels of description and marking up the boundaries
 between units with parentheses, separators or both. The levels of
 description are <ref id="tsr-levels" name="defined"> in compile time.
-The <tt/diphone/ and <tt/text/ may not be applicable for some of
+The <tt/segment/ and <tt/text/ may not be applicable for some of
 these options. This model of displaying the TSR is not used for
 transmitting the text over TTSCP.
+
+All the options in this subsection are <ref id="static" name="static>.
 
 <descrip>
 <tag>--colored</tag>
@@ -804,11 +933,11 @@ transmitting the text over TTSCP.
 	<tt/postfix/ options effectively disables printing other characters
 	than sounds.  This option is orthogonal to the <tt/structured/
 	option.
-<tag>--swallow_underbars</tag>
+<tag>--swallow&lowbar;underbars</tag>
 	Epos uses the low line (<tt/&lowbar;/) character to represent
 	suprasegmental units with no content at their level (e.g. syllables
 	are often only implicitly terminated or even generated
-	by the rules and have no associated symbol.); this option,
+	by the rules and have no associated symbol); this option,
 	when enabled, suppresses them completely.
 </descrip>
 
@@ -828,17 +957,13 @@ these are no limits at all. Also some <em/sanity check limits/ are imposed; thes
 act as hard limits, but can be effectively disabled by setting them to absurdly
 high values, with no direct impact on efficiency in the typical case.
 
-In fact, you can ignore this section completely, as the few hard limits tend to
+In fact, you can ignore this subsection completely, as the few hard limits tend to
 employ reasonably high values.
 
+The options in this subsection are <ref id="static" name="static"> unless
+specified otherwise.
+
 <descrip>
-<tag>--diph_buff_size <sl/diphones/</tag>
-	Soft limit.  Maximum number of diphones generated by the diphoniser
-	and synthesized at once. It more diphones have to be generated,
-	they are synthesized in chunks of <tt/diph_buff_size/.  If this
-	option is set to zero, a growable buffer is used instead, and
-	there is no limit on memory consumed.
-	This option has no effect in the monolithic Epos.
 <tag>--buffer_size <sl/bytes/</tag>
 	Soft limit. The initial buffer size for a wave file. This value is not
 	used, if we already know that we will eventually write this waveform
@@ -849,13 +974,27 @@ employ reasonably high values.
 	Sanity check limit.  When reading from a device, this is the maximum
 	amount of data which will be read for processing.  This is not necessary
 	when reading from a file, because the length of a file can be known in
-	advance and it is always finite.
-<tag>--hashes&lowbar;full <sl/percentage/</tag>
+	advance.  This option is not static.
+<tag>--hash_search <sl/n/</tag>
+	Trade-off.  Controls how many multipliers are tried out when
+	constructing a perfect hash table, for each table size.
+	The search begins at 1 and continues up to <sl/n/.
+	If the table still has collisions, hash table size is
+	increased by one and the search restarts.  This is iterated
+	until a perfect hash table is found.  As we only use perfect hash
+	tables for representing constant sets and functions, they are only
+	constructed during Epos startup.  Setting this option to a small
+	value (such as 17) speeds up Epos startup, while larger values
+	can sometimes arrive at a smaller table, thus saving some memory.
+<tag>--hashes_full <sl/percentage/</tag>
 	Trade-off. Controls how full should a hash table ideally be.
 	The hash tables used in Epos
 	are actually quite robust performance-wise, so that even values
 	like 1000, that is, ten data items per a hash table slot, result
 	in near-optimal speed. Values somewhere below 100 are the best bet.
+<tag>--max_errors <sl/count/</tag>
+	Sanity check limit.  If more than <sl/count/ of errors in a rules file
+	is found, Epos quits parsing the file.
 <tag>--max_line_len <sl/characters/</tag>
 	Hard limit. Maximum line length in a text-oriented input file.
 	Longer lines are truncated.
@@ -883,6 +1022,13 @@ employ reasonably high values.
 	Usually only very few bytes of the buffer are needed, but overflowing
 	it is fatal. It is recommended to provide at least a few hundred bytes,
 	preferably kilobytes, for this buffer.
+<tag>--seg_buff_size <sl/segments/</tag>
+	Soft limit.  Maximum number of segments generated by the diphoniser
+	and synthesized at once. It more segments have to be generated,
+	they are synthesized in chunks of <tt/seg_buff_size/.  If this
+	option is set to zero, a growable buffer is used instead, and
+	there is no limit on memory consumed.
+	This option has no effect in the monolithic Epos.
 <tag>--variables <sl/count/</tag>
 	Soft limit. Number of variables used in a set of rules.
 </descrip>
@@ -894,7 +1040,7 @@ employ reasonably high values.
 This subsection lists some options defined for each language.  Additional
 language dependent options are certain directory and file names and possibly
 others.  As every voice is associated with a single language (two voices
-may share a multilingual diphone inventory if desired), every voice dependent
+may share a multilingual segment inventory if desired), every voice dependent
 option is thence language dependent.
 
 <descrip>
@@ -923,18 +1069,6 @@ option is thence language dependent.
 	of a network error, the current voice will be switched to
 	the voice specified by this option and the initialisation will be
 	retried.
-<tag>--suppress_side_syll</tag>
-	This option should be off for most languages.  It makes the
-	<tt/syll/ rule avoid splitting off an insufficiently sonorous
-	word-initial pseudo-syllable. It is an ugly hack originally
-	introduced to get the Czech syllabification right, but I am
-	still not aware of related phenomena or possible generalizations.
-<tag>--limit_side_syll <sl/sound/</tag>
-	This parameter is only considered if <tt/suppress_side_syll/ is
-	enabled.  The parameter is the least permissible sonorous sound
-	to serve as a sonority peak if it happens to be word-initial.
-	(More precisely: permissible target unit, scope-initial, as defined
-	by the individual <tt/syll/ rule.)
 <tag>--rules_file <sl/filename/</tag>
 	The parameter is a filename. The file contains the transformational
 	rules to be applied for this language.
@@ -1006,14 +1140,16 @@ option is thence language dependent.
 	or slow network connection.
 	A value of <tt/0/ is actually a very small positive value and negative
 	values are not accepted.
+<tag>--n_segs <sl/n/ </tag>
+	The total number of segments withing the segment inventory.
 <tag>--models <sl/filename/</tag>
-	The value is a file name. The file contains the diphone inventory
+	The value is a file name. The file contains the segment inventory
 	proper. Its format is speech synthesis type dependent.
 <tag>--counts <sl/filename/</tag>
 	The value is a file name. The file contains the lengths of individual
-	diphones in this diphone inventory.
+	segments in this segment inventory.
 <tag>--dpt&lowbar;file <sl/filename/</tag>
-	The value is a file name. The file contains the symbolic diphone names
+	The value is a file name. The file contains the symbolic segment names
 	for user output; each consists of exactly three characters on a line
 	(indented with spaces from the left if necessary).  No blank lines
 	nor comments are allowed.  This file usually comes with a diphone
@@ -1021,6 +1157,18 @@ option is thence language dependent.
 <tag>--codebook <sl/filename/</tag>
 	The value is a file name. The file contains the code book for
 	the vector quantified LPC speech synthesis (<tt/lpc-vq/ type only).
+<label id="snlfile-option">
+<tag>--snl_file <sl/filename/</tag>
+	The value is a file name.  The file contains phone boundary information
+	for individual segments in this segment inventory.  Each line of the file
+	contains three space-separated items: segment number, relative position
+	within the segment (valued from 1 to 1024, e.g. 512 is the middle of the segment)
+	and the character (phone representation) which is to be associated with
+	the position.  Lines not conforming to this specification are ignored.
+	Currently, at most one label may be indicated for one segment, but it
+	would be easy to get rid of this limit (at a cost of a few extra
+	processor instructions).
+	See also <ref id="labelphones-option" name="label_phones option">.
 <tag>--init_f <sl/percentage/</tag>
 	The auditory neutral integer value for the fundamental frequency.
 	The typical value is 100.
@@ -1028,9 +1176,9 @@ option is thence language dependent.
 	The auditory neutral integer value for the volume.
 	The typical value is 100.
 <tag>--init_t <sl/percentage/</tag>
-	The auditory neutral integer value for the prosodic duration of diphones.
-	The typical value is 100.  Of course, it is diphone length relative
-	(some diphones are longer than others), just as the <tt/init_f/
+	The auditory neutral integer value for the prosodic duration of segments.
+	The typical value is 100.  Of course, it is segment length relative
+	(some segments are longer than others), just as the <tt/init_f/
 	and <tt/init_i/ options are.
 <tag>--channel <sl/channeltype/</tag>
 	The parameter, the output channel type, is one of the following:
@@ -1045,21 +1193,21 @@ option is thence language dependent.
 	This option may be used to simulate a dialogue by assigning
 	different output channels to different speakers.
 <tag>--inv_sampling_rate <sl/Hz/</tag>
-	The sampling rate this diphone inventory has been recorded at.
+	The sampling rate this segment inventory has been recorded at.
 	The algorithms we use also imply that we use the same frequency
 	for the synthesis.
 <tag>--sample&lowbar;size <sl/bits/</tag>
 	Number of bits per sample.  If some kind of a stereo output
 	is turned on, this option set the number of bits per channel.
 	Again, this is related to the quality of recording of the
-	diphone inventory.  We currently only support 8 and 16 bits.
+	segment inventory.  We currently only support 8 and 16 bits.
 </descrip>
 
 
 <sect2> Prosody generation
 <p>
 
-The options in this section control how the resulting per diphone prosodic
+The options in this subsection control how the resulting per segment prosodic
 information is assembled from the prosodic adjustments done to the
 structural units by the rules.  It actually controls the interpretation
 of those adjustments themselves.
@@ -1069,7 +1217,7 @@ of those adjustments themselves.
 	The asterisk stands for a &commat;-separated symbolic name of a linguistic description
 	level, such as <tt/phone/, <tt/syll/ or <tt/word/.  The parameter
 	is an integer value primarily used for enabling (1) or disabling (0)
-	certain levels of description when the total quantities for a diphone
+	certain levels of description when the total quantities for a segment
 	are computed.  It must however be understood that when some rules
 	like <tt/smooth/ are applied, the prosodic values are distributed
 	down to the target level of such a rule and cannot be distinguished
@@ -1104,7 +1252,7 @@ of those adjustments themselves.
 
 
 <!-- unselected options: 
-.cow, .loaded, .token_esc, .value_esc, .slash_esc, .use_diph, warnings, .input_text,
+.cow, .loaded, .token_esc, .value_esc, .slash_esc, .use_segs, warnings, .input_text,
 .sd_in, .sd_out,
 -->
 
@@ -1148,10 +1296,12 @@ Likewise, if the directory name begins with a slash, it is not considered
 to be relative to the base directory.
 
 Changing these options in run time does not immediately cause re-reading the
-renamed files.
+renamed files.  All of the options in this section are <ref id="static" name="static">
+unless stated otherwise.
 
 <descrip>
 <tag>--base&lowbar;dir <sl/dirname/</tag>
+	Only changeable on the command line.
 	The value is an absolute directory name.  This option can be used to
 	change the location of the whole configuration structure, which can also be
 	used for trying out Epos before installing it:
@@ -1162,6 +1312,7 @@ cd src
 </verb>
 </tscreen>
 
+<label id="pseudorootdir-option">n
 <tag>--pseudo_root_dir <sl/dirname/</tag>
 	The value is a directory name.  Sets the path prepended
 	to any file name referenced in the TTSCP <ref id="strm-cmd"
@@ -1172,24 +1323,29 @@ cd src
 	to this subtree to any user except Epos effectively gives him
 	the privilege to use the Epos file access rights anywhere
 	in the system through creating a symlink to the absolute root directory.
+	This option is not static.
 
 
 <tag>--ini&lowbar;dir <sl/dirname/</tag>
 	The value is a directory name.  Sets the path to language
-	independent configuration files.
+	independent configuration files.  This option is only changeable
+	on the command line.
 
 <tag>--fixed&lowbar;ini&lowbar;file <sl/filename/</tag>
 	The value is a file name.  This option can be used to change the file name
 	of the <tt>fixed.ini</tt> file, which usually contains operating system
-	independent, relatively fixed default global configuration.
+	independent, relatively fixed default global configuration.  This option
+	is only changeable on the command line.
 <tag>--cfg&lowbar;file <sl/filename/</tag>
 	The value is a file name. This option can be used to change the file name
 	of the <tt>epos.ini</tt> file.
-<tag>--wave&lowbar;file <sl/filename/</tag>
+<tag>--local&lowbar;sound&lowbar;file <sl/filename/</tag>
 	The value is a file name. This option can be used to change the file name
-	of the file produced by the <tt/play&lowbar;diphones/ option. In many unices,
+	of the local sound card device. In many unices,
 	setting this to <tt>/dev/dsp</tt> is the recommended way to actually hear
-	Epos speak. Other unices don't have <tt>/dev/dsp</tt>, however.
+	Epos speak. Other unices don't have <tt>/dev/dsp</tt>, however.  If the
+	sound card has no file name at all, set this to the null device
+	file name.
 <tag>--input&lowbar;file <sl/filename/</tag>
 	The value is a file name. This option can be used to change the file name
 	of the implicit input text used by the monolithic version of Epos.
@@ -1235,7 +1391,8 @@ cd src
 	The value is a directory name.  In this directory, TTSCP help files
 	for individual TTSCP commands and other help topics are located.
 	The contents of these files is sent to the TTSCP control connection
-	in reply to a corresponding <tt/help/ command.
+	in reply to a corresponding <tt/help/ command.  This option is not
+	static.
 <tag>--wav_dir <sl/dirname/</tag>
 	The value is a global directory name.
 	Any waveform files created by Epos without explicit directory
@@ -1254,8 +1411,10 @@ cd src
 <sect2> Daemon startup options
 <p>
 
-The options in this section usually have no effect if changed during run time;
-change them in the configuration files instead.
+All options in this subsection are <ref id="static" name="static">.
+They also usually have no effect if changed during run time;
+change them in the configuration files instead and request Epos
+<ref id="reinitialization" name="reinitialization">.
 
 <descrip>
 <label id="daemon-log-option">
@@ -1263,14 +1422,38 @@ change them in the configuration files instead.
 	The value is a file name. This option can be used to set the file
 	where various information about the Epos process is recorded.
 	At the moment that is of little practical use except for debugging.
+<tag>--use&lowbar;syslog</tag>
+	Log all TTSCP error messages with syslogd, if the syslog facility
+	is available.  Due to the internal design of Epos, some of these
+	messages are never actually sent over TTSCP to anyone - for example,
+	a fatal misconfiguration condition detected before the first client
+	connects.
+<tag>--full&lowbar;syslog</tag>
+	Log all TTSCP completion messages with syslogd, if the syslog facility is
+	available, including 1xx and 2xx class messages.
+<label id="authpriv-option">
+<tag>--authpriv</tag>
+	Log all security relevant TTSCP completion messages with the
+	facility <tt/authpriv/ instead of <tt/daemon/.  This includes
+	messages concerning denial of access or incorrectly specified
+	resource or password.  In that case, the <tt/err/ message level
+	is used instead of <tt/warn/.  Notice that network errors
+	are not affected by this option.
+<tag>--log&lowbar;codes </tag>
+	When set, all TTSCP messages are preceded with their numeric codes
+	as in TTSCP.
 <tag>--server&lowbar;pwd&lowbar;file <sl/filename/</tag>
 	The value is a file name. This option can be used to force the server
 	to store its internal password to a file.  This password can then
 	be used for TTSCP authentication in order to issue restricted commands
 	such as <tt/down/.  If the file can not be created, no error is reported.
+<tag>--debug&lowbar;password <sl/password/</tag>
+	The value is a string.  The string may be used instead of the server
+	password.  Use of this option makes Epos insecure and is discouraged.
 <tag>--restr&lowbar;file <sl/filename/</tag>
 	The file named by this parameter provides access control in TTSCP to individual
 	options.  Its syntax is described <ref id="restricted-options" name="above">.
+	This option can only be changed from the command line.
 <tag>--listen&lowbar;port <sl/port/</tag>
 	The TCP port number where the daemon should be listening for incoming
 	TTSCP connections. The daemon will check if no other service is already
@@ -1299,7 +1482,7 @@ This code is usually a <tt/fprintf/ to the <tt/stddbg/ stream.
 The decision whether to execute the debugging code, based on the
 code area and severity level is carried out by the <tt/debug&lowbar;wanted/
 function supplied in <tt>src/interf.cc</tt>.  You can either edit
-it yourself, or, you can use the options described in this section
+it yourself, or, you can use the options described in this subsection
 to control the behavior of the default <tt/debug&lowbar;wanted/ function
 supplied by Epos.  Note that <tt/&num;define DEBUGGING/ must be
 enabled in <tt/interf.h/, else the <tt/DEBUG/ macro is ignored
@@ -1317,7 +1500,6 @@ level | debugging messages | comment @
 1 | verbose  | too verbose @
 2 | normal   | informative @
 3 | rare     | warnings, and such @
-4 | none     | should not exist @
 <hline>
 </tabular>
 <caption>
@@ -1325,13 +1507,13 @@ level | debugging messages | comment @
 </caption>
 </table>
 
-
+All options in this subsection are <ref id="static" name="static">.
 
 <descrip>
 <tag>--use&lowbar;debug</tag>
 	This option must be <tt/on/ to provide any debugging information (except for
 	daemon activity logging controlled by <ref id="daemon-log-option" 
-	name="the daemon&lowbar;log option">.
+	name="the daemon&lowbar;log option"> and syslog logging.
 <tag>--assim&lowbar;debug <sl/level/</tag>
 	Severity level threshold for the code area of <tt/regress/ and
 	related types of rules, as well as their implementation in the
@@ -1375,7 +1557,7 @@ level | debugging messages | comment @
 	<tt>src/unit.cc</tt> file
 <tag>--synth&lowbar;debug <sl/level/</tag>
 	Severity level threshold for the code area of low level
-	speech syntheses (diphone to speech). It covers both
+	speech syntheses (segments to speech). It covers both
 	individual algorithms and the common code.
 <tag>--always&lowbar;debug <sl/level/</tag>
 	The global positive severity level threshold. Any debugging code
