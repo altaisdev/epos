@@ -177,7 +177,7 @@ monolith.o: monolith.cc $(HEADERS) $(MAKEFILE) options.lst $(SHELL)
 daemon.o: daemon.cc qnxipc.cc $(HEADERS) agent.h client.h $(MAKEFILE) options.lst $(SHELL)
 	$(CC) $(FLAGS) -c -o $@ daemon.cc
 
-agent.o: agent.cc $(HEADERS) agent.h navel.h client.h $(MAKEFILE) options.lst $(SHELL)
+agent.o: agent.cc $(HEADERS) agent.h navel.h client.h waveform.h $(MAKEFILE) options.lst $(SHELL)
 	$(CC) $(FLAGS) -c -o $@ agent.cc
 
 ttscp.o: ttscp.cc $(HEADERS) agent.h $(MAKEFILE) options.lst $(SHELL)
@@ -210,7 +210,7 @@ unit.o: $(HEADERS) unit.cc nnet.cc options.lst $(MAKEFILE) $(SHELL)
 text.o: common.h defaults.h hash.h interf.h options.lst $(MAKEFILE) text.cc $(SHELL)
 	$(CC) $(FLAGS) -c -o $@ text.cc
 
-synth.o: synth.h synth.cc interf.h options.h options.lst ktdsyn.h lpcsyn.h $(MAKEFILE) $(SHELL)
+synth.o: synth.h synth.cc interf.h options.h options.lst waveform.h ktdsyn.h lpcsyn.h $(MAKEFILE) $(SHELL)
 	$(CC) $(FLAGS) -c -o $@ synth.cc
 
 waveform.o: waveform.h waveform.cc interf.h options.lst $(MAKEFILE) $(SHELL)

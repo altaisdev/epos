@@ -445,11 +445,12 @@ bool set_option(option *o, char *val, void *base)
 			DEBUG(1,10,fprintf(STDDBG,"Configuration option \"%s\" set to %d\n",o->optname,*(int *)locus);)
 			break;
 		case O_STRING: 
-			parse_cfg_str(val);
+			if (val[0]) parse_cfg_str(val);
 			DEBUG(1,10,fprintf(STDDBG,"Configuration option \"%s\" set to \"%s\"\n",o->optname,val);)
 			*(char**)locus = strdup(val);	// FIXME: should be forever if monolith etc. (maybe)
 			break;
 		case O_CHAR:
+			if (!val[0]) shriek(447, fmt("Empty string given for a CHAR option %s", o->optname));
 			parse_cfg_str(val);
 			if (val[1]) shriek(447, fmt("Multiple chars given for a CHAR option %s", o->optname));
 			else *(char *)locus=*val;
@@ -515,7 +516,8 @@ static inline void set_option_or_die(char *name, char *value)
 {
 	option *o = option_struct(name, NULL);
 	if (!o) shriek(814, fmt("Unknown option %s", name));
-	if (!cfg->langs && o->structype != OS_CFG) return;
+	if (!cfg->langs && (o->structype != OS_CFG || o->opttype == O_LANG))
+		return;
 
 	if (set_option(o, value)) return;
 	shriek(814, fmt("Bad value %s for option %s", value, name));
@@ -534,7 +536,7 @@ bool lang_switch(const char *value)
 {
 	for (int i=0; i < cfg->n_langs; i++)
 		if (!strcmp(cfg->langs[i]->name, value)) {
-			if (!cfg->langs[i]->n_voices)		// FIXME
+			if (!cfg->langs[i]->n_voices)
 				shriek(462, "Switch to a mute language unimplemented");
 			cfg->default_lang = i;
 			return true;
@@ -601,7 +603,7 @@ char *format_option(const char *name)
 {
 	option *o = option_struct(name, this_lang->soft_options);
 	if (!o) {
-		shriek(442, fmt("Not returning empty string for nonexistant option %s", name));	//FIXME?
+		shriek(442, fmt("Nonexistent option %s", name));
 		return NULL; /* unreachable */
 	}
 	return format_option(o);
@@ -636,13 +638,13 @@ void parse_cmd_line()
 		case 1:
 			for (j = ar+1; *j; j++) switch (*j) {
 				case 'b': cfg->out_verbose=false; break;
-				case 'd': cfg->show_diph=true; break;
-				case 'e': cfg->show_phones=true; break;
+//				case 'd': cfg->show_diph=true; break;
+//				case 'e': cfg->show_phones=true; break;
 				case 'f': cfg->forking=false; break;
 				case 'H': cfg->long_help=true;	/* fall through */
 				case 'h': cfg->help=true; break;
 				case 'n': cfg->rules_file="nnet.rul";
-					  if (this_lang)
+					  if (cfg->langs && this_lang)
 						this_lang->rules_file = cfg->rules_file;
 					  cfg->neuronet=true; break;
 				case 'p': cfg->pausing=true; break;
@@ -653,7 +655,7 @@ void parse_cmd_line()
 					else if (cfg->warnings)
 						cfg->always_dbg--;
 					break;
-				default : shriek(442, fmt("Unknown option -%c, ignored", *j));
+				default : shriek(442, fmt("Unknown option -%c, no action taken", *j));
 			}
 			if (!ar[1]) {
 				cfg->input_file = "";   	//dash only
@@ -755,8 +757,8 @@ static inline void dump_help()
 
 	printf("usage: %s [options] ['Text to be processed']\n", argv[0]);
 	printf(" -b  bare format (no frills)\n");
-	printf(" -d  show diphones\n");
-	printf(" -e  show phones\n");
+//	printf(" -d  show diphones\n");
+//	printf(" -e  show phones\n");
 	printf(" -f  disable forking (detaching) the daemon\n");
 	printf(" -n  same as --neuronet --rules_file nnet.rul\n");
 	printf(" -p  pausing - show every intermediate state\n");

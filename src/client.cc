@@ -126,7 +126,8 @@ int just_connect_socket(unsigned int ipaddr, int port)
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
 	if (!ipaddr) {
-		gethostname(scratch, cfg->scratch);
+//		gethostname(scratch, cfg->scratch);	// can be used instead of localhost
+		strcpy(scratch, "localhost");
 		ipaddr = getaddrbyname(scratch);
 	}
 	addr.sin_addr.s_addr = ipaddr;

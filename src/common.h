@@ -27,7 +27,7 @@
 
 #define MAINTAINER  "Jirka Hanika"
 #define MAIL        "geo@ff.cuni.cz"
-#define VERSION     "2.4.24"
+#define VERSION     "2.4.28"
 
 #include "config.h"
 
@@ -131,6 +131,12 @@ class stream;
 	#define SLASH              '\\'
 	#define NULL_FILE	   "NUL"
 	#define MODE_MASK	   (S_IREAD | S_IWRITE)
+#endif
+
+#ifdef HAVE_WINSOCK2_H
+	#define socky unsigned
+#else
+	#define socky signed
 #endif
 
 

@@ -183,9 +183,7 @@ int cmd_setg(char *param, a_ttscp *a)
 		failed = e->code;
 		msg = e->msg;
 		delete e;
-//		printf("first\n");
 	}
-//	printf("second\n");
 	a->c->enter();
 	if (failed) shriek(failed, msg);
 	return result;
@@ -227,7 +225,7 @@ int cmd_help(char *param, a_ttscp *)
 	return PA_NEXT;
 }
 
-void free_sleep_table();
+// void free_sleep_table();
 
 int cmd_shutdown(char *, a_ttscp *a)
 {
@@ -235,20 +233,8 @@ int cmd_shutdown(char *, a_ttscp *a)
 	reply("800 shutdown OK");
 	a->c->leave();
 	ctrl_conns->remove(a->handle);
-	while (ctrl_conns->items) {
-		a_ttscp *tmp = ctrl_conns->translate(ctrl_conns->get_random());
-		sputs("800 shutdown requested\r\n", tmp->c->config->sd_out);
-		delete ctrl_conns->remove(tmp->handle);
-	}
-	if (cfg->pwdfile) remove(cfg->pwdfile);
 	delete a;		/* I'm not sure this is OK */
-	delete accept_conn;
-	delete ctrl_conns;
-	delete data_conns;
-	delete master_context;
-	free_sleep_table();
-	epos_done();
-	exit(0);
+	server_shutdown();
 	return PA_DONE;		/* naive compilers */
 }
 

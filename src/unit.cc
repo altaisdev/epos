@@ -40,7 +40,6 @@ unit::unit(UNIT layer, parser *parser)
 	cont = NO_CONT;
 	f = i = t = 0;
 	scope=false;
-//	if((signed int) layer <0) shriek(861, fmt("Can't use this point of view: %d", layer));	FIXME
 	DEBUG(1,2,fprintf(STDDBG,"New unit %u, parser %u\n", layer, parser->level);)
 
 	while (parser->level < layer) insert_end(new unit((UNIT) (layer-1), parser),NULL);
@@ -88,7 +87,6 @@ unit::~unit()
 	DEBUG(0,2,fprintf(STDDBG,"Disposing %c\n",cont);)
 	if (next) delete next;
 	if (firstborn) delete firstborn;
-//	if (father && father->firstborn == NULL) delete father;	// FIXME
 }
 
 /****************************************************************************
@@ -275,7 +273,7 @@ unit::insert(UNIT target, bool backwards, char what, bool *left, bool *right)
 	}
 	baby = NULL;
 	if (depth > target) 
-		for(tmpu=(backwards?lastborn:firstborn);tmpu;tmpu=(backwards?tmpu->prev:tmpu->next))
+		for (tmpu=(backwards?lastborn:firstborn);tmpu;tmpu=(backwards?tmpu->prev:tmpu->next))
 			tmpu->insert(target,backwards,what,left,right);
 	else shriek (861, "Out of turtles");
 }
@@ -327,7 +325,7 @@ unit::gather(char *buffer_now, char *buffer_end, bool suprasegm)
 {    
 	unit *tmpu;
 //	DEBUG(0,3,fprintf(STDDBG,"Chroust! %d %s\n", buffer_end - buffer_now, buffer_now - 3);)
-	for(tmpu = firstborn;tmpu && buffer_now < buffer_end; tmpu = tmpu->next) {
+	for (tmpu = firstborn;tmpu && buffer_now < buffer_end; tmpu = tmpu->next) {
 		buffer_now = tmpu->gather(buffer_now, buffer_end, suprasegm);
 		if (!buffer_now) return NULL;	// FIXME: slow and ugly
 	}
@@ -578,7 +576,7 @@ unit::regex(regex_t *regex, int subexps, regmatch_t *subexp, const char *repl)
 	int	i,j,k,l;
 	
 	sanity();
-	for (i=cfg->multi_subst; i; i--) {
+	for (i = cfg->multi_subst; i; i--) {
 		strend=gather(_gather_buff, _gather_buff+MAX_GATHER, true);
 		if (!strend) return;	// gather overflow
 		*strend=0;
@@ -639,7 +637,7 @@ unit::assim(UNIT target, bool backwards, char *fn, bool *left, bool *right)
 		return;
 	}
 	if (depth>target) 
-		for(tmpu = (backwards?lastborn:firstborn);tmpu;) {
+		for (tmpu = (backwards?lastborn:firstborn);tmpu;) {
 			unit *tmp_next = backwards ? tmpu->prev : tmpu->next;
 			tmpu->assim(target,backwards,fn,left,right);
 			tmpu = tmp_next;
@@ -716,12 +714,15 @@ unit::syllabify(char *sonor)
 void
 unit::syllabify(UNIT target, char *sonor)
 {
-	unit *tmpu;
+	unit *tmpu, *tmpu_prev;
 	
 	DEBUG(0,5,fprintf(STDDBG,"unit::syllabify in level %d cont %c %c %c \n", depth,Prev(depth)->cont,cont,Next(depth)->cont);)
 	syll_pending=0;
-	for(tmpu=RightMost(target);tmpu!=&EMPTY;tmpu=tmpu->Prev(tmpu->depth))
+	for (tmpu=RightMost(target);tmpu!=&EMPTY; ) {
+		tmpu_prev = tmpu->Prev(tmpu->depth);
 		tmpu->syllabify(sonor);
+		tmpu = tmpu_prev;
+	}
 }
 
 /****************************************************************************
@@ -755,8 +756,8 @@ unit::sseg(UNIT target, hash *templts)
 	
 	DEBUG(1,2,fprintf(STDDBG,"unit::sseg in level %d\n", depth);)
 	n=0;
-	for(tmpu=RightMost(target);tmpu!=&EMPTY;tmpu=tmpu->Prev(target)) n++;
-	for(j=n, tmpu=RightMost(target); j>0; j--, tmpu=tmpu->Prev(target)) {
+	for (tmpu = RightMost(target); tmpu != &EMPTY; tmpu = tmpu->Prev(target)) n++;
+	for (j=n, tmpu = RightMost(target); j>0; j--, tmpu = tmpu->Prev(target)) {
 		DEBUG(0,5,fprintf(STDDBG,"unit::sseg question n=%d j=%d\n", n, j);)
 		sprintf(_sseg_question[0], " /%d:%d", j, n);
 		sprintf(_sseg_question[1], " /%d:*", j);
@@ -785,9 +786,9 @@ unit::contour(UNIT target, int *recipe, int rec_len, int padd_start, FIT_IDX wha
 	unit *u;
 	int i;
 	int padd_count;
-	for (u=LeftMost(target), i = (padd_start > -1);
-			i<rec_len && u != &EMPTY;
-			u=u->Next(target), i++)  /* just count'em */ ;
+	for (u = LeftMost(target), i = (padd_start > -1);
+			i < rec_len && u != &EMPTY;
+			u = u->Next(target), i++)  /* just count'em */ ;
 	if (u->Next(target) != &EMPTY && padd_start == -1) {
 		shriek(463, fmt("recipe too short: %d items", rec_len));
 	}
@@ -798,12 +799,12 @@ unit::contour(UNIT target, int *recipe, int rec_len, int padd_start, FIT_IDX wha
 
 		/* the following happens to work even if (padd_start == -1) */
 
-	for (u=LeftMost(target), i=0;  i < padd_start;  u=u->Next(target), i++)
+	for (u = LeftMost(target), i=0;  i < padd_start;  u = u->Next(target), i++)
 		FIT(u, what) = recipe[i] + (additive ? FIT(u, what) : 0);
-	for ( ;  padd_count;  u=u->Next(target), padd_count--)
+	for ( ;  padd_count;  u = u->Next(target), padd_count--)
 		FIT(u, what) = recipe[i] + (additive ? FIT(u, what) : 0);
 	if (padd_start > -1) i++;
-	for ( ;  i < rec_len;  u=u->Next(target), i++)
+	for ( ;  i < rec_len;  u = u->Next(target), i++)
 		FIT(u, what) = recipe[i] + (additive ? FIT(u, what) : 0);
 }
 
@@ -834,18 +835,20 @@ unit::smooth(UNIT target, int *recipe, int n, int rec_len, FIT_IDX what)
 	
 	DEBUG(1,2,fprintf(STDDBG, "unit::smooth (%d:%d) %d %d ...\n", n, rec_len, recipe[0], recipe[1]);)
 	u=v=LeftMost(target);
-	for (j=0; j<n; j++) smooth_cq[j] = FIT(u, what);
-	for (; j<rec_len && u->Next(target)!=&EMPTY; j++, u=u->Next(target)) smooth_cq[j] = FIT(u, what);
-	for (; j<rec_len; j++) smooth_cq[j] = FIT(u, what);
+	for (j = 0; j < n; j++) smooth_cq[j] = FIT(u, what);
+	for ( ; j < rec_len && u->Next(target) != &EMPTY; j++, u = u->Next(target))
+		smooth_cq[j] = FIT(u, what);
+	for ( ; j < rec_len; j++) smooth_cq[j] = FIT(u, what);
 
 	cq_wrap=0;
 
-	for (; v!=&EMPTY; v=v->Next(target)) {
-		avg=0;
-		for (k=0; k<rec_len; k++) avg+=recipe[k]*smooth_cq[(k + cq_wrap) % rec_len];
-		FIT(v, what) = avg/RATIO_TOTAL;
-		smooth_cq[cq_wrap]=FIT(u, what);
-		if (++cq_wrap==rec_len) cq_wrap=0;
+	for (; v != &EMPTY; v = v->Next(target)) {
+		avg = 0;
+		for (k = 0; k < rec_len; k++)
+			avg += recipe[k] * smooth_cq[(k + cq_wrap) % rec_len];
+		FIT(v, what) = avg / RATIO_TOTAL;
+		smooth_cq[cq_wrap] = FIT(u, what);
+		if (++cq_wrap == rec_len) cq_wrap=0;
 		if (u->Next(target) != &EMPTY) u = u->Next(target);
 	}
 }
@@ -857,11 +860,11 @@ unit::project(UNIT target, int adjf, int adji, int adjt)
 {
 	unit *u;
 	if (depth > target) {
-		for (u=firstborn; u; u=u->next)
-			u->project(target, adjf+f, adji+i, adjt+t);
-		f=i=t=0;
+		for (u = firstborn; u; u = u->next)
+			u->project(target, adjf + f, adji + i, adjt + t);
+		f = i = t = 0;
 	} else {
-		f+=adjf; i+=adji; t+=adjt;
+		f += adjf; i += adji; t += adjt;
 	}
 }
 
@@ -875,21 +878,21 @@ unit::project(UNIT target, int adjf, int adji, int adjt)
 void 
 unit::raise(bool *whattab, bool*whentab, UNIT whither, UNIT whence)
 {
-	if (whither!=depth) shriek(861, "raise bad");
+	if (whither != depth) shriek(861, "raise bad");
 	unit *tmpu, *tmpbig;
 	DEBUG(1,2,fprintf(STDDBG,"unit::raise moving from %d to %d\n",whence,whither);)
 	if  (whither<=whence) shriek(462, "Raising downwards...huh...");
-	for (tmpbig=LeftMost(whither); tmpbig!=&EMPTY; tmpbig=tmpbig->Next(whither)) {
+	for (tmpbig = LeftMost(whither); tmpbig != &EMPTY; tmpbig = tmpbig->Next(whither)) {
 		if (whentab[tmpbig->cont]) {
 			DEBUG(1,2,fprintf(STDDBG,"unit::raise searching %c\n",tmpbig->cont);)
-			bool tmpscope=scope; scope=true;
-			for(tmpu=LeftMost(whence); tmpu!=&EMPTY; tmpu=tmpu->Next(whence)) {
+			bool tmpscope = scope; scope = true;
+			for (tmpu = LeftMost(whence); tmpu != &EMPTY; tmpu = tmpu->Next(whence)) {
 				if (whattab[tmpu->cont]) {
 					DEBUG(0,2,fprintf(STDDBG,"unit::raise found %c\n",tmpu->cont);)
-					tmpbig->cont=tmpu->cont;
+					tmpbig->cont = tmpu->cont;
 				}
 			}
-			scope=tmpscope;
+			scope = tmpscope;
 		} else DEBUG(1,2,fprintf(STDDBG,"unit::raise NOT searching %c\n",tmpbig->cont););
 
 	}
@@ -897,7 +900,7 @@ unit::raise(bool *whattab, bool*whentab, UNIT whither, UNIT whence)
 
 /****************************************************************************
  unit::diph    (innermost - creates a single "diphone" unit, if possible)
- 		The for(;;) cycle will normaly execute exactly once, if
+ 		The for (;;) cycle will normaly execute exactly once, if
  		a diphone is found; otherwise, nothing happens, because
  		a negative value is returned by translate_int(). 
 
@@ -912,9 +915,9 @@ inline void
 unit::diph(hash *dinven)   //_d_descr should contain a diphone name
 {
 	int n;
-	for (n=dinven->translate_int(_d_descr);n>=0;n-=OMEGA) {
-		DEBUG(1,5,fprintf(STDDBG,"Diphone number %d born\n", n%OMEGA);)
-		insert_end(new unit(cfg->segm_level, n%OMEGA),NULL);
+	for (n = dinven->translate_int(_d_descr); n >= 0; n -= OMEGA) {
+		DEBUG(1,5,fprintf(STDDBG,"Diphone number %d born\n", n % OMEGA);)
+		insert_end(new unit(cfg->segm_level, n % OMEGA), NULL);
 		sanity();
 		DEBUG(1,5,fprintf(STDDBG,"...born and inserted\n");)
 	}
@@ -952,7 +955,7 @@ unit::diphs(UNIT target, hash *dinven)
 		diph (dinven);
 		DEBUG(1,5,fprintf(STDDBG,"unit::diphs is done in: %c\n", cont);)
 	}
-	else for(tmpu=firstborn;tmpu;tmpu=tmpu->next) tmpu->diphs(target,dinven);
+	else for (tmpu = firstborn; tmpu; tmpu = tmpu->next) tmpu->diphs(target, dinven);
 	DEBUG(1,5,fprintf(STDDBG,"Exiting outer unit::diphs tar %d (finished)\n", target);)
 	sanity();
 }
@@ -988,15 +991,15 @@ unit::unlink(REPARENT rmethod)
 		break;
 	}
 	DEBUG(0,2,fprintf(STDDBG," ...successfully unlinked\n");)
-	firstborn=NULL;lastborn=NULL;            //"this" may be involved in a for-cycle
-	if (_unit_just_unlinked) {                      //  up the stack, so we can't delete it
-	        _unit_just_unlinked->next=NULL;        //  right now. We always keep the last one.
+	firstborn = NULL;lastborn = NULL;
+	if (_unit_just_unlinked) {			// this could probably be simplified
+	        _unit_just_unlinked->next=NULL;		// to "delete this"
 	        delete _unit_just_unlinked;
 	}
 	_unit_just_unlinked=this;
 
 	if (father && !father->firstborn) {
-		DEBUG(4,2,fprintf(STDDBG, "Unsafe unlink - may need more fixing\n"););
+		DEBUG(4,2,fprintf(STDDBG, "Unsafe unlink - may need more fixing\n"););	// as above
 		father->unlink(M_DELETE);
 	}
 	DEBUG(0,2,fprintf(STDDBG,"unit deleted, farewell\n");)
@@ -1009,16 +1012,17 @@ unit::unlink(REPARENT rmethod)
 int
 unit::forall(UNIT target, bool userfn(unit *patiens))
 {
-	unit *tmpu;
+	unit *tmpu, *tmpu_next;
 	int n = 0;
 
 	if (!this) return shriek(862, "NULL->forall"),0;
 	if (target == depth) n += (int) userfn(this);
-	else for (tmpu = firstborn; tmpu; tmpu = tmpu->next)
-	{
-		tmpu->sanity();
+	else for (tmpu = firstborn; tmpu; ) {
+		tmpu_next = tmpu->next;
 		n += (tmpu->forall(target, userfn));
-	}       //for(;;)
+		tmpu->sanity();
+		tmpu = tmpu_next;
+	}
 	return n;
 }
 /****************************************************************************
@@ -1078,7 +1082,7 @@ int
 unit::index(UNIT what, UNIT where)
 {
 	int i=0;
-	if (what > where) shriek(862, "Bad sequence of arguments to unit::index");
+	if (what > where) shriek(862, "Wrong order of arguments to unit::index");
 	if (what < depth) shriek(862, fmt("Underindexing in unit::index %d",what));
 	unit *lookfor = ancestor(what);
 	unit *lookin = ancestor(where);

@@ -64,7 +64,7 @@ int main(int argc, char **argv)
 		return 0;
 	} catch (any_exception *e) {	// this one is preferred, however.
 //	} catch (old_style_exc *e) {	// this one is required by the g++ bugware
-		printf("*****************\n");
+//		printf("*****************\n");
 		return 4;
 	}
 }
