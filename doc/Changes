@@ -923,3 +923,7 @@ for an exciting story, just skip it.
 	- initializing unit::gb and unit::sb statically
 	- minor additions to main.dic
 
+2.4.35 from 2.4.34	 8.11.99
+	- partly fixed labelled waveforms (added a field to "cue " chunk header)
+	- hopefully finally fixed unit::sb
+
