@@ -39,7 +39,8 @@ class parser
 	void init(SYMTABLE symtab);          // the common constructor
 	~parser();
 	UNIT level;		// contains the UNIT level of the next symbol
-	int f, i, t;		// f, i, t of the next symbol (usually zero)
+//	int f, i, t;		// f, i, t of the next symbol (usually zero)
+	float t;
 	unsigned char gettoken(); // gets the next symbol
 	UNIT chrlev(unsigned char c);  // what level c is to be analysed at
 	void done();		// shriek if some input left

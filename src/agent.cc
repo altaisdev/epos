@@ -286,6 +286,7 @@ a_diphs::run()
 	int items = 0;
 
 	unit *root = *(unit **)&inb;
+	root->project(cfg->segm_level);
 again:
 	n = root->write_diphs(c, position, dbs);
 	position += n;

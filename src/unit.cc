@@ -26,7 +26,10 @@ unit EMPTY;
 
 #include "slab.h"
 
+#include "marker.cc"
+
 SLABIFY(unit, unit_slab, 1024, shutdown_units)
+SLABIFY(marker, marker_slab, 1024, shutdown_unit_markers)
 
 /****************************************************************************
  This constructor will construct a unit at the "layer" level, 
@@ -38,14 +41,17 @@ unit::unit(UNIT layer, parser *parser)
 	next = prev = firstborn = lastborn = father = NULL;
 	depth = layer;
 	cont = NO_CONT;
-	f = i = t = 0;
-	scope=false;
+//	f = i = t = 0;
+	m = NULL;
+	scope = false;
 	DEBUG(1,2,fprintf(STDDBG,"New unit %u, parser %u\n", layer, parser->level);)
 
 	while (parser->level < layer) insert_end(new unit((UNIT) (layer-1), parser),NULL);
 	if    (parser->level == layer) {
-		f = parser->f;
-		i = parser->i;
+//		shriek(899, "unit const");
+//		m =
+//		f = parser->f;
+//		i = parser->i;
 		t = parser->t;
 		cont = parser->gettoken();
 	}
@@ -62,7 +68,8 @@ unit::unit(UNIT layer, int content)
 	next = prev = firstborn = lastborn = father = NULL;
 	depth = layer;
 	cont = content;
-	f = i = t = 0;
+//	f = i = t = 0;
+	m = NULL;
 	scope = false;
 	DEBUG(1,2,fprintf(STDDBG,"New unit %u, content %d\n", layer, content);)
 }
@@ -254,9 +261,10 @@ unit::insert(UNIT target, bool backwards, char what, bool *left, bool *right)
 			} else father->lastborn = tmpu;
 			next = tmpu;
 			tmpu->father = father;
-			tmpu->f = f;
-			tmpu->i = i;
+//			tmpu->f = f;
+//			tmpu->i = i;
 			tmpu->t = t;
+			tmpu->m = m->derived();
 		}
 		if (!prev && right[cont] && left[Prev(depth)->cont]) {
 			baby = tmpu = new unit(depth, what);
@@ -264,9 +272,10 @@ unit::insert(UNIT target, bool backwards, char what, bool *left, bool *right)
 			father->firstborn = tmpu;
 			prev = tmpu;
 			tmpu->father = father;
-			tmpu->f = f;
-			tmpu->i = i;
+//			tmpu->f = f;
+//			tmpu->i = i;
 			tmpu->t = t;
+			tmpu->m = m->derived();
 		}
 		DEBUG(1,4,fprintf(STDDBG,"New contents: %c\n",cont);)
 		return;
@@ -324,6 +333,7 @@ unit::done()
 	if (sb) free(sb);
 	gb = sb = NULL;
 	shutdown_units();
+	shutdown_unit_markers();
 }
 
 /****************************************************************************
@@ -386,9 +396,9 @@ unit::gather(int *l, bool delimited, bool suprasegm)
 // char *_subst_buff = NULL;
 // char *_gather_buff = NULL;
 
-char *unit::gb = (char *)malloc(INIT_GB_SIZE);
+char *unit::gb = (char *)xmalloc(INIT_GB_SIZE);
 int unit::gbsize = INIT_GB_SIZE;
-char *unit::sb = (char *)malloc(INIT_GB_SIZE);
+char *unit::sb = (char *)xmalloc(INIT_GB_SIZE);
 int unit::sbsize = INIT_GB_SIZE;
 
 inline void
@@ -396,7 +406,7 @@ unit::assert_sbsize(int k)
 {
 	if (sbsize <= k + 1) {
 		while (sbsize <=k + 1) sbsize <<= 1;
-		sb = (char *)realloc(sb, sbsize);
+		sb = (char *)xrealloc(sb, sbsize);
 	}
 }
 
@@ -422,8 +432,8 @@ unit::subst()
 	lastborn  = tmpu->lastborn;
 	firstborn->set_father(this);
 	sanity();
-	tmpu->firstborn=NULL;      //lest they delete out our newly adopted children
-	tmpu->next=NULL;           //Paranoid
+	tmpu->firstborn = NULL;      //lest they delete out our newly adopted children
+	tmpu->next = NULL;           //Paranoid
 	delete tmpu;
 	delete parsie;
 	DEBUG(0,3,fprintf(STDDBG,"innermost unit::subst - return to caller\n");)
@@ -646,7 +656,7 @@ commit:
  unit::regex
  ****************************************************************************/
 
-// FIXME: more efficient strcpys
+// FIXME: more efficient strcpys, please
 
 void
 unit::regex(regex_t *regex, int subexps, regmatch_t *subexp, const char *repl)
@@ -666,10 +676,10 @@ unit::regex(regex_t *regex, int subexps, regmatch_t *subexp, const char *repl)
 		sanity();
 		DEBUG(1,3,fprintf(STDDBG,"unit::regex matched %s\n", gb);)
 		
+//		for (k = 0; k < subexp[0].rm_so; k++) sb[k] = gb[k];
 		k = subexp[0].rm_so;
 		assert_sbsize(k);
 		strncpy(sb, gb, k);
-//		for (k = 0; k < subexp[0].rm_so; k++) sb[k] = gb[k];
 		
 		for (j = 0; ; j++) {
 			if (repl[j]==ESCAPE && repl[j+1]>='0' && repl[j+1]<='9') {
@@ -822,6 +832,8 @@ unit::syllabify(UNIT target, char *sonor)
 #define SSEG_QUESTIONS 5
 static char _sseg_question[SSEG_QUESTIONS][SSEG_QUESTION_LEN];
 
+#ifdef REALLY_NEED_SSEG
+
 void
 unit::sseg(hash *templts, char symbol, int *quant)
 {
@@ -854,11 +866,14 @@ unit::sseg(UNIT target, hash *templts)
 		sprintf(_sseg_question[2], " /%dlast:*", n-j+1);
 		sprintf(_sseg_question[3], " /*:%d", n);
 		sprintf(_sseg_question[4], " /*:*");
-		sseg(templts, 'f', &tmpu->f);
-		sseg(templts, 'i', &tmpu->i);
+//		sseg(templts, 'f', &tmpu->f);
+//		sseg(templts, 'i', &tmpu->i);
 		sseg(templts, 't', &tmpu->t);
+		shriek(899, "no sseg");
 	}
 }
+
+#endif
 
 /****************************************************************************
  unit::contour	Distributes a prosodic contour over a linear string of units.
@@ -869,6 +884,8 @@ unit::sseg(UNIT target, hash *templts)
  ****************************************************************************/
 
 #define FIT(x,y) ((y==Q_FREQ) ? (x->f) : (y==Q_INTENS) ? (x->i) : (x->t) )
+
+#define UGLY_POSITION  0.5
 
 void
 unit::contour(UNIT target, int *recipe, int rec_len, int padd_start, FIT_IDX what, bool additive)
@@ -890,12 +907,15 @@ unit::contour(UNIT target, int *recipe, int rec_len, int padd_start, FIT_IDX wha
 		/* the following happens to work even if (padd_start == -1) */
 
 	for (u = LeftMost(target), i=0;  i < padd_start;  u = u->Next(target), i++)
-		FIT(u, what) = recipe[i] + (additive ? FIT(u, what) : 0);
+//		FIT(u, what) = recipe[i] + (additive ? FIT(u, what) : 0);
+		m = new marker(what, true, recipe[i], m, UGLY_POSITION);
 	for ( ;  padd_count;  u = u->Next(target), padd_count--)
-		FIT(u, what) = recipe[i] + (additive ? FIT(u, what) : 0);
+//		FIT(u, what) = recipe[i] + (additive ? FIT(u, what) : 0);
+		m = new marker(what, true, recipe[i], m, UGLY_POSITION);
 	if (padd_start > -1) i++;
 	for ( ;  i < rec_len;  u = u->Next(target), i++)
-		FIT(u, what) = recipe[i] + (additive ? FIT(u, what) : 0);
+//		FIT(u, what) = recipe[i] + (additive ? FIT(u, what) : 0);
+		m = new marker(what, true, recipe[i], m, UGLY_POSITION);
 }
 
 
@@ -920,6 +940,7 @@ int smooth_cq[SMOOTH_CQ_SIZE];
 void
 unit::smooth(UNIT target, int *recipe, int n, int rec_len, FIT_IDX what)
 {
+#ifdef HAVE_SMOOTH
 	unit *u, *v;
 	int cq_wrap, j, k, avg;
 	
@@ -941,10 +962,15 @@ unit::smooth(UNIT target, int *recipe, int n, int rec_len, FIT_IDX what)
 		if (++cq_wrap == rec_len) cq_wrap=0;
 		if (u->Next(target) != &EMPTY) u = u->Next(target);
 	}
+#else
+//	shriek(899, "no smooth");
+	DEBUG(3,2,fprintf(STDDBG, "No smooth!");)	// FIXME
+#endif
 }
 
 #undef FIT
 
+#ifdef HAVE_PROJECT
 void
 unit::project(UNIT target, int adjf, int adji, int adjt)
 {
@@ -957,6 +983,49 @@ unit::project(UNIT target, int adjf, int adji, int adjt)
 		f += adjf; i += adji; t += adjt;
 	}
 }
+#else
+void
+unit::project(UNIT target)			// FIXME optimize
+{
+	if (target == depth) return;
+	if (target < depth) {
+		float sum = 0;
+		float c = 0;
+		unit *u;
+		for (u = firstborn; u; u = u->next) {
+			sum += u->t;
+		}
+		u = firstborn;
+		marker *tmp;
+		while (m) {
+			if (m->extent) {
+				if (m->next && !m->next->extent)
+					shriek(862, "Extent followed by a non-extent");
+				for (unit *u = firstborn; u; u = u->next) {
+					u->m->merge(m->derived(), &u->m);
+					u->project(target);
+				}
+				delete m;
+				m = NULL;
+			} else {
+				tmp = m;
+				if (tmp->pos < c) shriek(862, "unsorted markers");
+				while (tmp->pos > c + u->t / sum) {
+					u->project(target);
+					c += u->t / sum;
+					u = u->next;
+				}
+				m = tmp->next;
+				tmp->next = NULL;
+				tmp->pos = (tmp->pos - c) / u->t * sum;
+				marker **ml;
+				for (ml = &u->m; *ml; ml = &(*ml)->next) ;
+				*ml = tmp;
+			}
+		}
+	} else shriek(899, "project upwards");
+}
+#endif
 
 /****************************************************************************
  unit::raise    moves the characters given to the level given
@@ -1123,6 +1192,7 @@ unit::forall(UNIT target, bool userfn(unit *patiens))
 int
 unit::effective(FIT_IDX which)
 {
+#ifdef HAVE_EFFECTIVE
 	DEBUG(0,2,fprintf(STDDBG,"computing unit::effective, level %d, f=%d\n", depth, f);)
 
 	if (cfg->pros_mul[which]) {
@@ -1142,6 +1212,23 @@ unit::effective(FIT_IDX which)
 		}
 		return sum + cfg->pros_neutral[which];
 	}
+#else
+//	shriek(899, "no effective");
+
+	marker *ma;
+	unit *u = this;
+//	for (u = this; u; u = u->father) {
+		for (ma = u->m; ma; ma = ma->next)
+		{
+//			printf("%d\n", ma->par);
+			if (ma->type == which) {
+				return 100 + ma->par;	// FIXME!!
+			}
+		}
+//	}
+//	printf("sto\n");
+	return 100;  // FIXME!!
+#endif
 } 
 
 /****************************************************************************

@@ -89,12 +89,12 @@ inline void mark_voice(int a)
 
 struct cue_point
 {
-	long name;
-	long pos;
-	char chunk[4];
-	long chunkstart;
-	long blkstart;
-	long sample_offset;
+	int name;
+	int pos;
+	int chunk[4];
+	int chunkstart;
+	int blkstart;
+	int sample_offset;
 };
 
 cue_point cue_point_template = { 0, 0, FOURCC_INIT("data"), 0, 0, 0 };
@@ -105,9 +105,9 @@ cue_point cue_point_template = { 0, 0, FOURCC_INIT("data"), 0, 0, 0 };
 struct ltxt
 {
 	char txt[4];
-	long len;
-	long cp_name;
-	long sample_count;
+	int len;
+	int cp_name;
+	int sample_count;
 	char purpose[4];
 	short country;
 	short language;
@@ -115,12 +115,19 @@ struct ltxt
 	short codepage;
 };
 
-#define USA	 1		// FIXME (etc.)
-#define English  9
-#define American 1
-#define Boring_CodePage	437
+//#define USA	 1		// FIXME (etc.)
+//#define English  9
+//#define American 1
+//#define Boring_CodePage	437
 
-ltxt ltxt_template = { FOURCC_INIT("ltxt"), 0, 0, 0, FOURCC_INIT("dphl"), USA, English, American, Boring_CodePage };
+//ltxt ltxt_template = { FOURCC_INIT("ltxt"), 0, 0, 0, FOURCC_INIT("dphl"), USA, English, American, Boring_CodePage };
+
+struct labl
+{
+	char txt[4];
+	int len;
+	int cp_name;
+};
 
 wavefm::wavefm(voice *v)
 {
@@ -152,8 +159,8 @@ wavefm::wavefm(voice *v)
 	buffer = NULL;
 	hdr.buffer_idx = 0;
 
-	cuehdr.len = 4;
 	cuehdr.n = adtlhdr.len = 0;
+	cuehdr.len = 4;
 	memcpy(cuehdr.string1, "cue ", 4);
 	memcpy(adtlhdr.string1, "LIST", 4);
 	memcpy(adtlhdr.string2, "adtl", 4);
@@ -416,7 +423,7 @@ wavefm::detach()
 struct w_ophase
 {
 	bool inlined;
-	int  adjustment;
+	int adjustment;
 	char **buff;
 	int  *len;
 };
@@ -656,13 +663,20 @@ wavefm::label(char *lbl)
 		adtl_max = ADTL_INITIAL_BUFF;
 		adtl_buff = (char *)xmalloc(adtl_max);
 	}
-
+/*
 	ltxt *l = (ltxt *)(adtl_buff + adtlhdr.len);
 	*l = ltxt_template;
 	l->cp_name = current_cp - 1;
 	l->sample_count = offs - last_offset;
 	l->len = sizeof(ltxt) - RIFF_HEADER_SIZE + strlen(lbl) + 1;
 	strcpy((char *)(l+1), lbl);
+*/
+	labl *l = (labl *)(adtl_buff + adtlhdr.len);
+	strncpy(l->txt, "labl", 4);
+	l->cp_name = current_cp;
+	l->len = sizeof(labl) - RIFF_HEADER_SIZE + strlen(lbl) + 1;
+	strcpy((char *)(l+1), lbl);
+
 	adtlhdr.len += sizeof(ltxt) + strlen(lbl) + 1;
 
 	last_offset = offs;

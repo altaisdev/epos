@@ -33,6 +33,7 @@
 
 #define SMOOTH_CQ_SIZE    16		// max smooth request length, see unit::smooth()
 
+class marker;
 
 class unit
 {
@@ -56,13 +57,15 @@ class unit
 		char*s1b,char*s1e,char*s2b,char*s3b,char*s3e); //inner, see implem.
 	void syll_break(char *sonority, unit *before);    //Implements the side-syllable hack
 	void syllabify(char *sonority);  //May split "father" just before "this", if sonority minimum
-	void sseg(hash *templates, char symbol, int *quantity);
+//	void sseg(hash *templates, char symbol, int *quantity);
 	void diph(hash *diph_inventory);  //Will create up to one diphone. Go see it if curious.
     
 	void sanity();                    //check that this unit is sanely linked to the others
 	void insane(const char *token);   //called exclusively by sanity() in case of a problem
     
-	int f,i,t;
+//	int f,i,t;
+	float t;
+	marker *m;
     public:
 	bool scope;                       //true=don't pass on Next/Prev requests
 		unit(UNIT layer, parser *);
@@ -97,12 +100,12 @@ class unit
                                       // Will split units (syllables),
                                       // according to sonority[cont] of "target"
                                       // units (phones) contained there
-        void sseg(UNIT target, hash *templates);
+//        void sseg(UNIT target, hash *templates);
         			      // Take freq, time or intensity from the hash*
 	void contour(UNIT target, int *recipe, int rec_len,
 			int padd_start, FIT_IDX what, bool additive);
         void smooth(UNIT target, int *ratio, int base, int len, FIT_IDX what);
-        void project(UNIT target, int f, int i, int t);
+        void project(UNIT target);
         void raise(bool *what, bool *when, UNIT whither, UNIT whence);
         			      // Move characters between levels
 	void diphs(UNIT target, hash *diph_inventory);
@@ -131,7 +134,7 @@ class unit
 	static char *sb;		// subst buffer
 	static int sbsize;
 	static void done();		// free buffers
-	static void assert_sbsize(int);	// at least that big sbsize
+	static void assert_sbsize(int);	// ensure at least that big sbsize
 };
 
 // extern char * _subst_buff;

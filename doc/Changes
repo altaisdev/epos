@@ -916,17 +916,11 @@ for an exciting story, just skip it.
 	- properly escaped line-initial hash chars standing for pauses
 		in lng/*/traditnl.dph (discarded as comments until now)
 
-2.4.33 from 2.4.32	19.10.99
-	- say.cc fix (if no TTSCP_USER environment variable set)
 
-2.4.34 from 2.4.33	26.11.99
-	- initializing unit::gb and unit::sb statically
+2.5.-4 from 2.4.32
+	- unit markers (see marker.cc) - that's why prosody is broken
+	- say.cc fix: no TTSCP_USER variable set
 	- minor additions to main.dic
-
-2.4.35 from 2.4.34	 8.11.99
-	- partly fixed labelled waveforms (added a field to "cue " chunk header)
-	- hopefully finally fixed unit::sb
-
-2.4.36 from 2.4.35	11.11.99
-	- fixed unlabelled waveforms (added "adjustment" to class w_ophase)
+	- changed labelled waveforms from regions to labels and partly fixed them
+	- fixed sbsize related bugs
 

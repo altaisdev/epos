@@ -403,7 +403,8 @@ r_prosody::apply(unit *root)
 {
 	if (!dict) load_hash();
 	DEBUG(1,1,fprintf(STDDBG,"entering rules::sseg()\n");)
-	root->sseg(target, dict);
+//	root->sseg(target, dict);
+	shriek(862, "no sseg");
 	if (cfg->lowmemory) {
 		DEBUG(2,2,fprintf(STDDBG,"Hash table caching is disabled.\n");) //hashtabscache[rulist[i].param]->debug();
 		delete dict;
@@ -537,7 +538,7 @@ r_smooth::apply(unit *root)
 {
 	
 	DEBUG(1,1,fprintf(STDDBG,"entering rules::smooth()\n");)
-	root->project(target,0,0,0);
+	root->project(target);
 	root->smooth(target, list, n, l, quantity);
 }
 

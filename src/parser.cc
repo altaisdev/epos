@@ -73,6 +73,7 @@ parser::init(SYMTABLE symtab)
 
 	gettoken();		// new - hope this works
 //	f = i = t = 0;
+	t = 1;
 
 	DEBUG(0,7,fprintf(STDDBG,"Parser: initial level is %u.\n",level);)
 /*	if (level == U_TEXT) {		// This should go away sooner or later
@@ -145,7 +146,8 @@ parser::gettoken()
 			default : ;
 		}
 		level = chrlev(token);
-		f = i = t = 0;
+//		f = i = t = 0;
+		t = 1;
 		if (level == cfg->text_level) {
 			DEBUG(2,7,fprintf(STDDBG,"Parser: end of text reached, changing the policy\n");)
 			initables(ST_EMPTY);

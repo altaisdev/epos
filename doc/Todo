@@ -50,6 +50,7 @@ Miscelannea
 - make install not robust (cfg not there, no binaries...)
 - iso8859-to-cp1250 conversions - get rid of the convertor if possible
 - examine the --input_text and --input_file options
+- document waveform labels in ttscp.sgml - waveform format description
 
 Should Check
 - behavior of intr with something other than oa_wavefm (may miss 123 or 122)

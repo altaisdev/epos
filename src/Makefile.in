@@ -41,7 +41,7 @@ SHELL = /bin/sh
 
 HEADERS=common.h defaults.h unit.h parser.h rule.h text.h interf.h options.h hash.h synth.h voice.h exc.h
 MOREHEADERS=waveform.h ktdsyn.h ptdsyn.h lpcsyn.h tcpsyn.h slab.h navel.h rx.h client.h agent.h 
-SOURCES=parser.cc unit.cc rule.cc block.cc text.cc interf.cc options.cc exc.cc hash.cc hashtmpl.cc synth.cc waveform.cc voice.cc say.cc options.lst nnet.cc monolith.cc daemon.cc agent.cc ttscp.cc client.cc qnxipc.cc ktdsyn.cc ptdsyn.cc lpcsyn.cc tcpsyn.cc rx.c
+SOURCES=parser.cc unit.cc marker.cc rule.cc block.cc text.cc interf.cc options.cc exc.cc hash.cc hashtmpl.cc synth.cc waveform.cc voice.cc say.cc options.lst nnet.cc monolith.cc daemon.cc agent.cc ttscp.cc client.cc qnxipc.cc ktdsyn.cc ptdsyn.cc lpcsyn.cc tcpsyn.cc rx.c
 DOSSOURCES=epos.cpp config.dos README.dos
 MODULES=parser.o unit.o rule.o text.o interf.o options.o synth.o ktdsyn.o ptdsyn.o lpcsyn.o tcpsyn.o voice.o waveform.o
 TARGETS=epos say vrfy
@@ -207,7 +207,7 @@ hashm.o: hash.h hash.cc hashtmpl.cc defaults.h slab.h $(MAKEFILE) $(SHELL)
 rule.o: $(HEADERS) rule.cc block.cc options.lst $(MAKEFILE) $(SHELL)
 	$(CC) $(FLAGS) -c -o $@ rule.cc
 
-unit.o: $(HEADERS) unit.cc nnet.cc options.lst $(MAKEFILE) $(SHELL)
+unit.o: $(HEADERS) unit.cc marker.cc nnet.cc options.lst $(MAKEFILE) $(SHELL)
 	$(CC) $(FLAGS) -c -o $@ unit.cc
 
 text.o: common.h defaults.h hash.h interf.h options.lst $(MAKEFILE) text.cc $(SHELL)

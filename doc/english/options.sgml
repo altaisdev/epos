@@ -1216,10 +1216,6 @@ cd src
 	The language dependent value is a directory name.
 	The directory shall contain the implicit input text file for the
 	monolithic version of Epos.
-<tag>--prosody_dir <sl/dirname/</tag>
-	The language dependent value is a directory name.
-	The directory shall contain any prosody modelling related dictionaries
-	used by the rules. FIXME: fakt? chci to tak?
 <tag>--lang_base_dir <sl/dirname/</tag>
 	The value is a global directory name, not a language dependent one.
 	It serves as the base directory for looking up the newly constructed

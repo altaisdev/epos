@@ -222,8 +222,6 @@ the length of the <tt/data/ chunk shall be determined from the
 total length of the RIFF form. (Epos never actually takes advantage
 of this rule.)
 
-FIXME: labels
-
 
 <sect1> TTSCP Commands
 <p>
