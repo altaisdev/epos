@@ -81,7 +81,7 @@ lpcsyn::lpcsyn(voice *v)
 	nvyrov = 0;
 	lold = v->init_f;
 
-/* incipit constructor clasae oldsynth */
+/* incipit constructor clasae synth */
 	ipitch = 0;
 	lastl = lold;
 	iyold = 0 ;

@@ -410,9 +410,9 @@ unit::gather(char *buffer_now, char *buffer_end, bool suprasegm)
 		buffer_now = tmpu->gather(buffer_now, buffer_end, suprasegm);
 		if (!buffer_now) return NULL;
 	}
+	if(buffer_now >= buffer_end) 
+		return NULL;
 	if (cont != NO_CONT && (depth == cfg->phone_level || suprasegm)) {
-		if(buffer_now >= buffer_end) 
-			return NULL;
 		if (depth < cfg->phone_level) 
 			// shriek(811, "Cannot gather diphonized units (reorder rules)");
 			return buffer_now;

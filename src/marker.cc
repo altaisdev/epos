@@ -95,7 +95,7 @@ marker::operator < (marker ma)
 int
 marker::write_ssif(char *whither)
 {
-	if (quant == Q_FREQ) return sprintf(whither, "(%d %d) ", (int)(pos * 100),
-		cfg->pros_neutral[Q_FREQ] + par);
+	if (quant == Q_FREQ) return sprintf(whither, "(%d %d %s) ", (int)(pos * 100),
+		cfg->pros_neutral[Q_FREQ] + par, extent?"yes":"no");
 	else return 0;
 }

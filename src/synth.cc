@@ -18,11 +18,12 @@
 #include "ktdsyn.h"
 #include "ptdsyn.h"
 #include "lpcsyn.h"
+#include "mbrsyn.h"
 #ifndef MONOLITH
 #include "tcpsyn.h"
 #endif
 
-oldsynth *setup_synth(voice *v)
+synth *setup_synth(voice *v)
 {
 	if (v->syn) shriek(862, "new v->syn - again");
 
@@ -43,6 +44,7 @@ oldsynth *setup_synth(voice *v)
 #endif
 		case S_KTD:	return new ktdsyn(v);
 		case S_PTD:	return new ptdsyn(v);
+		case S_MBROLA:  return new mbrsyn(v);
 		default:	shriek(861, "Impossible synth type");
 	}
 	return NULL;
@@ -103,24 +105,24 @@ void show_diphones(unit *root)
 
 #undef BUFF_SIZE
 
-oldsynth::oldsynth()
+synth::synth()
 {
 	DEBUG(1,9,fprintf(STDDBG,"A synthesis going to initialise\n");)
 }
 
-oldsynth::~oldsynth()
+synth::~synth()
 {
 	DEBUG(1,9,fprintf(STDDBG,"A synthesis deconstructed\n");)
 }
 
 void
-oldsynth::syndiph(voice *, diphone, wavefm *)
+synth::syndiph(voice *, diphone, wavefm *)
 {
-	shriek(861, "oldsynth::syndiph is abstract\n");
+	shriek(861, "synth::syndiph is abstract\n");
 }
 
 void
-oldsynth::syndiphs(voice *v, diphone *d, int n, wavefm *w)
+synth::syndiphs(voice *v, diphone *d, int n, wavefm *w)
 {
 	diphone x;
 	if (cfg->show_labels) {
@@ -147,7 +149,7 @@ oldsynth::syndiphs(voice *v, diphone *d, int n, wavefm *w)
 }
 
 void
-oldsynth::synssif(voice *v, char *, wavefm *w)
+synth::synssif(voice *v, char *, wavefm *w)
 {
 	
 }

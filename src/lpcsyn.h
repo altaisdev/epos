@@ -32,7 +32,7 @@ struct model
 	int lsq;
 };                //internal representation of model
 
-class lpcsyn : public oldsynth
+class lpcsyn : public synth
 {
 	int ipitch, lastl;
 	long iyold, ifilt[8], kyu;

@@ -947,3 +947,10 @@ for an exciting story, just skip it.
 	 	- fixed unlabelled waveforms (added "adjustment" to class w_ophase)
 	- smoothing by phone, not by segment in czech.rul (completely broken anyway)
 
+2.5.-2 from 2.5.-3
+	- renamed oldsynth back to synth
+	- mbrsyn
+	- new Slovak stuff (Martin)
+	- a subtle gather() bug fixed
+	- eigth voices bug fixed
+

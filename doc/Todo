@@ -8,6 +8,7 @@ Bugs
 - document [p] and dump
 - the --show_labels option is undoc and too idiosyncratic
 - theimer is broken
+- subst doesn't apply the first time
 
 Features
 - pause hierarchy rules

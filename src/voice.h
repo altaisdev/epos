@@ -16,7 +16,7 @@
  */
 
 class rules;
-class oldsynth;
+class synth;
 
 enum SYNTH_TYPE {
 	S_NONE = 0,
@@ -25,11 +25,12 @@ enum SYNTH_TYPE {
 	S_LPC_INT = 5,
 	S_LPC_VQ = 6,
 	S_KTD = 8,
-	S_PTD = 10
+	S_PTD = 10,
+	S_MBROLA = 12
 };
 
-#define STstr "none:internet:::lpc-float:lpc-int:lpc-vq::ktd::ptd:"
-#define ST_MAX (S_PTD+1)
+#define STstr "none:internet:::lpc-float:lpc-int:lpc-vq::ktd::ptd::mbrola:"
+#define ST_MAX (S_MBROLA+1)
 
 enum CHANNEL_TYPE {CT_MONO, CT_LEFT, CT_RIGHT, CT_BOTH};
 #define CHANNEL_TYPEstr "mono:left:right:both:"
@@ -77,7 +78,7 @@ struct voice : public cowabilium
    public:
 	file *diphone_names;
 	
-	oldsynth *syn;
+	synth *syn;
    
 	voice(const char *filename, const char *dirname, lang *parent_lang);
 	~voice();

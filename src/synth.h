@@ -14,40 +14,37 @@
  */
 
 /*
- *	Read this if you ever derive a new synthesis from class oldsynth.
+ *	Read this if you ever derive a new synthesis from class synth.
  *
- *	Every synthesis must provide either a syndiph() or syndiphs()
+ *	Every synthesis must provide either a syndiph() or syndiphs() of synssif()
  *	method. The easiest approach is to override syndiph() with
  *	code to synthesize a single diphone. It will only be called
- *	by oldsynth::syndiphs() - it adjusts the prosody by the values
+ *	by synth::syndiphs() - it adjusts the prosody by the values
  *	specified for the current voice for you.
  *
  *	On the other hand, if you override syndiphs(), you'll have
- *	to implement these adjustments yourself. In this case you
- *	should also override syndiph() with a dummy function (it
- *	would never be called except by common code, but it the
- *	compiler needs it at least declared).
+ *	to implement these adjustments yourself if necessary.
  */
 
-class oldsynth
+class synth
 {
 	unsigned int crc;
    public:
-/*	oldsynth(SYNTH_TYPE type, const char *counts_file, const char *models_file,
+/*	synth(SYNTH_TYPE type, const char *counts_file, const char *models_file,
  *			const char *codebook_file, const char *dpt_file,
  ****			int f, int i, int t, int sampling_rate);	*/
 
-	oldsynth();
-	virtual ~oldsynth(void);
-	virtual void syndiph(voice *v, diphone d, wavefm *w) = 0;
+	synth();
+	virtual ~synth(void);
+	virtual void syndiph(voice *v, diphone d, wavefm *w);
 	virtual void syndiphs(voice *v, diphone *d, int count, wavefm *w);
 	virtual void synssif(voice *v, char *, wavefm *w);
 };
 
-class voidsyn: public oldsynth
+class voidsyn: public synth
 {
    public:
-	voidsyn() : oldsynth() {};
+	voidsyn() : synth() {};
 	virtual ~voidsyn() {};
 	virtual void syndiph(voice *v, diphone d, wavefm *w);
 	virtual void synssif(voice *v, char *, wavefm *w);
@@ -55,4 +52,4 @@ class voidsyn: public oldsynth
 
 void play_diphones(unit *root, voice *v);
 void show_diphones(unit *root);
-oldsynth *setup_synth(voice *v);
+synth *setup_synth(voice *v);

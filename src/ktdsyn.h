@@ -30,7 +30,7 @@ typedef struct
     int delk;
   } USEK;
 
-class ktdsyn : public oldsynth
+class ktdsyn : public synth
 {
    public:
 	double buf[9];

@@ -149,9 +149,9 @@ lang::add_voice(const char *voice_name)
 	sprintf(filename, "%s.ini", voice_name);
 	sprintf(dirname, "%s%c%s", cfg->voice_base_dir, SLASH, name);
 	if (*voice_name) {
-		if (!voices) voices = (voice **)xmalloc(8*sizeof (void *));
+		if (!voices) voices = (voice **)xmalloc(8*sizeof(void *));
 		else if (!(n_voices-1 & n_voices) && n_voices > 4)  // if n_voices==8,16,32...
-			voices = (voice **)xrealloc(voices, n_voices << 1);
+			voices = (voice **)xrealloc(voices, (n_voices << 1) * sizeof(void *));
 		voices[n_voices++] = new(this) voice(filename, dirname, this);
 	}
 	free(filename);
