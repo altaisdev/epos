@@ -1,6 +1,6 @@
 /*
  *	epos/src/daemon.cc
- *	(c) 1998-99 geo@ff.cuni.cz
+ *	(c) 1998-99 geo@cuni.cz
  *
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -347,6 +347,7 @@ void server_shutdown()
 
 static void unix_sigterm(int)
 {
+	if (server_shutting_down) shriek(466, "forcing shutdown");
 	server_shutting_down = true;
 }
 

@@ -1,5 +1,5 @@
 /*
- *	(c) 1998-99 Jirka Hanika <geo@ff.cuni.cz>
+ *	(c) 1998-99 Jirka Hanika <geo@cuni.cz>
  *
  *	This single source file src/client.cc, but NOT THE REST OF THIS PACKAGE,
  *	is considered to be in Public Domain. Parts of this single source file may be
@@ -81,6 +81,8 @@ char scratch[SCRATCH_SPACE + 2];
 //	#include <errno.h>
 //#endif
 
+#include <sys/types.h>
+#include <signal.h>
 
 /*
  *	blocking sgets() 

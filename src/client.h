@@ -1,5 +1,5 @@
 /*
- *	(c) 1998-99 Jirka Hanika <geo@ff.cuni.cz>
+ *	(c) 1998-99 Jirka Hanika <geo@cuni.cz>
  *
  *	This single source file src/client.h, but NOT THE REST OF THIS PACKAGE,
  *	is considered to be in Public Domain. Parts of this single source file may be

@@ -12,10 +12,11 @@ export WPP386=-xs
 
 # Want an external debugging lib? Download dmalloc and uncomment the following.
 # DMALLOC_STATUS=-DWANT_DMALLOC
-ifeq ($(DMALLOC_STATUS), -DWANT_DMALLOC)
-  DMALLOC_LINK_OPT=-ldmalloc -L/usr/local/lib
-endif
-#HOMEMADE_STRDUP=-DHOMEMADE_STRDUP
+# ifeq ($(DMALLOC_STATUS), -DWANT_DMALLOC)
+#    DMALLOC_LINK_OPT=-ldmalloc -L/usr/local/lib
+# endif
+
+# HOMEMADE_STRDUP=-DHOMEMADE_STRDUP
 
 #add -pg for profiling, -ggdb for gdb debugging
 
@@ -141,9 +142,9 @@ dos:
 	@echo  $(DOSES)
 	@echo 
 
-$(DOSES): dos% :$(HEADERS) $(SOURCES) /usr/lib/cstocs/%.enc clean $(SHELL) ../arch/unix/cstodos cfgsync
-	@echo Building a DOS distribution.
-	@$(SHELL) ../arch/unix/cstodos $* "$(HEADERS) $(MOREHEADERS) $(SOURCES)" "$(DOSSOURCES)"
+# $(DOSES): dos% :$(HEADERS) $(SOURCES) /usr/lib/cstocs/%.enc clean $(SHELL) ../arch/unix/cstodos cfgsync
+#	@echo Building a DOS distribution.
+#	@$(SHELL) ../arch/unix/cstodos $* "$(HEADERS) $(MOREHEADERS) $(SOURCES)" "$(DOSSOURCES)"
 
 $(SHELL):
 	@echo You should already have bash installed.

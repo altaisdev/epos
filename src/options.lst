@@ -1,6 +1,6 @@
 /*
  *	epos/src/options.lst
- *	(c) 1997-98 geo@ff.cuni.cz
+ *	(c) 1997-98 geo@cuni.cz
  *
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -372,6 +372,7 @@ OPTION (mrw, "max_rule_weight",    INT, 900000)	// Maximum rule weight in a choi
 OPTION (max_line, "max_line_len",  INT, 512)	// How long may an input line be?
 OPTION (scratch, "scratch_size",   INT, 512)	// How long may some temporary strings be?
 OPTION (dev_txtlen,"dev_text_len", INT, 50000)  // How much data can we expect from a device?
+OPTION (maxtext, "max_text_size",  INT, 17000000)  // Maximum gather buffer size
 
 OPTION (eof_char, "end_of_file",  CHAR, '\033') // Which key should terminate user input?
 
@@ -430,8 +431,8 @@ OPTION (wav_hdr, "wave_header",	  BOOL, false)  // Should .wav output contain .w
 OPTION (daemon_log, "daemon_log",  STR, NULL)	// Log file of daemon.cc activities (TTSCP server)
 OPTION (pwdfile, "server_pwd_file",STR, NULL)	// File to store the server passwd for TTSCP auth
 OPTION (dbg_pwd, "debug_password", STR, "")	// Additional server password (insecure)
-OPTION (allow_file, "allow_options_file", STR, "allowed.ini") // options anonymous may change
-OPTION (db_size, "diph_buff_size", INT, 511)	// max n of diphones to be synthesized at once
+OPTION (restr_file, "restr_file",  STR, "restr.ini") // restricted options
+OPTION (db_size, "diph_buff_size", INT, 0)	// max n of diphones to be synthesized at once
 OPTION (buffer_size, "buffer_size",INT, 8192)	// buffer size for wave files
 OPTION (max_net_cmd, "max_net_cmd",INT, 16384)  // Max TCP command length
 OPTION (listen_port, "listen_port",INT, TTSCP_PORT) // TCP port where the daemon should listen

@@ -1,6 +1,6 @@
 /*
  *	epos/src/waveform.cc
- *	(c) 1998-99 geo@ff.cuni.cz
+ *	(c) 1998-99 geo@cuni.cz
  *
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@
 
 //#pragma hdrstop
 
-#ifdef KDGETLED		// Feel free to disable or delete the following stuff
+#ifdef KDGETLED_NEVER_DEFINED	// Feel free to disable or delete the following stuff
 inline void mark_voice(int a)
 {
 	static int voices_attached = 0;
@@ -72,7 +72,7 @@ inline void mark_voice(int a)
 	ioctl(1, KDSETLED, kbd_flags);
 }
 #else
-inline void mark_voice(int) {};
+// inline void mark_voice(int) {};
 #endif
 
 
@@ -331,7 +331,7 @@ wavefm::detach(int)
 	DEBUG(2,9,fprintf(STDDBG,"Detaching waveform %s\n", ""););
 	sync_soundcard(fd);
 	if (cfg->wav_hdr && !ioctlable(fd)) write_header();
-	mark_voice(-1);
+//	mark_voice(-1);
 	fd = -1;
 //	free(buffer);
 //	buffer = NULL;
@@ -349,7 +349,7 @@ void
 wavefm::attach(int d)
 {
 	DEBUG(2,9,fprintf(STDDBG,"Attaching waveform %s\n", ""););
-	mark_voice(1);
+//	mark_voice(1);
 	fd = d;
 //	written_bytes = 0;
 	if (ioctlable(fd)) {

@@ -805,11 +805,13 @@ code      | error type      | suggested action@
 451	| not authorized to do this@
 452	| no such user or bad password@
 453	| not allowed to use localsound@
+456	| input too long@
 461	| input triggered server bug@
 462	| unimplemented feature@
 463	| input triggered configuration bug@
 464	| input triggered OS incompatibility@
 465	| i/o problem : error on close()@
+466	| command stuck@
 471	| tcpsyn received invalid waveform@
 472	| unresolved remote tcpsyn server@
 473	| unreachable remote tcpsyn server@

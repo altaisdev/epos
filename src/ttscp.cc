@@ -1,6 +1,6 @@
 /*
  *	epos/src/ttscp.cc
- *	(c) 1998-99 geo@ff.cuni.cz
+ *	(c) 1998-99 geo@cuni.cz
  *
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -100,8 +100,7 @@ int cmd_done(char *, a_ttscp *)
 int cmd_intr(char *param, a_ttscp *a)
 {
 	/*
-	 * EXPERIMENTAL
-	 *	the 401 reply is sent by the agent with inb != NULL
+	 *	the 401 reply is sent by the stream
 	 */
 
 	a_ttscp *ctrl = ctrl_conns->translate(param);
@@ -252,34 +251,6 @@ void cmd_restart(char *param)
 }
 **************/
 
-/*****
-
-void cmd_reap(char *param, a_ttscp *)
-{
-
-	shriek(462, "reap broken");
-
- *	if (this_context->uid != UID_SERVER) {
- *		DEBUG(3,11,fprintf(STDDBG, "Unauthorised reap attempt, uid=%d\n", this_context->uid);)
- *		reply("411 no such command");
-		return;
-	}
-
-	int cpid = 0;
-
-	if (param && sscanf(param, "%d", &cpid)) {
-		if (cpid) kill(cpid, SIGHUP);
-		cpid = wait(NULL);
-		if (cpid == -1) {
-			DEBUG(2,11,fprintf(STDDBG, "[core] No child returned upon reap %d, uid=%d!\n", cpid, this_context->uid);)
-			return;
-		}
-		DEBUG(1,11,fprintf(STDDBG, "[core] Suddenly, child %d returned\n",  cpid);)
-//		register_child(-cpid);
- *	} else DEBUG(2,11,fprintf(STDDBG, "[core] reap with no param?\n"));
- *
- *
-}*/
 
 #define SHOW_SPACE " "
 

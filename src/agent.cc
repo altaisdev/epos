@@ -1,6 +1,6 @@
 /*
  *	epos/src/agent.cc
- *	(c) 1998-99 geo@ff.cuni.cz
+ *	(c) 1998-99 geo@cuni.cz
  *
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -242,24 +242,17 @@ class a_print : public agent
 	a_print() : agent(T_UNITS, T_TEXT) {};
 };
 
-#define INITIAL_PRINT_BUFFER_SIZE	8192		// FIXME
-
 void
 a_print::run()
 {
 	char *b;
-	char *endb;
-	int bsize = INITIAL_PRINT_BUFFER_SIZE;
-	do {
-		b = (char *)xmalloc(bsize);
-		endb = ((unit *)inb)->gather(b, b + bsize, true /* (incl. ssegs) */ );
-	} while ((endb == b + bsize) && (free(b), bsize <<= 1, b = (char *)xmalloc(bsize)));
-	*endb = 0;
+	int l;
 
-	void *r = b;
+	b = ((unit *)inb)->gather(&l, false /* no ^$ */, true /* incl. ssegs */ );
+
 	delete (unit *) inb;
 	inb = NULL;
-	pass(r);
+	pass(strdup(b));
 }
 
 
@@ -272,21 +265,33 @@ class a_diphs : public agent
 	a_diphs() : agent(T_UNITS, T_DIPHS) {position = 0;};
 };
 
+#define INIT_DIPHS_BS	2048
+
 void
 a_diphs::run()
 {
-	diphone *d = (diphone *)xmalloc((cfg->db_size + 1) * sizeof(diphone));
+	int dbs = cfg->db_size ? cfg->db_size : INIT_DIPHS_BS;
+	diphone *d = (diphone *)xmalloc((dbs + 1) * sizeof(diphone));
+	diphone *c = d + 1;
 	int n;
+	int items = 0;
 
 	unit *root = *(unit **)&inb;
-	n = root->write_diphs(d + 1, position, cfg->db_size);
+again:
+	n = root->write_diphs(c, position, dbs);
 	position += n;
-	if (n < cfg->db_size) {
+	items += n;
+	if (cfg->db_size && n >= dbs) {
+		d = (diphone *)xrealloc(d, (dbs + 1 + position) * sizeof(diphone));
+		c = d + 1 + position;
+		goto again;
+	}
+	if (!cfg->db_size || n < dbs) {
 		delete root;
 		inb = NULL;
 		position = 0;
 	} else schedule();
-	d->code = n;
+	d->code = items;
 	DEBUG(1,11,fprintf(STDDBG, "agent diphs generated %d diphones\n", n);)
 	pass(d);
 }

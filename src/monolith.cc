@@ -1,6 +1,6 @@
 /*
  *	epos/src/monolith.cc
- *	(c) 1996-99 geo@ff.cuni.cz
+ *	(c) 1996-99 geo@cuni.cz
  *
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

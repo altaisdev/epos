@@ -886,3 +886,21 @@ for an exciting story, just skip it.
 	- next attempt at labelled waveforms
 	- added some missing stuff to the documentation, chapter Options
 
+2.4.29 from 2.4.28	28.9.99
+	- replaced gather and subst buffers with growable buffers
+		(subst and regex rules may get broken under some circumstances)
+	- added a max_text_size sanity check (as an option)
+	- fixed a set_option bug (setl could fail, but set the option to 0)
+	- a small fix in lng/czech/prosody.rul - penults always off-falling
+	- a few minor fixes
+
+2.4.30 from 2.4.29	3.10.99
+	- new autoconf test - HAVE_REG_EEND
+	- arch/unix/Makefile.dummy made even more dummy
+	- Makefile made urmake compatible
+	- code pedantified (except for kill(), strcasecmp(), gethostname(), strdup())
+	- fix for infinite "grow sb" loop in unit::subst()
+	- allowed.ini renamed to restr.ini, together with the respective option
+		and its location can be changed with --base_dir
+	- added a security section to the documentation
+	- commented out the mark_voice() debugging thing in waveform.cc
