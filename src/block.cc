@@ -166,7 +166,6 @@ block_rule::apply_current(unit *root)
 	rule *r;
 	unit *u;
 
-	DEBUG(0,1,fprintf(STDDBG,"rules::apply when i=%d call debug()\n",current_rule);debug();)
 	DEBUG(0,2,root->fout(NULL);)
 	r = rulist[current_rule];
 	
@@ -176,7 +175,7 @@ block_rule::apply_current(unit *root)
 		unit *tmp_next = u->Next(scope);
 		tmpscope = u->scope;
 		u->scope = true;
-		DEBUG(0,1,fprintf(STDDBG, "rules::apply current_rule %d\n", current_rule);)
+		DEBUG(0,1,fprintf(STDDBG, "block_rule::apply current_rule %d\n", current_rule);)
 #ifdef DEBUGGING
 		if (cfg->use_dbg) current_debug_tag = r->dbg_tag;
 		if (cfg->showrule) fprintf(STDDBG, "[%s] %s %s\n",

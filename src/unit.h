@@ -76,6 +76,8 @@ class unit
                                       //Writes the diphones out to an array of
                                       // struct diphone. Returns: how many written
                                       // starting_at==0 for the first diphone
+	int write_ssif_head(char *whither); // ^ how many chars written
+	int write_ssif(char *whither, int starting_at, int bs);
 	void show_phones();	      // printf() the phones
 	void nnet_out(const char *filename, const char *dirname);
 	void fout(char *filename);        //stdout if NULL
@@ -102,6 +104,7 @@ class unit
                                       // units (phones) contained there
 //        void sseg(UNIT target, hash *templates);
         			      // Take freq, time or intensity from the hash*
+	void prospoint(FIT_IDX what, int value, float position);
 	void contour(UNIT target, int *recipe, int rec_len,
 			int padd_start, FIT_IDX what, bool additive);
         void smooth(UNIT target, int *ratio, int base, int len, FIT_IDX what);

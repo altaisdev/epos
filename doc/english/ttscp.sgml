@@ -76,7 +76,7 @@ unindented and server responses indented.
 	release: 2.4.6
 	handle: O29-m2UZ
 	
-user user@host.domain.net
+user user&commat;host.domain.net
 	452 user not found
 setl some_option on
 	200 OK
@@ -221,6 +221,10 @@ RIFF form being sent, and the length of the data chunk is negative,
 the length of the <tt/data/ chunk shall be determined from the
 total length of the RIFF form. (Epos never actually takes advantage
 of this rule.)
+
+Epos is able to produce labelled waveforms; one label is produced at the
+end of each unit.  These are standard labl subchunks as defined by
+the RIFF format. FIXME: give details.
 
 
 <sect1> TTSCP Commands

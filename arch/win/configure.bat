@@ -5,7 +5,7 @@ call convert.bat
 cd ..\..\src
 
 move agent.cc agent.cpp
-move client.cc client.cpp
+copy client.cc client.cpp
 move daemon.cc daemon.cpp
 move unit.cc unit.cpp
 move hash.cc hash.cpp
@@ -29,9 +29,8 @@ del config.h
 copy ..\arch\win\config.in .\config.h
 copy ..\arch\win\epos.dsp .
 copy ..\arch\win\epos.dsw .
-
-if not exist lpcsyn.cc echo /**/ > lpcsyn.cc
-if not exist lpcsyn.h  echo /**/ > lpcsyn.h
+copy ..\arch\win\say.dsp .
+copy ..\arch\win\eposm.dsp .
 
 cd ..\cfg\cfg
 

@@ -484,7 +484,7 @@ an array of options, indexed using the commercial at character
 (&commat;) followed by a layer name.  For example,
 
 <tscreen><verb>
-	perm@colon	":,"
+	perm&commat;colon	":,"
 </verb></tscreen>
 
 defines the permissible colon terminators.  Since the TSR layer names
@@ -770,13 +770,13 @@ transmitting the text over TTSCP.
 	level, such as <tt/phone/, <tt/syll/ or <tt/word/.  The parameter
 	is a string which will be printed before the first unit within this
 	unit, for example before the word-initial syllable in case of
-	<tt/begin@word/).
+	<tt/begin&commat;word/).
 <tag>--close* <sl/string/</tag>
 	The asterisk stands for a &commat;-separated symbolic name of a linguistic description
 	level, such as <tt/phone/, <tt/syll/ or <tt/word/.  The parameter
 	is a string which will be printed after the last unit within this
 	unit, for example before the word-final syllable in case of
-	<tt/close@word/).
+	<tt/close&commat;word/).
 <tag>--color* <sl/string/</tag>
 	The asterisk stands for a &commat;-separated symbolic name of a linguistic description
 	level, such as <tt/phone/, <tt/syll/ or <tt/word/.  The parameter
@@ -786,7 +786,7 @@ transmitting the text over TTSCP.
 	level, such as <tt/phone/, <tt/syll/ or <tt/word/.  The parameter
 	is a string which will be printed between adjacent units of this
 	level of description, for example between words in case of	
-	<tt/separ@word/).
+	<tt/separ&commat;word/).
 <tag>--structured</tag>
 	Whether the verbose model of displaying the TSR as described above
 	is used. When off, only the text itself is printed and simple
@@ -1012,12 +1012,12 @@ option is thence language dependent.
 <tag>--counts <sl/filename/</tag>
 	The value is a file name. The file contains the lengths of individual
 	diphones in this diphone inventory.
-<tag>--dph&lowbar;file <sl/filename/</tag>
-	The value is a file name. The file contains the diphone descriptions
-	in the format used by the <tt/diph/ rule. FIXME: odkaz nebo popis
 <tag>--dpt&lowbar;file <sl/filename/</tag>
 	The value is a file name. The file contains the symbolic diphone names
-	for user output.
+	for user output; each consists of exactly three characters on a line
+	(indented with spaces from the left if necessary).  No blank lines
+	nor comments are allowed.  This file usually comes with a diphone
+	inventory.
 <tag>--codebook <sl/filename/</tag>
 	The value is a file name. The file contains the code book for
 	the vector quantified LPC speech synthesis (<tt/lpc-vq/ type only).
@@ -1254,7 +1254,7 @@ cd src
 <sect2> Daemon startup options
 <p>
 
-The options in this section usually have no effect if changed in run time;
+The options in this section usually have no effect if changed during run time;
 change them in the configuration files instead.
 
 <descrip>

@@ -110,7 +110,7 @@ void trans_data()
 	if (!data) data = "No.";
 	sputs("strm $", ctrld);
 	sputs(dh, ctrld);
-	sputs(":raw:rules:print:$", ctrld);
+	sputs(":raw:rules:dump:$", ctrld);
 	sputs(dh, ctrld);
 	sputs("\r\n", ctrld);
 	sputs("appl ", ctrld);
@@ -129,7 +129,7 @@ void trans_data()
 			scratch[SCRATCH_SPACE] = 0;
 			sscanf(scratch, "%d", &count);
 			char *b=(char *)malloc(count+1);
-			b[read(datad, b, count)] = 0;
+			b[yread(datad, b, count)] = 0;
 			printf("%s\n", b);
 		}
 	}

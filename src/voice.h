@@ -16,7 +16,7 @@
  */
 
 class rules;
-class synth;
+class oldsynth;
 
 enum SYNTH_TYPE {
 	S_NONE = 0,
@@ -77,7 +77,7 @@ struct voice : public cowabilium
    public:
 	file *diphone_names;
 	
-	synth *syn;
+	oldsynth *syn;
    
 	voice(const char *filename, const char *dirname, lang *parent_lang);
 	~voice();

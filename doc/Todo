@@ -3,6 +3,11 @@ Bugs
 - better prosody modelling for monosyllaba
 - with windows sokec, files as stream input modules crash the server
 - with windows sokec, files as output modules with disk full crash the server
+- 213788788
+- smooth not implemented
+- document [p] and dump
+- the --show_labels option is undoc and too idiosyncratic
+- theimer is broken
 
 Features
 - pause hierarchy rules
@@ -27,6 +32,8 @@ Features
 - reasonable logging
 - investigate the optimum pause lengths
 - integrate the neural network stuff
+- config files should ignore trailing carriage returns
+- big-endian ovens
 
 Inventory omissions
 - unknown diphone - no. 19 (consonant---r)

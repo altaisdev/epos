@@ -44,6 +44,12 @@
 	#include <sys/stat.h>
 #endif
 
+#ifdef HAVE_MMSYSTEM_H
+	#include <mmsystem.h>
+	#include <windows.h>
+	#include <windowsx.h>
+#endif
+
 #include <fcntl.h>
 #include <errno.h>
 
@@ -53,6 +59,27 @@
 
 
 #define DARK_ERRLOG 2	/* 2 == stderr; for global stdshriek and stddbg output */
+
+#ifdef HAVE_MMSYSTEM_H
+	HWAVEOUT       hWaveOut = NULL;
+	LPWAVEHDR      lpWaveHdr   = NULL;
+	/*
+	void CALLBACK WndProc(HWAVEOUT hwo, UINT uMsg, DWORD dwInstance, DWORD wParam, DWORD lParam)
+	{
+	   switch (uMsg)
+		{
+			case MM_WOM_DONE:
+			if(waveOutUnprepareHeader( hwo, lpWaveHdr, sizeof(WAVEHDR) ))
+				shriek(445, "Cannot unprepare wave header ...");
+			if(waveOutClose( hwo ))
+				shriek(445, "Cannot close wave device ...");
+			hWaveOut = NULL;
+			break;
+		}
+	}
+*/
+#endif
+
 
 agent::agent(DATA_TYPE typein, DATA_TYPE typeout)
 {
@@ -133,6 +160,7 @@ inline void do_relax(void *ptr, DATA_TYPE type)
 		case T_TEXT:	free(ptr); break;
 		case T_UNITS:	delete ((unit *)ptr); break;
 		case T_DIPHS:	free(ptr); break;
+		case T_SSIF:	free(ptr); break;
 		case T_WAVEFM:	delete((wavefm *)ptr); break;
 	}
 }
@@ -275,6 +303,7 @@ class a_diphs : public agent
 };
 
 #define INIT_DIPHS_BS	2048
+#define INIT_SSIF_BS	4096
 
 void
 a_diphs::run()
@@ -295,17 +324,52 @@ again:
 		d = (diphone *)xrealloc(d, (dbs + 1 + position) * sizeof(diphone));
 		c = d + 1 + position;
 		goto again;
-	}
-	if (!cfg->db_size || n < dbs) {
+	} else {
 		delete root;
 		inb = NULL;
 		position = 0;
-	} else schedule();
+	}
 	d->code = items;
 	DEBUG(1,11,fprintf(STDDBG, "agent diphs generated %d diphones\n", n);)
 	pass(d);
 }
 
+class a_ssif : public agent
+{
+	virtual void run();
+	virtual const char *name() { return "to-mbrola"; };
+	int position;
+   public:
+	a_ssif() : agent(T_UNITS, T_SSIF) {position = 0;};
+};
+
+void
+a_ssif::run()
+{
+	int ssifbs = cfg->ssifb_size ? cfg->ssifb_size : INIT_SSIF_BS;
+	char *d = (char *)xmalloc((ssifbs + 1));
+	char *c = d /* + sizeof header */;
+	int n;
+	int items = 0;
+
+	unit *root = *(unit **)&inb;
+	root->project(cfg->phone_level);
+again:
+	n = root->write_ssif(c, position, ssifbs);
+	position += n;
+	items += n;
+	if (cfg->ssifb_size && n >= ssifbs) {
+		d = (char *)xrealloc(d, (ssifbs + 1 + position));
+		c = d /* + sizeof header */ + strlen(d);		/* FIXME: efficiency */
+		goto again;
+	} else {
+		delete root;
+		inb = NULL;
+		position = 0;
+	}
+	DEBUG(1,11,fprintf(STDDBG, "agent ssif generated %d items\n", n);)
+	pass(d);
+}
 
 class a_chunk : public agent
 {
@@ -390,8 +454,14 @@ a_synth::run()
 		try {
 			this_voice->syn = setup_synth(this_voice);
 		} catch (command_failed *e) {
-			if (e->code / 10 == 47 && this_lang->fallback_voice) {	// 47x codes are network errors
+			if (e->code / 10 == 47 && this_lang->fallback_voice && *this_lang->fallback_voice) {
+								// 47x codes are network errors
 				voice_switch(this_lang->fallback_voice);
+				if (this_lang->permanent_fallbacks) {
+					c->leave();
+					voice_switch(this_lang->fallback_voice);
+					c->enter();
+				} 
 				delete e;
 				run();
 				return;
@@ -457,7 +527,11 @@ a_io::a_io(const char *par, DATA_TYPE in, DATA_TYPE out) : agent(in, out)
 			  if (socket == -1) shriek(445, fmt("Cannot open file %s", par));
 			  else close_upon_exit = true;
 			  break;
+#ifdef HAVE_MMSYSTEM_H
+		case '#': socket = -2; //special_io(par + 1, in);
+#else
 		case '#': socket = special_io(par + 1, in);
+#endif
 			  break;
 		default:  shriek(462, "unimplemented i/o agent class");
 			/* if ever adding classes, take care of closing/nonclosing
@@ -603,23 +677,24 @@ a_output::report(bool total, int written)
 	}
 }
 
-class oa_ascii : public a_output
+
+template <DATA_TYPE type> class oa_ascii : public a_output
 {
 	virtual int insize() {
 		return strlen((char *)inb);
 	}
    public:
-	oa_ascii(const char *s): a_output(s, T_TEXT) {};
+	oa_ascii(const char *s): a_output(s, type) {};
 };
 
-class oa_stml : public a_output
-{
-	virtual int insize() {
-		return strlen((char *)inb);
-	}
-   public:
-	oa_stml(const char *s): a_output(s, T_STML) {};
-};
+//class oa_stml : public a_output
+//{
+//	virtual int insize() {
+//		return strlen((char *)inb);
+//	}
+//   public:
+//	oa_stml(const char *s): a_output(s, T_STML) {};
+//};
 
 class oa_diph : public a_output
 {
@@ -647,6 +722,52 @@ void
 oa_wavefm::run()
 {
 	wavefm *w = (wavefm *)inb;
+#ifdef HAVE_MMSYSTEM_H
+	DWORD          dwResult;
+	WAVEFORMATEX   pFormat;
+	if (socket == -2) {
+		pFormat.wFormatTag = WAVE_FORMAT_PCM;
+		pFormat.wBitsPerSample = w->hdr.wlenb;
+		pFormat.nSamplesPerSec = w->hdr.sf1;
+		pFormat.nChannels = w->hdr.numchan;
+		pFormat.nBlockAlign = w->hdr.wlenB;
+		pFormat.nAvgBytesPerSec = w->hdr.avr1;
+		pFormat.cbSize = 0;
+		if(hWaveOut) {
+			waveOutReset(hWaveOut);
+			waveOutClose(hWaveOut);
+			hWaveOut = NULL;
+		}
+		//if(!hWaveOut){
+			if (waveOutOpen(&hWaveOut, WAVE_MAPPER, &pFormat, 0, 0L,WAVE_FORMAT_QUERY))
+				shriek(445, "Wave fmt not supported ...");
+			if (int autobus=waveOutOpen(&hWaveOut, WAVE_MAPPER,&pFormat, 0, 0L, CALLBACK_NULL))
+				shriek(445, "Cannot open wave device ...");
+			lpWaveHdr = (LPWAVEHDR)xmalloc(sizeof(WAVEHDR));
+			if (!lpWaveHdr)
+				shriek(445, "Cannot allocate wave header ...");
+		//}
+		//else
+		//{
+			//waveOutReset(hWaveOut);
+		//}
+		lpWaveHdr->lpData = w->buffer;
+		lpWaveHdr->dwBufferLength = w->hdr.buffer_idx;
+		lpWaveHdr->dwFlags = 0L;
+		lpWaveHdr->dwLoops = 0L;
+		if(waveOutPrepareHeader(hWaveOut, lpWaveHdr, sizeof(WAVEHDR)))
+			shriek(445, "Cannot prepare wave header ...");
+		dwResult = waveOutWrite(hWaveOut, lpWaveHdr, sizeof(WAVEHDR));
+		if (dwResult != 0)
+			shriek(445, "Cannot write to wave device ...");
+		report(false, 1);
+		report(true, 1);
+		attached = false;
+		inb = NULL;
+		finis(false);
+	} else {
+#endif
+	
 	if (!attached && !sleep_table[socket]) {
 //		report(true, w->written_bytes() /* + sizeof(wave_header) */);
 		w->attach(socket);
@@ -670,6 +791,9 @@ oa_wavefm::run()
 //		reply("200 output OK");
 		finis(false);
 	}
+#ifdef HAVE_MMSYSTEM_H
+	}
+#endif
 }
 
 void
@@ -695,18 +819,19 @@ oa_wavefm::brk()
  *	stream agent itself. stream->head is an input agent.
  */
 
-enum agent_type {AT_UNKNOWN, AT_CHUNK, AT_JOIN, AT_ASCII, AT_DIPHS, AT_PRINT, AT_RULES, AT_STML, AT_SYNTH,
-		 AT_T_TEXT, AT_T_STML, AT_T_UNITS, AT_T_DIPHS, AT_T_WAVEFM};
-const char *agent_type_str = ":chunk:join:raw:diphs:print:rules:stml:synth:[t]:[s]:[i]:[d]:[w]:";
+enum agent_type {AT_UNKNOWN, AT_CHUNK, AT_JOIN, AT_ASCII, AT_SSIF, AT_DIPHS, AT_PRINT, AT_RULES, AT_STML, AT_SYNTH,
+		 AT_T_TEXT, AT_T_STML, AT_T_UNITS, AT_T_SSIF, AT_T_DIPHS, AT_T_WAVEFM};
+const char *agent_type_str = ":chunk:join:raw:dump:diphs:print:rules:stml:synth:[t]:[s]:[i]:[p]:[d]:[w]:";
 
 agent *make_agent(char *s, agent *preceding)
 {
 	if (strchr("@#/.$", *s)) {
 		if (!preceding) return new a_input(s);
 		switch (preceding->out) {
-			case T_TEXT:   return new oa_ascii(s);
-			case T_STML:   return new oa_stml(s);
+			case T_TEXT:   return new oa_ascii<T_TEXT>(s);
+			case T_STML:   return new oa_ascii<T_STML>(s);
 			case T_UNITS: shriek(448, "Units are hard to output");
+			case T_SSIF:   return new oa_ascii<T_SSIF>(s);
 			case T_DIPHS:  return new oa_diph(s);
 			case T_WAVEFM: return new oa_wavefm(s);
 			default: shriek(462, "unimplmd oa");
@@ -717,6 +842,7 @@ agent *make_agent(char *s, agent *preceding)
 		case AT_UNKNOWN: shriek(861, "Agent type bug.");
 		case AT_ASCII: return new a_ascii;
 		case AT_CHUNK: return new a_chunk;
+		case AT_SSIF:  return new a_ssif;
 		case AT_DIPHS: return new a_diphs;
 		case AT_JOIN:  return new a_join;
 		case AT_PRINT: return new a_print;
@@ -727,6 +853,7 @@ agent *make_agent(char *s, agent *preceding)
 		case AT_T_TEXT:  return new a_type<T_TEXT>;
 		case AT_T_STML:  return new a_type<T_STML>;
 		case AT_T_UNITS: return new a_type<T_UNITS>;
+		case AT_T_SSIF:  return new a_type<T_SSIF>;
 		case AT_T_DIPHS: return new a_type<T_DIPHS>;
 		case AT_T_WAVEFM:return new a_type<T_WAVEFM>;
 
@@ -1063,6 +1190,14 @@ void make_nonblocking(int f)
 	fcntl(f, F_SETFL, O_NONBLOCK);
 #endif
 }
+
+#ifndef HAVE_GETHOSTNAME
+int gethostbyname(char *b, size_t)
+{
+	strcpy(b, "localhost");
+	return 0;
+}
+#endif
 
 a_accept::a_accept() : agent(T_NONE, T_NONE)
 {

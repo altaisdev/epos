@@ -9,7 +9,7 @@ Compiling on a UNIX machine:
  3. make
  4. make install   (as root - will install cfg files under /usr/lib/epos)
  5. install speech segment inventories (downloadable separately) if required
-	(untar them starting from the root)
+	(untar them starting from /usr/lib/epos/inv)
 
 Compiling with Visual C++ on a Windows NT machine:
  1. cd arch\win
@@ -18,7 +18,7 @@ Compiling with Visual C++ on a Windows NT machine:
  4. run VC and open the workspace file epos.dsw
  5. build the project (press F7)
  5. install speech segment inventories (downloadable separately) if required
-	(untar them starting from the root of the current drive)
+	(untar them starting from \usr\lib\epos\inv on the current drive)
 
 Running:
  epos   starts a speech daemon
@@ -30,9 +30,9 @@ TTSCP server at epos.ure.cas.cz. If you don't have /dev/dsp, you might
 wish to try "say -w 'Some text'" to create /usr/lib/epos/root/said.wav
 which is an MS Windows-style .wav file. If you are not connected to
 the Internet, or epos.ure.cas.cz is unreachable or misconfigured (not
-unusual), go to /usr/lib/epos/lng/czech/czech.ini and swap the words
-"kadlec" and "rvq" in the "voices" option. This will make Epos speak
-using a poor quality built-in voice.
+unusual), a slightly lower quality built-in voice will be used instead.
+
+Under MS Windows, the multi-media system is used instead of /dev/dsp.
 
 System requirements:
 
@@ -46,7 +46,7 @@ More info:
 
  1. read doc/Intro
  2. read doc/english/epos.* (asterisk stays for any one of txt, dvi...)
- 3. browse http://epos.ure.cas.cz/ (mostly identical to (2))
+ 3. or browse http://epos.ure.cas.cz/ (mostly identical to (2))
  4. have a look at the files under cfg (or /usr/lib/epos)
  5. read the source under src
 (The last two steps are optional.)
@@ -54,7 +54,7 @@ More info:
 Getting help:
 
  0. The order of the following steps is important.
- 1. Download a recent version.
+ 1. Download a recent version and retry.
  2. Get more info as outlined above.
  3. subscribe and mail to epos@braille.mff.cuni.cz. This is a developer list.
     Be sure to mention the version you're running or trying to run

@@ -54,7 +54,7 @@ class DIFON
     if(labels) delete (labels);
   }
 };
-class ptdsyn : public synth
+class ptdsyn : public oldsynth
 {
  private:
  DIFON *dif;

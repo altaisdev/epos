@@ -17,7 +17,7 @@
  *	is unfortunately synchronous (waits for completion).
  */
 
-class tcpsyn : public synth
+class tcpsyn : public oldsynth
 {
 	int cd;		/* control TTSCP connection	*/
 	int dd;		/* data TTSCP connection	*/

@@ -18,16 +18,20 @@
 #include "ktdsyn.h"
 #include "ptdsyn.h"
 #include "lpcsyn.h"
+#ifndef MONOLITH
 #include "tcpsyn.h"
+#endif
 
-synth *setup_synth(voice *v)
+oldsynth *setup_synth(voice *v)
 {
 	if (v->syn) shriek(862, "new v->syn - again");
 
 	switch (v->type) {
 		case S_NONE:	shriek(813, "This voice is mute");
+#ifndef MONOLITH
 		case S_TCP:	// shriek(462, "Network voices not implemented");
 				return new tcpsyn(v);
+#endif
 #ifdef LPC_H
 		case S_LPC_FLOAT: return new lpcfloat(v);
 		case S_LPC_INT: return new lpcint(v);
@@ -99,24 +103,24 @@ void show_diphones(unit *root)
 
 #undef BUFF_SIZE
 
-synth::synth()
+oldsynth::oldsynth()
 {
 	DEBUG(1,9,fprintf(STDDBG,"A synthesis going to initialise\n");)
 }
 
-synth::~synth()
+oldsynth::~oldsynth()
 {
 	DEBUG(1,9,fprintf(STDDBG,"A synthesis deconstructed\n");)
 }
 
 void
-synth::syndiph(voice *, diphone, wavefm *)
+oldsynth::syndiph(voice *, diphone, wavefm *)
 {
-	shriek(861, "synth::syndiph is abstract\n");
+	shriek(861, "oldsynth::syndiph is abstract\n");
 }
 
 void
-synth::syndiphs(voice *v, diphone *d, int n, wavefm *w)
+oldsynth::syndiphs(voice *v, diphone *d, int n, wavefm *w)
 {
 	diphone x;
 	if (cfg->show_labels) {
@@ -143,9 +147,20 @@ synth::syndiphs(voice *v, diphone *d, int n, wavefm *w)
 }
 
 void
+oldsynth::synssif(voice *v, char *, wavefm *w)
+{
+	
+}
+
+void
 voidsyn::syndiph(voice *, diphone, wavefm *)
 {
 	shriek(813, "Synthesis type absent");
 }
 
+
+void voidsyn::synssif(voice *, char *, wavefm *)
+{
+	shriek(813, "Synthesis type absent");
+}
 

@@ -245,10 +245,10 @@ and replacee are separated with a comma.
 
   Setup the diphone layer below the phone layer.
   The parameter names a file, which contains
-  phone to diphone mappings, again in the dictionary format
-  The replacees represent three character
-  diphone identifiers, the replacers are the respective diphone
-  numbers (decimal).
+  phone to diphone mappings, again in the dictionary format.
+  The replacees each represent a three character
+  diphone identifier, the replacers are the respective diphone
+  codes (decimal).
   It is possible, and indeed typical to include multiple identifiers
   for the same diphone number.
 
@@ -804,8 +804,16 @@ for the <tt>syll</tt> rule sonority groups.
 <sect1> Escaping special characters
 <p>
 
-You can use the backslash to escape any special character including itself
-anywhere in the rules or <tt>.ini</tt> file strings.
-<tt/&bsol;n/, <tt/&bsol;t/, <tt/&bsol;&lsqb;/ may be used
-to insert a newline, tab, or escape characters, respectively.
+You can escape any special character by prefixing it by a backslash
+anywhere in the rules or configuration files.  The backslash will
+be skipped, and the character will lose any special meaning which
+it would acquire within a given context.  Of course, backslashes
+themselves can be escaped in the same way.
+
+<p>
+
+In addition, special characters listed in
+<ref id="escapes" name="the table of escape sequences"> can be inserted
+using the same mechanism.
+
 

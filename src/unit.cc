@@ -42,6 +42,7 @@ unit::unit(UNIT layer, parser *parser)
 	depth = layer;
 	cont = NO_CONT;
 //	f = i = t = 0;
+	t = 0;
 	m = NULL;
 	scope = false;
 	DEBUG(1,2,fprintf(STDDBG,"New unit %u, parser %u\n", layer, parser->level);)
@@ -69,6 +70,7 @@ unit::unit(UNIT layer, int content)
 	depth = layer;
 	cont = content;
 //	f = i = t = 0;
+	t = 0;
 	m = NULL;
 	scope = false;
 	DEBUG(1,2,fprintf(STDDBG,"New unit %u, content %d\n", layer, content);)
@@ -125,6 +127,52 @@ unit::write_diphs(diphone *whither, int first, int n)
 	return m;
 }
 
+/****************************************************************************
+ Dumps the structure to SSIF. Returns how many bytes written.
+ ****************************************************************************/
+ 
+int
+unit::write_ssif_head(char *whither) {
+	return sprintf(whither, "%c %d ", cont, effective(Q_TIME));
+}
+
+
+#define WSSIF_SAFETY 100		// FIXME
+
+int
+unit::write_ssif(char *whither, int first, int len)
+{
+	bool tmpscope = scope;
+	marker *m;
+	unit *tmpu;
+	int n = 0;		// how many dumped
+	static unit *iucache; static int ifcache; static unit *ocache;
+	 
+	if (!whither) shriek (861, "NULL ptr passed to write_ssif()");
+	char *current = whither;
+	scope = true;
+	if (first == ifcache && iucache == this) tmpu=ocache;
+	else for (n = first, tmpu = LeftMost(cfg->phone_level); n--; tmpu = tmpu->Next(cfg->phone_level));
+
+	for (; (current < whither + len - WSSIF_SAFETY) && tmpu != &EMPTY; tmpu = tmpu->Next(cfg->phone_level)) {
+		int l = tmpu->write_ssif_head(scratch);
+		memcpy(current, scratch, l);
+		current += l;
+		for (m = tmpu->m; m; m = m->next) {
+			int l = m->write_ssif(scratch);
+			memcpy(current, scratch, l);
+			current += l;
+		}
+		*current++ = '\n';
+		n++;
+	}
+	*current = 0;
+
+	scope = tmpscope;
+	iucache = this; ifcache = first + n; ocache = tmpu;
+	return n;
+}
+
 void
 unit::show_phones()
 {
@@ -148,13 +196,13 @@ unit::fout(char *filename)      //NULL means stdout
 	file *tmp;
 	outf = filename ? fopen(filename, "wt", "unit dump file") : cfg->stddbg;
 
-	tmp = claim(cfg->header_xscr, cfg->ini_dir, "", "rt", "transcription header");
+	tmp = claim(cfg->header_xscr, cfg->ini_dir, "", "rt", "transcription header", NULL);
 	fputs(tmp->data, outf);
 	unclaim(tmp);
 
 	fdump(outf);
 
-	tmp = claim(cfg->footer_xscr, cfg->ini_dir, "", "rt", "transcription footer");
+	tmp = claim(cfg->footer_xscr, cfg->ini_dir, "", "rt", "transcription footer", NULL);
 	fputs(tmp->data, outf);
 	unclaim(tmp);
 
@@ -223,6 +271,15 @@ unit::fdump(FILE *handle)        //this one does the real job
 	if (cfg->out_postfix && !(cont == NO_CONT && cfg->out_swallow__)) { 
 		colorize(depth, handle);   //If you wanna disable this, go to interf.cc::colorize()   
 		fputs(fmtchar(cont), handle);
+		if (m) fputs("[", handle);
+		if (m && m->quant == Q_FREQ) fputs("f", handle);
+		if (m && m->quant == Q_INTENS) fputs("i", handle);
+		if (m && m->quant == Q_TIME) fputs("t", handle);
+		if (m) {
+			sprintf(scratch, "%d", m->par);
+			fputs(scratch, handle);
+		}
+		if (m) fputs("]", handle);
 		colorize(-1, handle);
 	}
 }
@@ -405,7 +462,7 @@ inline void
 unit::assert_sbsize(int k)
 {
 	if (sbsize <= k + 1) {
-		while (sbsize <=k + 1) sbsize <<= 1;
+		while (sbsize <= k + 1) sbsize <<= 1;
 		sb = (char *)xrealloc(sb, sbsize);
 	}
 }
@@ -885,11 +942,19 @@ unit::sseg(UNIT target, hash *templts)
 
 #define FIT(x,y) ((y==Q_FREQ) ? (x->f) : (y==Q_INTENS) ? (x->i) : (x->t) )
 
-#define UGLY_POSITION  0.5
+#define UGLY_POSITION  0.99
+
+void
+unit::prospoint(FIT_IDX what, int value, float position)
+{
+	DEBUG(1,2,fprintf(STDDBG, "Adding prosody point at %d\n", depth);)
+	if (what == Q_TIME) t += value;
+	else m = new marker(what, true /* extent */, value, m, position);
+}
 
 void
 unit::contour(UNIT target, int *recipe, int rec_len, int padd_start, FIT_IDX what, bool additive)
-{
+{					// FIXME! take additive into account
 	unit *u;
 	int i;
 	int padd_count;
@@ -907,16 +972,14 @@ unit::contour(UNIT target, int *recipe, int rec_len, int padd_start, FIT_IDX wha
 		/* the following happens to work even if (padd_start == -1) */
 
 	for (u = LeftMost(target), i=0;  i < padd_start;  u = u->Next(target), i++)
-//		FIT(u, what) = recipe[i] + (additive ? FIT(u, what) : 0);
-		m = new marker(what, true, recipe[i], m, UGLY_POSITION);
+		u->prospoint(what, recipe[i], UGLY_POSITION);
 	for ( ;  padd_count;  u = u->Next(target), padd_count--)
-//		FIT(u, what) = recipe[i] + (additive ? FIT(u, what) : 0);
-		m = new marker(what, true, recipe[i], m, UGLY_POSITION);
+		u->prospoint(what, recipe[i], UGLY_POSITION);
 	if (padd_start > -1) i++;
 	for ( ;  i < rec_len;  u = u->Next(target), i++)
-//		FIT(u, what) = recipe[i] + (additive ? FIT(u, what) : 0);
-		m = new marker(what, true, recipe[i], m, UGLY_POSITION);
+		u->prospoint(what, recipe[i], UGLY_POSITION);
 }
+
 
 
 /****************************************************************************
@@ -964,7 +1027,7 @@ unit::smooth(UNIT target, int *recipe, int n, int rec_len, FIT_IDX what)
 	}
 #else
 //	shriek(899, "no smooth");
-	DEBUG(3,2,fprintf(STDDBG, "No smooth!");)	// FIXME
+	DEBUG(3,2,fprintf(STDDBG, "No smooth!\n");)	// FIXME
 #endif
 }
 
@@ -997,11 +1060,15 @@ unit::project(UNIT target)			// FIXME optimize
 		}
 		u = firstborn;
 		marker *tmp;
-		while (m) {
+		if (!m) {
+			for (unit *u = firstborn; u; u = u->next)
+				u->project(target);
+		} else while (m) {
 			if (m->extent) {
 				if (m->next && !m->next->extent)
 					shriek(862, "Extent followed by a non-extent");
 				for (unit *u = firstborn; u; u = u->next) {
+					DEBUG(1,2,fprintf(STDDBG, "Moving prosody point to %d; q=%d, val=%d\n", u->depth, m->quant, m->par);)
 					u->m->merge(m->derived(), &u->m);
 					u->project(target);
 				}
@@ -1192,44 +1259,40 @@ unit::forall(UNIT target, bool userfn(unit *patiens))
 int
 unit::effective(FIT_IDX which)
 {
-#ifdef HAVE_EFFECTIVE
-	DEBUG(0,2,fprintf(STDDBG,"computing unit::effective, level %d, f=%d\n", depth, f);)
-
-	if (cfg->pros_mul[which]) {
-		int product = 1 << 10;
-		for (unit *u = this; u; u = u->father) {
-			int w = cfg->pros_weight[u->depth];
-			if (w > 10) shriek(462, "Weight absurd in unit::effective");
-			int x = which  ?  which==2 ? u->t : u->i  :  u->f;
-			for ( ; w; w--) product += product * x / cfg->pros_neutral[which];
-		}
-		return product * cfg->pros_neutral[which] >> 10;
-	} else {
-		int sum = 0;
-		for (unit *u = this; u; u = u->father) {
-			int x = which  ?  which==2 ? u->t : u->i  :  u->f;
-			sum += x * cfg->pros_weight[depth];
-		}
-		return sum + cfg->pros_neutral[which];
-	}
-#else
-//	shriek(899, "no effective");
-
 	marker *ma;
 	unit *u = this;
-//	for (u = this; u; u = u->father) {
+	if (which == Q_TIME) {
+		if (cfg->pros_mul[which]) {
+			int product = 1 << 10;
+			for (unit *u = this; u; u = u->father) {
+				int w = cfg->pros_weight[u->depth];
+				if (w > 10) shriek(462, "Weight absurd in unit::effective");
+				int x = (int)u->t;
+				for ( ; w; w--) product += product * x / cfg->pros_neutral[which];
+			}
+			return product * cfg->pros_neutral[which] >> 10;
+		} else {
+			int sum = 0;
+			for (unit *u = this; u; u = u->father) {
+				int x = (int)u->t;
+				sum += x * cfg->pros_weight[depth];
+			}
+			return sum + cfg->pros_neutral[which];
+		}
+	}
+	int r = cfg->pros_neutral[which];		// FIXME
+	for (u = this; u; u = u->father) {
 		for (ma = u->m; ma; ma = ma->next)
 		{
-//			printf("%d\n", ma->par);
-			if (ma->type == which) {
-				return 100 + ma->par;	// FIXME!!
+			if (ma->quant == which && ma->extent) {
+//				printf(" += %d\n", ma->par);
+				r += ma->par;
 			}
 		}
-//	}
+	}
 //	printf("sto\n");
-	return 100;  // FIXME!!
-#endif
-} 
+	return r;
+}
 
 /****************************************************************************
  Some bogus relicts

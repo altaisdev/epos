@@ -14,12 +14,12 @@
  */
 
 /*
- *	Read this if you ever derive a new synthesis from class synth.
+ *	Read this if you ever derive a new synthesis from class oldsynth.
  *
  *	Every synthesis must provide either a syndiph() or syndiphs()
  *	method. The easiest approach is to override syndiph() with
  *	code to synthesize a single diphone. It will only be called
- *	by synth::syndiphs() - it adjusts the prosody by the values
+ *	by oldsynth::syndiphs() - it adjusts the prosody by the values
  *	specified for the current voice for you.
  *
  *	On the other hand, if you override syndiphs(), you'll have
@@ -29,28 +29,30 @@
  *	compiler needs it at least declared).
  */
 
-class synth
+class oldsynth
 {
 	unsigned int crc;
    public:
-/*	synth(SYNTH_TYPE type, const char *counts_file, const char *models_file,
+/*	oldsynth(SYNTH_TYPE type, const char *counts_file, const char *models_file,
  *			const char *codebook_file, const char *dpt_file,
  ****			int f, int i, int t, int sampling_rate);	*/
 
-	synth();
-	virtual ~synth(void);
+	oldsynth();
+	virtual ~oldsynth(void);
 	virtual void syndiph(voice *v, diphone d, wavefm *w) = 0;
 	virtual void syndiphs(voice *v, diphone *d, int count, wavefm *w);
+	virtual void synssif(voice *v, char *, wavefm *w);
 };
 
-class voidsyn: public synth
+class voidsyn: public oldsynth
 {
    public:
-	voidsyn() : synth() {};
+	voidsyn() : oldsynth() {};
 	virtual ~voidsyn() {};
 	virtual void syndiph(voice *v, diphone d, wavefm *w);
+	virtual void synssif(voice *v, char *, wavefm *w);
 };
 
 void play_diphones(unit *root, voice *v);
 void show_diphones(unit *root);
-synth *setup_synth(voice *v);
+oldsynth *setup_synth(voice *v);

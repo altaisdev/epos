@@ -70,7 +70,7 @@ class context
 
 class stream;
 
-enum DATA_TYPE {T_NONE, T_INPUT, T_TEXT, T_STML, T_UNITS, T_DIPHS, T_WAVEFM};
+enum DATA_TYPE {T_NONE, T_INPUT, T_TEXT, T_STML, T_UNITS, T_DIPHS, T_SSIF, T_WAVEFM};
 
 struct pend_ll
 {

@@ -917,10 +917,33 @@ for an exciting story, just skip it.
 		in lng/*/traditnl.dph (discarded as comments until now)
 
 
-2.5.-4 from 2.4.32
+2.5.-4 from 2.4.32	19.11.99
 	- unit markers (see marker.cc) - that's why prosody is broken
 	- say.cc fix: no TTSCP_USER variable set
 	- minor additions to main.dic
 	- changed labelled waveforms from regions to labels and partly fixed them
 	- fixed sbsize related bugs
+
+2.5.-3 from 2.5.-4	20.3.00
+	- finished new prosody modelling
+	- mbrola-compatible speech synthesizer input format (SSIF) introduced
+	- prosody_dir option removed (prosody is language-dependent anyway)
+	- &commat;s hacked out in the HTML documentation
+	- incorporated a 2.4.36 to 2.4.40 patch:
+		- endianness and Solaris related fixes
+		- mmsystem compatibility (Petr)
+		- added an lpc voice, "theimer"
+		- voices reconfigured: rvq renamed to r-kubec-vq, r-vichova added
+		- permanent voice fallbacks
+		- put lpcsyn.cc lpcsyn.h under GPL
+		- repacked inventories (relative to /usr/lib/epos/inv, added READMEs)
+		- mmsystem and Visual C++ scripting fixes (Petr)
+		- a few voices changed prosodic defaults
+		- Windows specific regex configuration fixes
+		- #define __STDC__ braindamage removed from rx.h
+	- incorporated a 2.4.32 to 2.4.36 patch except for already present items:
+		- initializing unit::gb and unit::sb statically and related fixes
+		- partly fixed labelled waveforms (added a field to "cue " chunk header)
+	 	- fixed unlabelled waveforms (added "adjustment" to class w_ophase)
+	- smoothing by phone, not by segment in czech.rul (completely broken anyway)
 

@@ -27,7 +27,7 @@
 
 #define MAINTAINER  "Jirka Hanika"
 #define MAIL        "geo@cuni.cz"
-#define VERSION     "2.5.-4"
+#define VERSION     "2.5.-3"
 
 #include "config.h"
 
@@ -68,7 +68,8 @@ char *strdup(const char *);
 		#include <rx.h>
 	#else
 	    #ifdef HAVE_REGEX_H
-		#include <regex.h>
+//		#include <regex.h>
+		#include "rx.h"
 	    #else
 		#include "rx.h"
 	    #endif

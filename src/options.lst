@@ -310,7 +310,7 @@
 # define strfy(s) #s
 # define stringify(s) strfy(s)
 # ifndef BASE_DIR
-	# define BASE_DIR "/usr/lib/epos"
+	# define BASE_DIR /usr/lib/epos
 # endif
 	OPTION (base_dir, "base_dir", STR, stringify(BASE_DIR))// base path to everything
 # undef strfy
@@ -415,7 +415,7 @@ VOICE_OPTION (inv_ct,channel, "channel", CHANNEL, CT_MONO)// (unused; not stereo
 VOICE_OPTION (inv_counts, counts, "counts",  STR, NULL)	// File with the model counts for every diphone?
 VOICE_OPTION (inv_models, models, "models",  STR, NULL)	// File with the models themselves?
 VOICE_OPTION (inv_book, book, "codebook",    STR, NULL)	// No idea what this file is
-VOICE_OPTION (inv_dph, dphfile, "dph_file",  STR, NULL)	// File describing the diphones?
+//VOICE_OPTION (inv_dph, dphfile, "dph_file",  STR, NULL)	// File describing the diphones?
 VOICE_OPTION (inv_dpt, dptfile, "dpt_file",  STR, NULL)	// File naming the diphones?
 VOICE_OPTION (inv_f0, init_f, "init_f",      INT, 100)	// Neutral frequency for the inventory
 VOICE_OPTION (inv_i0, init_i, "init_i",      INT, 100)	// Neutral intensity
@@ -433,6 +433,7 @@ OPTION (pwdfile, "server_pwd_file",STR, NULL)	// File to store the server passwd
 OPTION (dbg_pwd, "debug_password", STR, "")	// Additional server password (insecure)
 OPTION (restr_file, "restr_file",  STR, "restr.ini") // restricted options
 OPTION (db_size, "diph_buff_size", INT, 0)	// max n of diphones to be synthesized at once
+OPTION (ssifb_size, "ssif_buff_size",INT,0)	// max n bytes of SSIF to be synthesized at once
 OPTION (buffer_size, "buffer_size",INT, 8192)	// buffer size for wave files
 OPTION (max_net_cmd, "max_net_cmd",INT, 16384)  // Max TCP command length
 OPTION (listen_port, "listen_port",INT, TTSCP_PORT) // TCP port where the daemon should listen
@@ -448,9 +449,12 @@ OPTION (sd_out, "",		   INT, -1)	// current output network socket
 OPTION (pend_min, "pend_min",	   INT, 3)	// FIXME: non-functional
 OPTION (pend_max, "pend_max",	   INT, 7)	// FIXME: non-functional
 
+OPTION (big_endian, "big_endian", BOOL, false)  // run-time decided
+
 LNG_OPTION (std_voices, voice_names, "voices", STR, "")	// voices supported for this language
 LNG_OPTION (sft_opts, soft_option_names, "soft_options", STR, "")
 				// language-specific voice options supported for this language
+LNG_OPTION (permanent_fallbacks, permanent_fallbacks, "permanent_fallbacks", BOOL, false)
 LNG_OPTION (fallback_voice, fallback_voice, "fallback_voice", STR, "")
 				// voice to be used when the current one fails at run time
 
