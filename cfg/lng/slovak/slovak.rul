@@ -27,12 +27,19 @@ if    phr_break
 	inside	\#	phone
 	{
 		contour   t/-65   phone
+		contour   i/-99   phone
 	}
 	5x  regress   0>\#(!_0)	sent	; vlo¾ení pausy
 }
 
-if   kadlec_dph
-	segments  ../czech/kadlec.dph   colon
-if  !kadlec_dph
-	segments  traditnl.dph 		colon
+regress |>0(!_!)	colon	phone
 
+if    slovak_dph
+	segments  slovak.dph	colon
+if    !slovak_dph
+{
+	if   kadlec_dph
+		segments  ../czech/kadlec.dph   colon
+	if  !kadlec_dph
+		segments  traditnl.dph 		colon
+}
