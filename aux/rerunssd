@@ -1,7 +1,0 @@
-#!/bin/sh
-
-PID=`ps x |grep ' ssd ' |grep -v grep|cut -d\  -f 2`
-kill $PID
-
-echo Starting ssd
-ssd &

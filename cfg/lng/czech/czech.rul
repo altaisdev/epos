@@ -1,5 +1,5 @@
 
-# Prozatímní pravidla pro pøepis èe¹tiny
+# Prozatímní pravidla pro pøepis èeštiny
 
 $colloquial	external
 $irony		external
@@ -15,11 +15,11 @@ $base_dir	external
 $prosody   = ${base_dir}/${prosody_dir}
 #$dph_file  = ${base_dir}/${invent_dir}/${inv_dph}
 
-$voiced    = bdïgvz¾ïZ®hø
-$voiceless = pt»kfs¹»cèxØ
-$fric      = sz¹¾fvhx
-$afric     = cZè®
-$stop      = pt»kbdïg
+$voiced    = bdïgvzïZhø
+$voiceless = ptkfsšcèxØ
+$fric      = szšfvhx
+$afric     = cZè
+$stop      = ptkbdïg
 $nasal     = mnòN
 $sonant    = jlr$nasal
 $short     = aeiouyì
@@ -31,8 +31,8 @@ $everywhere= !_!
 $numbers   = 1234567890
 $sonority  = 0'<$fric$afric${stop}øØ$nasal<l<rjJ<$vowel   ;l<r because of "umrlec" etc. Not outright systematic nor safe.
 
-$lower_case = aábcèdïeéìfghiíjklmnòoópqrøs¹t»uúùvwxyız¾
-$upper_case = AÁBCÈDÏEÉÌFGHIÍJKLMNÒOÓPQRØS©T«UÚÙVWXYİZ®
+$lower_case = aábcèdïeéìfghiíjklmnòoópqrøsštuúùvwxyız
+$upper_case = AÁBCÈDÏEÉÌFGHIÍJKLMNÒOÓPQRØSŠTUÚÙVWXYİZ
 
 regress  ${upper_case}>${lower_case}($everywhere)
 
@@ -44,28 +44,28 @@ regress  ${upper_case}>${lower_case}($everywhere)
  progress  ù>ú($everywhere)
 
  progress  0>s(x_!)
- progress  u0>0v(q_!)              ; Rozlo¾ení x,q na ks, kv
+ progress  u0>0v(q_!)              ; Rozloení x,q na ks, kv
  regress   xq>k($everywhere)
- regress   h>x(c_!)                ; Spøe¾ka ch > x
- regress   z¾>Z®(d_!)              ; Spøe¾ky dz,d¾ > Z,®
- progress  cd>0(!_xZ®)
- progress  h>x(s_!)                ; Pra¾ské sh
+ regress   h>x(c_!)                ; Spøeka ch > x
+ regress   z>Z(d_!)              ; Spøeky dz,d > Z,
+ progress  cd>0(!_xZ)
+ progress  h>x(s_!)                ; Praské sh
 
 # Následující pravidla jednak zmìní vìty vydìlené dvojteèkou
-#   na vìty vydìlené teèkou (to je spí¹e ¹patnì ne¾ dobøe),
+#   na vìty vydìlené teèkou (to je spíše špatnì ne dobøe),
 #   dále pak oznaèí dvojteèkou (místo otazníku) ty vìty, které
 #   obsahovaly ve své první klausi nìkteré ze slov uvedenıch
-#   ve slovníku wh.dic, nemìly tuto klausi zvlá¹» vydìlenou
-#   ¾ádnou interpunkcí, a byly samy vydìleny otazníkem.
+#   ve slovníku wh.dic, nemìly tuto klausi zvláš vydìlenou
+#   ádnou interpunkcí, a byly samy vydìleny otazníkem.
 #
-# Fonetik vidí, ¾e jsem právì "definoval" doplòovací otázky.
+# Fonetik vidí, e jsem právì "definoval" doplòovací otázky.
 
  progress  :>.($everywhere)	text	sent
  subst     wh.dic				; Doplòovací otázky
  raise     q:_			colon	phone
  progress  q>_(!0_!)		sent	colon	;  jen v první klausi
  raise     q:?			sent	colon
- progress  q>0($everywhere)			;  úklid v¹ech úrovní
+ progress  q>0($everywhere)			;  úklid všech úrovní
  progress  q>_($everywhere)	sent	colon
  progress  q>:($everywhere)	text	sent
 
@@ -77,11 +77,11 @@ regress  ${upper_case}>${lower_case}($everywhere)
 
  subst     syll.dic		; Rozsadit vokály
  regress   0>'(0_$vowel)	; Rázy
- progress  0>q(!q_sz¹¾)	 colon  
- progress  q>0(!_!0)     word   ; "q" jen pøed hranicí slov, za ní¾ je sykavka
+ progress  0>q(!q_szš)	 colon  
+ progress  q>0(!_!0)     word   ; "q" jen pøed hranicí slov, za ní je sykavka
  prep	   seq.dic
  progress  q>0($everywhere)
- prep      preps.dic 	     ; Fúze pøedlo¾ek, postpozic
+ prep      preps.dic 	     ; Fúze pøedloek, postpozic
  prep      nonsyl.dic    syll
  postp     postps.dic
 
@@ -99,15 +99,15 @@ regress  ${upper_case}>${lower_case}($everywhere)
  }
 
  regress   0>n(m_ì)
- regress   dtn>ï»ò(!_iíì)
- regress   ì>e(ï»ò_!)
+ regress   dtn>ïò(!_iíì)
+ regress   ì>e(ïò_!)
  regress   0>j(!_ì)
  regress   ì>e($everywhere)
 
  progress  yı>ií($everywhere)
  progress  i>j($vowel_!) syll   ; slabièné èlenìní? Leda vıjimeènì 
  progress  w>u($vowel_$consonant&0)
- progress  w>v($everywhere)     ; vìt¹inou ale "w" odstraní vıjimky, øeknìme
+ progress  w>v($everywhere)     ; vìtšinou ale "w" odstraní vıjimky, øeknìme
  progress  n>N(!_kg)
 
  regress   b>0(!_b)	syll	; pochybnı heuristickı odstaveèek
@@ -121,9 +121,9 @@ regress  ${upper_case}>${lower_case}($everywhere)
  progress  oae>OAE(!_u)	syll	; Dvojhlásky
  regress   u>0(OAE_!)	syll
 
- regress   Z®>DÏ(!_$vowel)	; toto by mìlo pøijít do inventáøe (traditnl.dph);
- regress   0>d(!_DÏ)		; rozkládá se zde dz, d¾ (representované Z,®)
- regress   DÏ>z¾(!_!)		; na d-z, d-¾, pokud následuje vokál.
+ regress   Z>DÏ(!_$vowel)	; toto by mìlo pøijít do inventáøe (traditnl.dph);
+ regress   0>d(!_DÏ)		; rozkládá se zde dz, d (representované Z,)
+ regress   DÏ>z(!_!)		; na d-z, d-, pokud následuje vokál.
 
  progress  0>~($vowel_0) syll	; Oznaèení otevøenıch vokalickıch slabik tildou
  raise     ~:!		 syll
@@ -171,7 +171,7 @@ regress  ${upper_case}>${lower_case}($everywhere)
 	smooth	f/30/40\30			word	phone
  }
 
- inside   ?	sent	; Následující jen pro otázky zji¹»ovací
+ inside   ?	sent	; Následující jen pro otázky zjišovací
  {
 #	prosody   $prosody/fadeoutp.dic	sent	phone
 	prosody	  $prosody/fadeoutw.dic	sent	word
@@ -201,7 +201,7 @@ regress  ${upper_case}>${lower_case}($everywhere)
 	prosody   $prosody/exclafad.dic	sent	syll
  }
 
-## regress   0>\#(!_0)	colon	; vlo¾ení pausy
+## regress   0>\#(!_0)	colon	; vloení pausy
 
 # diphones  ${dph_file}	colon	    ; mìlo by bıt zhruba posledním pravidlem
 
