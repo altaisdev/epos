@@ -2,7 +2,7 @@
 dnl Process this file with autoconf to produce a configure script
 
 AC_INIT(src/unit.cc)
-AM_INIT_AUTOMAKE(epos, 2.5.22)
+AM_INIT_AUTOMAKE(epos, 2.5.23)
 AC_PREFIX_DEFAULT(/usr)
 
 CCC="g++ c++ cc++ gcc cc"
@@ -49,6 +49,7 @@ AC_HAVE_HEADERS(strings.h)
 AC_HAVE_HEADERS(string.h)
 AC_HAVE_HEADERS(stdint.h)
 AC_HAVE_HEADERS(io.h)
+AC_HAVE_HEADERS(process.h)
 AC_HAVE_HEADERS(rx.h)
 AC_HAVE_HEADERS(regex.h)
 AC_HAVE_HEADERS(errno.h)
@@ -73,7 +74,8 @@ AC_HAVE_HEADERS(linux/kd.h)
 AC_HAVE_HEADERS(sys/kernel.h)
 AC_HAVE_HEADERS(sys/name.h)
 AC_HAVE_HEADERS(fcntl.h)
-AC_HAVE_FUNCS(strerror vsnprintf strdup fork getegid strcasecmp stricmp gethostname gettimeofday qnx_name_attach abort)
+AC_HAVE_HEADERS(direct.h)
+AC_HAVE_FUNCS(strerror vsnprintf strdup fork getegid strcasecmp stricmp getcwd gethostname gettimeofday qnx_name_attach abort kill pipe _pipe)
 
 AC_CACHE_CHECK("for glibc regex error codes",
    epos_cv_symb_regeend,
@@ -95,7 +97,7 @@ AC_CACHE_CHECK("for glibc regex error codes",
 	epos_cv_symb_regeend=no)
 )
 if test "$epos_cv_symb_regeend" = yes; then
-   AC_DEFINE(HAVE_REG_EEND)
+   AC_DEFINE([HAVE_REG_EEND], [], [ Define if your regex library defines the REG_EEND and REG_ESIZE error codes ])
 fi
 
 AC_CACHE_CHECK("for regmatch_t.rm_so",
@@ -119,45 +121,35 @@ AC_CACHE_CHECK("for regmatch_t.rm_so",
 	epos_cv_struct_rm_so=no)
 )
 if test "$epos_cv_struct_rm_so" = yes; then
-   AC_DEFINE(HAVE_RM_SO)
+   AC_DEFINE([HAVE_RM_SO], [], [ Define if your regex library defines the REG_EEND and REG_ESIZE error codes ])
 fi
 
 
 AC_CACHE_CHECK("for terminate",
    epos_cv_fn_terminate,
    AC_TRY_COMPILE(
-	#include <stdlib.h> 
-	,
-	throw new int; exit(1); terminate(),
-	epos_cv_fn_terminate=yes,
-	epos_cv_fn_terminate=no,
-	epos_cv_fn_terminate=yes)
+	[ #include <stdlib.h> ],
+	[ throw new int; exit(1); terminate() ] ,
+	[ epos_cv_fn_terminate=yes ],
+	[ epos_cv_fn_terminate=no ],
+	[ epos_cv_fn_terminate=yes ])
 )
 if test "$epos_cv_fn_terminate" = yes; then
-   AC_DEFINE(HAVE_TERMINATE)
-fi
-
-AC_CACHE_CHECK("for built-in bool",
-   epos_cv_type_bool,
-   AC_TRY_COMPILE(,
-	bool b,
-	epos_cv_type_bool=yes,
-	epos_cv_type_bool=no)
-)
-if test "$epos_cv_type_bool" = yes; then
-   AC_DEFINE(HAVE_BOOL)
+   AC_DEFINE([HAVE_TERMINATE], [], [ Define if you have the built-in terminate function. ])
 fi
 
 AC_CACHE_CHECK("for explicit template instatiations",
    epos_cv_c_templ_inst,
    AC_TRY_COMPILE(
-	template <class any_type> class some_type{}; template class some_type<int>;,
-	,
-	epos_cv_c_templ_inst=yes,
-	epos_cv_c_templ_inst=no)
+	[ template <class any_type> class some_type{}; template class some_type<int>; ]	,
+	[],
+	[ epos_cv_c_templ_inst=yes ],
+	[ epos_cv_c_templ_inst=no ])
 )
 if test "$epos_cv_c_templ_inst" = yes; then
-   AC_DEFINE(HAVE_TEMPL_INST)
+   AC_DEFINE([HAVE_TEMPL_INST], [], [ Define if your compiler understands explicit class template instantiations
+   as in template class templ_type<param_type>; ]
+)
 fi
 
 AC_CACHE_CHECK("for socklen_t",
@@ -173,7 +165,7 @@ AC_CACHE_CHECK("for socklen_t",
 	epos_cv_type_socklen=no)
 )
 if test "$epos_cv_type_socklen" = yes; then
-   AC_DEFINE(HAVE_SOCKLEN_T)
+   AC_DEFINE([HAVE_SOCKLEN_T], [], [ Define if you have socklen_t in sys/socket.h or sys/types.h. ])
 fi
 
 broken_enum_bitfields_test='\
@@ -202,7 +194,7 @@ AC_CACHE_CHECK("for broken enum bitfields",
 	epos_cv_c_broken_enum_bitfields=yes)
 )
 if test "$epos_cv_c_broken_enum_bitfields" = yes; then
-   AC_DEFINE(BROKEN_ENUM_BITFIELDS)
+   AC_DEFINE([BROKEN_ENUM_BITFIELDS], [], [ Define if your compiler incorrectly treats enum bit fields as signed ])
 fi
 
 
