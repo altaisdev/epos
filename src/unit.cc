@@ -358,10 +358,10 @@ char *
 unit::gather(int *l, bool delimited, bool suprasegm)
 {
 	char *r;
-	if (!gb) {
-		gbsize = INIT_GB_SIZE;
-		gb = (char *)xmalloc(gbsize);
-	}
+//	if (!gb) {
+//		gbsize = INIT_GB_SIZE;
+//		gb = (char *)xmalloc(gbsize);
+//	}
 	do {
 		char *b = gb;
 		if (delimited) *b++ = '^';
@@ -386,10 +386,10 @@ unit::gather(int *l, bool delimited, bool suprasegm)
 // char *_subst_buff = NULL;
 // char *_gather_buff = NULL;
 
-char *unit::gb = 0;
-int unit::gbsize = 0;
-char *unit::sb = 0;
-int unit::sbsize = 0;
+char *unit::gb = (char *)malloc(INIT_GB_SIZE);
+int unit::gbsize = INIT_GB_SIZE;
+char *unit::sb = (char *)malloc(INIT_GB_SIZE);
+int unit::sbsize = INIT_GB_SIZE;
 
 
 inline void
@@ -435,10 +435,10 @@ unit::subst(hash *table, int l, char *prefix, char *prefix_end, char *body, char
 	sanity();
 	resultant = table->translate(body);
 	if (!resultant) return false;
-	if (!sb) {
-		sbsize = INIT_GB_SIZE;
-		sb = (char *)xmalloc(sbsize);
-	}
+//	if (!sb) {
+//		sbsize = INIT_GB_SIZE;
+//		sb = (char *)xmalloc(sbsize);
+//	}
 	safe_grow = sbsize - l;
 	while ((int)strlen(resultant) - (int)strlen(body) > safe_grow) {
 		safe_grow += sbsize;
