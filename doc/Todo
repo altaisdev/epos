@@ -1,5 +1,8 @@
 Bugs
+- after a single nonsense char is processed, Epos goes silent and may get looping with say -w
 - better prosody modelling for monosyllaba
+- with windows sokec, files as stream input modules crash the server
+- with windows sokec, files as output modules with disk full crash the server
 
 Features
 - pause hierarchy rules

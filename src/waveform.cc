@@ -55,6 +55,12 @@
 	#include <io.h>		/* open, (ioctl,) ... */
 #endif
 
+#ifndef SNDCTL_DSP_SYNC
+#ifndef SOUND_PCM_SYNC
+#define FORGET_SOUND_IOCTLS
+#endif
+#endif
+
 
 #define FOURCC_INIT(x) {(x[0]), (x[1]), (x[2]), (x[3])}
 
@@ -199,9 +205,6 @@ wavefm::~wavefm()
 
 #ifndef SNDCTL_DSP_SYNC
 #define SNDCTL_DSP_SYNC		SOUND_PCM_SYNC
-#ifndef SOUND_PCM_SYNC
-#error The sound card ioctls seem to be broken or absent, remove this #error
-#endif
 #endif
 
 #ifndef SNDCTL_DSP_RESET

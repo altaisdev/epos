@@ -904,3 +904,9 @@ for an exciting story, just skip it.
 		and its location can be changed with --base_dir
 	- added a security section to the documentation
 	- commented out the mark_voice() debugging thing in waveform.cc
+
+2.4.31 from 2.4.30	6.10.99
+	- waveform stuff survives no sound ioctls found without FORGET_SOUND_IOCTLS
+	- minor fix to say.cc to avoid fopen(NULL)
+	- oa_wavefm::run() modified to run until EAGAIN (not just end of ophase)
+

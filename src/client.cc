@@ -77,9 +77,9 @@ char scratch[SCRATCH_SPACE + 2];
 	#include <winsock2.h>
 #endif
 
-//#ifdef HAVE_ERRNO_H
-//	#include <errno.h>
-//#endif
+#ifdef HAVE_ERRNO_H
+	#include <errno.h>
+#endif
 
 #include <sys/types.h>
 #include <signal.h>
@@ -143,7 +143,7 @@ int connect_socket(unsigned int ipaddr, int port)
 	if (sd == -1) {
 		shriek(473, "Server unreachable\n");
 	}
-	sgets(scratch, cfg->scratch, sd);
+	if (!sgets(scratch, cfg->scratch, sd)) shriek(474, "Remote server listens but discards\n");
 	if (strncmp(scratch, "TTSCP spoken here", 18)) {
 		scratch[15] = 0;
 		shriek(474, "Protocol not recognized");

@@ -647,10 +647,13 @@ oa_wavefm::run()
 		report(false, w->written /* + sizeof(wave_header)*/);
 		attached = true;
 	}
-	if (w->flush()) {
-		if (w->written) report(false, w->written);
-		push(socket);
-	} else {
+	bool to_do;
+	while ((to_do = w->flush()) && w->written) {
+		report(false, w->written);
+	}
+
+	if (to_do) push(socket);
+	else {
 		if (w->written) report(false, w->written);
 		report(true, w->written_bytes());
 		w->detach(socket);

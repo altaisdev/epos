@@ -266,7 +266,9 @@ int main(int argc, char **argv)
 //	sputs("intr\r\n", ctrld);
 
 // #ifdef HAVE_GETENV
-	FILE *f = fopen(getenv("TTSCP_USER"), "rt");
+	FILE *f;
+	char *ttscp_user_config = getenv("TTSCP_USER");
+	if (ttscp_user_config) f = fopen(ttscp_user_config, "rt");
 	if (f) {
 		while (!feof(f)) {
 			*scratch = 0;

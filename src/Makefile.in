@@ -7,6 +7,9 @@ CC=@CXX@
 LNK=@CXX@
 LDOPTS=-L/lib -L/usr/local/lib -L/usr/lib
 OTHERLIBS=@LIBS@
+
+# The following line may be deleted if using some other compiler than Watcom C.
+
 export WPP386=-xs
 
 
@@ -89,7 +92,7 @@ say	: say.o Makefile ../cfg/cfg/default.ini
 	$(LNK) -o $@ say.o $(DMALLOC_LINK_OPT) $(LDOPTS) $(FLAGS)
 	@echo Type \"make install\" to install cfg files to $(LIBDIR)
 
-vrfy	: vrfy.cc
+vrfy	: vrfy.cc client.cc
 	$(CC) $(FLAGS) -o $@ vrfy.cc
 
 monolith mh : eposm
