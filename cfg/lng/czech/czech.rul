@@ -27,7 +27,7 @@ $prosody   = ${base_dir}/${prosody_dir}
  inside  ,    colon
  {
 	prosody	  $prosody/nonterm.dic	colon	phone
-	smooth	f/5/40\35\15\5			colon   syll
+#	smooth	f/5/40\35\15\5			colon   syll
  }
 
  if      $irony		sent
@@ -52,7 +52,7 @@ $prosody   = ${base_dir}/${prosody_dir}
 	{
 		prosody   $prosody/wh.dic		sent	syll
 	}
-	prosody   ${prosody}/fadeoutp.dic	sent	phone
+#	prosody   ${prosody}/fadeoutp.dic	sent	phone
 	prosody   ${prosody}/fadeouts.dic	sent	syll
 
 	inside    .   sent
@@ -65,7 +65,7 @@ $prosody   = ${base_dir}/${prosody_dir}
 
  inside   ?	sent	; Následující jen pro otázky zjišovací
  {
-#	prosody   $prosody/fadeoutp.dic	sent	phone
+	prosody   $prosody/fadeoutp.dic	sent	phone
 	prosody	  $prosody/fadeoutw.dic	sent	word
 
 
@@ -93,13 +93,13 @@ $prosody   = ${base_dir}/${prosody_dir}
 	prosody   $prosody/exclafad.dic	sent	syll
  }
 
-## regress   0>\#(!_0)	colon	; vložení pausy
+regress   0>\#(!_0)	colon	; vložení pausy
 
 # diphones  ${dph_file}	colon	    ; mìlo by být zhruba posledním pravidlem
 
- diphones  kadlec.dph
+ diphones  traditnl.dph colon
  
- smooth    f/10/80\10	text diphone
+# smooth    f/10/80\10	text diphone
 
 
 ;--------------------  debug     elem,pause text
