@@ -62,7 +62,7 @@ $prosody = ../czech/prosody
 	smooth	f/30/40\30			word	phone
  }
 
- inside   ?	sent	; Následující jen pro otázky zjišovací
+ inside   ?	sent	; Následující jen pro otázky zji¹»ovací
  {
 	prosody   $prosody/fadeoutp.dic	sent	phone
 	prosody	  $prosody/fadeoutw.dic	sent	word
@@ -92,7 +92,7 @@ $prosody = ../czech/prosody
 	prosody   $prosody/exclafad.dic	sent	syll
  }
 
-regress   0>\#(!_0)	colon	; vložení pausy
+regress   0>\#(!_0)	colon	; vlo¾ení pausy
 
 if   kadlec_dph
 	segments  ../czech/kadlec.dph   colon

@@ -1,6 +1,6 @@
 +	~plus~
 \d	~teèka~
-\-	~až~
+\-	~a¾~
 \m	~mínus~
 =	~rovná~sa~
 /	~lomeno~
@@ -9,8 +9,8 @@
 )	~koniec~zátvorky~
 [	~hranatá~zátvorka~
 ]	~koniec~hranatej~zátvorky~
-{	~zložená~zátvorka~
-}	~koniec~zloženej~zátvorky~
+{	~zlo¾ená~zátvorka~
+}	~koniec~zlo¾enej~zátvorky~
 &	~et~
 *	~hviezdièka~
 %	~percent~
@@ -19,8 +19,8 @@ _	~dolná~èiarka~
 "	~úvodzovky~
 `	~spätný~apostrof~
 \\	~obrátené~lomítko~
-<	~menší~
->	~väèší~
+<	~men¹í~
+>	~väè¹í~
 \#	~kód~
 $$	dolár
-^^	strieška
+^^	strie¹ka

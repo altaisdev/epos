@@ -2,11 +2,11 @@
 #	(c) Jirka Hanika <geo@ff.cuni.cz>
 #       (c) Martin Petriska <petriska@pobox.sk>
 
-$voiced    = bdÔgZézûhv
-$voiceless = ptùkcËsöxf
-$fric      = szöûfvhx
-$afric     = cZËé
-$stop      = pbtùdÔkg
+$voiced    = bdÔgZÆzæhv
+$voiceless = ptªkcËsπxf
+$fric      = szπæfvhx
+$afric     = cZËÆ
+$stop      = pbtªdÔkg
 $nasal     = mnÚN
 $sonant    = jlr$nasal
 $short     = aeiouy‰Ï
@@ -18,11 +18,11 @@ $everywhere= !_!
 $numbers   = 1234567890
 $sonority  = 0'<$fric$afric${stop}<$nasal<l<rj<‡Â$vowel   ;l<r viz "umrlec" etc. Ani systematickÈ, ani bezpeËnÈ.
 
-$lower_case = a·‰bcËdÔeÈÏfghiÌjklæÂmnÚoÛÙpqr‡sötùu˙vwxy˝zû
-$upper_case = A¡ƒBC»DœE…ÃFGHIÕJKLº≈MN“O”‘PQR¿SäTçU⁄VWXY›Zé
+$lower_case = a·‰bcËdÔeÈÏfghiÌjklµÂmnÚoÛÙpqr‡sπtªu˙vwxy˝zæ
+$upper_case = A¡ƒBC»DœE…ÃFGHIÕJKL•≈MN“O”‘PQR¿S©T´U⁄VWXY›ZÆ
 
 # Pravidla pro ËtenÌ zkratek apod.: velkÈ pÌsmeno na jinÈm,
-#   neû prvnÌm mÌstÏ ve slovÏ indikuje zkratku a hl·skuje se.
+#   neæ prvnÌm mÌstÏ ve slovÏ indikuje zkratku a hl·skuje se.
 #   StejnÏ tak jednotlivÈ pÌsmeno p¯ed cifrou nebo speci·lnÌm znakem.
 subst skratky.dic
 regress	 ${lower_case}>${upper_case}(0_!${lower_case})			colon
@@ -38,11 +38,11 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
 
 
  progress  0>s(x_!)
- progress  u0>0v(q_!)              ; Rozloûenie x,q na ks, kv
+ progress  u0>0v(q_!)              ; Rozloæenie x,q na ks, kv
  regress   xq>k($everywhere)
- regress   h>x(c_!)                ; Sp¯eûka ch > x
- regress   zû>Zé(d_!)              ; Sp¯eûky dz,dû > Z,é 
- progress  cd>0(!_xZé)
+ regress   h>x(c_!)                ; Sp¯eæka ch > x
+ regress   zæ>ZÆ(d_!)              ; Sp¯eæky dz,dæ > Z,Æ 
+ progress  cd>0(!_xZÆ)
  
 
  regress 0>o(Ù_!)
@@ -56,20 +56,20 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
 
 
 # N·sledujÌcÌ pravidla jednak zmÏnÌ vÏty vydÏlenÈ dvojteËkou
-#   na vÏty vydÏlenÈ teËkou (to je spÌöe öpatnÏ neû dob¯e),
+#   na vÏty vydÏlenÈ teËkou (to je spÌπe πpatnÏ neæ dob¯e),
 #   d·le pak oznaËÌ dvojteËkou (mÌsto otaznÌku) ty vÏty, kterÈ
 #   obsahovaly ve svÈ prvnÌ klausi nÏkterÈ ze slov uveden˝ch
-#   ve slovnÌku wh.dic, nemÏly tuto klausi zvl·öù vydÏlenou
-#   û·dnou interpunkcÌ, a byly samy vydÏleny otaznÌkem.
+#   ve slovnÌku wh.dic, nemÏly tuto klausi zvl·πª vydÏlenou
+#   æ·dnou interpunkcÌ, a byly samy vydÏleny otaznÌkem.
 #
-# Fonetik vidÌ, ûe jsem pr·vÏ "definoval" doplÚovacÌ ot·zky.
+# Fonetik vidÌ, æe jsem pr·vÏ "definoval" doplÚovacÌ ot·zky.
 
  progress  :>.($everywhere)	text	sent
  subst     wh.dic				; DoplÚovacÌ ot·zky
  raise     Q:_			colon	phone
  progress  Q>_(!0_!)		sent	colon	;  jen v prvnÌ klausi
  raise     Q:?			sent	colon
- progress  Q>0($everywhere)			;  ˙klid vöech ˙rovnÌ
+ progress  Q>0($everywhere)			;  ˙klid vπech ˙rovnÌ
  progress  Q>_($everywhere)	sent	colon
  progress  Q>:($everywhere)	text	sent
 
@@ -89,7 +89,7 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
 
 
 
- regress   dtnl>ÔùÚæ(!_Ìie)
+ regress   dtnl>ÔªÚµ(!_Ìie)
   
  progress  y˝Ï>iÌe($everywhere)
 
@@ -104,11 +104,11 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
  progress Zdt>0(!_q)                 ; ß 246
  regress q>c($everywhere)
 
- regress s>q(ùtÔd_t)		   ; ùst,Ôst,dst,tst-> ct
- progress ùtÔd>0(!_q)
+ regress s>q(ªtÔd_t)		   ; ªst,Ôst,dst,tst-> ct
+ progress ªtÔd>0(!_q)
  regress q>c($everywhere)
   
- regress ù>0(!_Ô)		  ; ùÔ->Ô dev‰ùdesiat
+ regress ª>0(!_Ô)		  ; ªÔ->Ô dev‰ªdesiat
 
 # regress   $voiced>${voiceless}(!_$voiceless&0')       	; Asimilace znÏlosti
  regress   $voiced>${voiceless}(!_$voiceless&0')  colon     	; Asimilace znÏlosti

@@ -23,13 +23,13 @@ if    a_colons	sent
 
 if    phr_break
 {
-	regress   0>\#(!_0)	colon	; vložení pausy
+	regress   0>\#(!_0)	colon	; vlo¾ení pausy
 	inside	\#	phone
 	{
 		contour   t/-65   phone
 		contour   i/-99   phone
 	}
-	5x  regress   0>\#(!_0)	sent	; vložení pausy
+	5x  regress   0>\#(!_0)	sent	; vlo¾ení pausy
 }
 
 regress |>0(!_!)	colon	phone
