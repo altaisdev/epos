@@ -1,0 +1,199 @@
+# Makefile.in should be processed by configure to yield Makefile
+
+OBJ=.o
+SRC=.cc
+COPY=cp
+CC=@CXX@
+LNK=@LNK@
+LDOPTS=-L/lib -L/usr/local/lib -L/usr/lib -lc -lg++ -lstdc++ -lgcc -lm -lc -lgmon -lgcc -m elf_i386
+DYNLNKR=-dynamic-linker /lib/ld-linux.so.1
+CRT=/usr/lib/crt1.o /usr/lib/crti.o /usr/lib/crtbegin.o
+CRTEND=/usr/lib/crtend.o /usr/lib/crtn.o
+
+#RedHat 5.0
+#LDOPTS=-L/lib -L/usr/local/lib -L/usr/lib -lc -lg++ -lstdc++ -lm -lc  
+#DYNLNKR=-dynamic-linker /lib/ld-linux.so.2
+#CRT=/usr/lib/crt1.o /usr/lib/crti.o /usr/lib/gcc-lib/i386-redhat-linux/2.7.2.3/crtbegin.o
+#CRTEND=/usr/lib/gcc-lib/i386-redhat-linux/2.7.2.3/crtend.o /usr/lib/crtn.o
+
+#RedHat 4.2
+#LDOPTS=-L/lib -L/usr/local/lib -L/usr/lib -lc -lg++ -lstdc++ -lm -lc  
+#DYNLNKR=-dynamic-linker /lib/ld-linux.so.1
+#CRT=/usr/lib/crt1.o /usr/lib/crti.o /usr/lib/crtbegin.o
+#CRTEND=/usr/lib/crtend.o /usr/lib/crtn.o
+OTHERLIBS=-lrx 
+
+# Want an external debugging lib? Download dmalloc and uncomment the following.
+
+OTHERLIBS=@LIBS@
+
+# Want an external debugging lib? Download dmalloc and uncomment the following.
+# DMALLOC_STATUS=-DWANT_DMALLOC
+ifeq ($(DMALLOC_STATUS), -DWANT_DMALLOC)
+  DMALLOC_LINK_OPT=-ldmalloc -L/usr/local/lib
+endif
+#HOMEMADE_STRDUP=-DHOMEMADE_STRDUP
+
+#add -pg for profiling, -ggdb for gdb debugging
+
+#ifeq (@GXX@, yes)
+#  CFLAGS=-Wall -Wunused -Wpointer-arith -O0 -pipe  -fpic -ggdb
+#else
+#  CFLAGS=-O1
+#endif
+CFLAGS=@CFLAGS@
+FLAGS=$(DMALLOC_STATUS) $(HOMEMADE_STRDUP) $(CFLAGS)
+
+SS     = ss
+
+prefix = @prefix@
+LIBDIR = @prefix@/lib/$(SS)
+LIBNAME = lib$(SS).so.$(shell ../aux/makever)
+CFGDIR = $(LIBDIR)/cfg
+
+SHELL = /bin/sh
+
+HEADERS=common.h defaults.h elements.h parser.h rule.h text.h interf.h hash.h synth.h
+SOURCES=parser.cc elements.cc rule.cc block.cc text.cc interf.cc hash.cc synth.cc ss.cc options.cc nnet.cc
+DOSSOURCES=ss.cpp README.dos
+MODULES=parser$(OBJ) elements$(OBJ) rule$(OBJ) text$(OBJ) interf$(OBJ) hash$(OBJ) synth$(OBJ) ktdsyn$(OBJ) voice$(OBJ)
+TARGETS=$(SS)
+DOSES=  dos1250 dos1252 dospc2 dosil1 dosil2 doskam doskoi8 dosascii dosmac dosvga
+
+# the compilation proper may also depend on this makefile.
+# Linking always does.
+
+# MAKEFILE=
+MAKEFILE=Makefile
+
+.PHONY: all static monolith install clean distclean tgz dist cfgsync date gdb pg dos $(DOSES)
+all: $(TARGETS)
+
+install : all $(SHELL) ../aux/makeinst
+	@$(SHELL) ../aux/makeinst /usr/lib $(LIBNAME) $(LIBDIR) ../cfg
+#	install -m 0755 -o bin -g bin $(TARGETS) $(EXEDIR)
+#	install -m 0644 -o bin -g bin $(LIBRARY) $(LIBDIR)
+
+
+
+clean:  $(SHELL) ../aux/listtmp
+	@if [ `cat $(CFGDIR)/ss.ini $(CFGDIR)/ssfixed.ini| grep 'use_debug *on\|use_debug *yes\|memory_low *on\|memory_low *yes'|wc -l` -ne 0 ];\
+		 then echo Debugging option seems to be set; fi
+	@rm -fr ../dos
+	@rm -f `$(SHELL) ../aux/listtmp $(LIBDIR) $(TARGETS)`
+
+distclean: clean
+	@rm -f config.h Makefile config.cache
+	@cp -f ../aux/Makefile.dummy Makefile
+
+
+$(SS)	: $(LIBNAME) ss$(OBJ) ssd
+	@echo Building the client...
+	$(LNK) $(DYNLNKR) -o $@ $(CRT) ss$(OBJ) $(LIBNAME) $(DMALLOC_LINK_OPT) $(LDOPTS) $(CRTEND) -lrx
+	@echo Type \"make install\" to install cfg files to $(LIBDIR)
+
+monolith: $(MODULES) monolith$(OBJ) Makefile ../cfg/cfg/ssdeflt.ini
+	$(LNK) $(DYNLNKR) -o ss $(CRT) monolith$(OBJ) $(LIBNAME) $(DMALLOC_LINK_OPT) $(LDOPTS) $(CRTEND) -lrx
+
+static  : $(MODULES) monolith$(OBJ) ss$(OBJ) Makefile ../cfg/cfg/ssdeflt.ini
+	$(LNK) $(DYNLNKR) -o ss $(CRT) monolith$(OBJ) $(MODULES) $(DMALLOC_LINK_OPT) $(LDOPTS) $(OTHERLIBS) $(CRTEND)
+
+
+$(LIBNAME)  : $(HEADERS) $(MODULES) Makefile ../cfg/cfg/ssdeflt.ini
+	$(LNK) -shared $(DYNLNKR) -o $@ $(CRT) $(MODULES) $(DMALLOC_LINK_OPT) $(LDOPTS) $(OTHERLIBS) $(CRTEND) -soname $(LIBNAME)
+
+ssd:	Makefile $(HEADERS) $(MODULES) daemon$(OBJ)
+	@echo Building the daemon...
+	$(LNK) $(DYNLNKR) -o $@ $(CRT) daemon$(OBJ) $(LIBNAME) $(DMALLOC_LINK_OPT) $(LDOPTS) $(OTHERLIBS) $(CRTEND)
+	@../aux/rerunssd
+
+tgz: distclean $(SHELL) ../aux/maketgz cfgsync
+	@echo Building a .tgz package...
+	@$(SHELL) ../aux/maketgz
+
+dist: tgz
+
+cfgsync: ../aux/distcfg
+	@$(SHELL) ../aux/distcfg
+
+date: $(SHELL) ../aux/makedate
+	@echo -n 'Source files last modified '
+	@$(SHELL) ../aux/makedate
+
+../cfg/cfg/ssdeflt.ini: options.cc ../aux/makedflt $(SHELL)
+	@$(SHELL) ../aux/makedflt $@
+
+gdb: $(SHELL)
+	@$(SHELL) ../aux/addcflag ggdb
+
+pg: $(SHELL)
+	@$(SHELL) ../aux/addcflag pg
+
+dos:
+	@echo
+	@echo You must also specify how to encode Czech characters. Possible targets:
+	@echo  $(DOSES)
+	@echo 
+
+$(DOSES): dos% :$(HEADERS) $(SOURCES) /usr/lib/cstocs/%.enc clean $(SHELL) ../aux/cstodos cfgsync
+	@echo Building a DOS distribution.
+	@$(SHELL) ../aux/cstodos $* "$(HEADERS) $(SOURCES)" "$(DOSSOURCES)"
+
+$(SHELL):
+	@echo You should already have bash installed.
+	@if which bash >/dev/null; ln -s `which bash` $(SHELL); fi
+	@if [ -f $(SHELL) ]; then echo I\'ve tried to install it now.; fi
+
+
+$(CFGDIR)/ssfixed.ini:
+	#mkdir -p $(CFGDIR)
+	#@cp -f $(CFGDIR)/ssfixed.ini $(CFGDIR)/ssfixed.old.ini 2>/dev/null
+	#cp -f cfg/ssfixed.ini $(CFGDIR)
+
+config.h: configure.h.in
+	sh configure
+
+configure.h.in: configure.in
+	autoheader
+
+
+ss$(OBJ): ss$(SRC) $(HEADERS) $(MAKEFILE) options.cc $(SHELL)
+	$(CC) $(FLAGS) -c -o $@ ss$(SRC)
+
+monolith$(OBJ): monolith$(SRC) $(HEADERS) $(MAKEFILE) options.cc $(SHELL)
+	$(CC) $(FLAGS) -c -o $@ monolith$(SRC)
+
+daemon$(OBJ): daemon$(SRC) $(HEADERS) $(MAKEFILE) options.cc $(SHELL)
+	$(CC) $(FLAGS) -c -o $@ daemon$(SRC)
+
+parser$(OBJ): common.h parser.h interf.h parser$(SRC) options.cc $(MAKEFILE) $(SHELL)
+	$(CC) $(FLAGS) -c -o $@ parser$(SRC)
+
+interf$(OBJ): common.h interf.h interf$(SRC) options.cc $(MAKEFILE) $(SHELL)
+	$(CC) $(FLAGS) -c -o $@ interf$(SRC)
+
+hash$(OBJ): hash.h hash$(SRC) defaults.h $(MAKEFILE) $(SHELL)
+	$(CC) $(FLAGS) -c -o $@ hash$(SRC)
+
+rule$(OBJ): $(HEADERS) rule$(SRC) block$(SRC) options.cc $(MAKEFILE) $(SHELL)
+	$(CC) $(FLAGS) -c -o $@ rule$(SRC)
+
+elements$(OBJ): $(HEADERS) elements$(SRC) nnet$(SRC) options.cc $(MAKEFILE) $(SHELL)
+	$(CC) $(FLAGS) -c -o $@ elements$(SRC)
+
+text$(OBJ): common.h defaults.h hash.h interf.h options.cc $(MAKEFILE) text$(SRC) $(SHELL)
+	$(CC) $(FLAGS) -c -o $@ text$(SRC)
+
+synth$(OBJ): synth.h synth$(SRC) interf.h options.cc $(MAKEFILE) $(SHELL)
+	$(CC) $(FLAGS) -c -o $@ synth$(SRC)
+
+voice$(OBJ): voice.h voice$(SRC) interf.h options.cc $(MAKEFILE) $(SHELL)
+	$(CC) $(FLAGS) -c -o $@ voice$(SRC)
+
+ktdsyn$(OBJ): ktdsyn.h ktdsyn$(SRC) interf.h Makefile
+	$(CC) $(FLAGS) -c -o $@ ktdsyn$(SRC)
+
+lpcsyn$(OBJ): lpcsyn.h lpcsyn$(SRC) interf.h Makefile
+	$(CC) $(FLAGS) -c -o $@ lpcsyn$(SRC)
+
+

@@ -1,53 +1,57 @@
 
 SS je znaènì flexibilní program a bez zásahu do jeho zdrojového kódu
-je možné modifikovat jeho chování prakticky v každém ohledu. To se
-dìje pomocí nastavování konfiguraèních parametrù. Ty je možné zadávat
+je mo¾né modifikovat jeho chování prakticky v ka¾dém ohledu. To se
+dìje pomocí nastavování konfiguraèních parametrù. Ty je mo¾né zadávat
 na pøíkazové øádce nebo v konfiguraèních souborech.
 
 
 Konfiguraèní soubory
 --------------------
 
-Není-li øeèeno jinak, vždy se zpracovávají soubory ssfixed.ini, ss.ini
-a jeden ze souborù ssansi.ini a ssrtf.ini. Oèekává se, že ssfixed.ini
+Není-li øeèeno jinak, v¾dy se zpracovávají soubory ssfixed.ini, ss.ini
+a jeden ze souborù ssansi.ini a ssrtf.ini. Oèekává se, ¾e ssfixed.ini
 obsahuje parametry, které jsou na dané instalaci mìnìny jen výjimeènì, 
 zatímco ss.ini obsahuje parametry, které se mìní pomìrnì èasto. Smyslem
 tohoto uspoøádání je, aby se èastìji mìnìné parametry nemusely hledat
 v záplavì rùzných nezajímavých konstant. Soubory ssansi.ini, ssrtf.ini
-každý obsahují ucelenou konfiguraci výstupu (buï do textu obohaceného
+ka¾dý obsahují ucelenou konfiguraci výstupu (buï do textu obohaceného
 o ANSI escape sequence barev, nebo do formátu RTF) a volí se mezi nimi
 parametrem markup_language.
 
 Syntax konfiguraèního souboru je shodná se syntaxí slovníkù popsaných
-v doc/dict.doc. Struènì øeèeno, každý øádek obsahuje dvojici 
+v doc/dict.doc. Struènì øeèeno, ka¾dý øádek obsahuje dvojici 
 
 jméno_parametru		jeho_hodnota
 
-nebo komentáø. Není-li hodnota uvedena, používají se implicitní
-hodnoty uvedené v tabulce implicitních hodnot níže.
+nebo komentáø. Není-li hodnota uvedena, pou¾ívají se implicitní
+hodnoty uvedené v tabulce implicitních hodnot ní¾e.
    
 Typy jednotlivých parametrù, jejich identifikátory v textu programu,
 jejich struèný popis a pod. lze nalézt v souboru src/options.cc. Tento 
-soubor je celkem èitelný i pro neprogramátory. Je též vhodné podívat se
+soubor je celkem èitelný i pro neprogramátory. Je té¾ vhodné podívat se
 dovnitø do souborù cfg/ss*.ini. 
+
+
+Lokální parametry
+-----------------
 
 
 Pøíkazová øádka
 ---------------
 
-Na pøíkazové øádce je možno uvádìt konfiguraèní parametry pod stejnými
+Na pøíkazové øádce je mo¾no uvádìt konfiguraèní parametry pod stejnými
 názvy, uvozenými dvojicí pomlèek. Hodnota se od názvu parametru oddìluje
-mezerou nebo rovnítkem, lze uvìøit výše uvedeným implicitním hodnotám.
+mezerou nebo rovnítkem, lze uvìøit vý¹e uvedeným implicitním hodnotám.
 
-Ekvivalentní pøíklady spouštìní ss, chci-li vidìt difony od textu
+Ekvivalentní pøíklady spou¹tìní ss, chci-li vidìt difony od textu
 zadaného z klávesnice (poèet mezer nehraje roli):
 
 ss --show_diphones     --input_file
 ss --show_diphones=yes --input_file=
 ss --input_file        --show_diphones yes
 
-Pouze z pøíkazové øádky lze též využívat takzvané negované implicitní
-hodnoty. V tomto pøípadì se pøed název parametru píší tøi, nikoli jen
+Pouze z pøíkazové øádky lze té¾ vyu¾ívat takzvané negované implicitní
+hodnoty. V tomto pøípadì se pøed název parametru pí¹í tøi, nikoli jen
 dvì pomlèky a výsledná hodnota je uvedena ve tøetím sloupci tabulky
 implicitních hodnot. To má smysl zøejmì jen pro hodnoty typu boolean.
 Napøíklad vypnutí tisku difonù z pøíkazové øádky, pokud je zapnuto
@@ -57,30 +61,30 @@ ss --show_diphones=false
 ss --show_diphones no
 ss ---show_diphones
 
-Mimoto je možno používat ještì nìkolik jednoznakových parametrù
-(short options). Jejich chování se doufejme vypíše na "ss -h".
+Mimoto je mo¾no pou¾ívat je¹tì nìkolik jednoznakových parametrù
+(short options). Jejich chování se doufejme vypí¹e na "ss -h".
 
 
 Environment
 -----------
 
-Pokud environment obsahuje promìnnou SSCFGFILE, použije se její hodnota
+Pokud environment obsahuje promìnnou SSCFGFILE, pou¾ije se její hodnota
 jako hodnota cfg_file místo implicitního ss.ini.
 
 
 Implicitní hodnoty
 ------------------
 
-(Tøetí sloupeèek je podle mne k nièemu, až na øádek "pøepínaè".
+(Tøetí sloupeèek je podle mne k nièemu, a¾ na øádek "pøepínaè".
  Viz "pøíkazová øádka".)
 
 Typ parametru		    Implicitní hodnota		Negace
    èíslo		      0				  0
    pøepínaè		      true (zapnuto)		  false (vypnuto)
-   znak			      žádný znak ('\0')		  znak nula ('0')
+   znak			      ¾ádný znak ('\0')		  znak nula ('0')
    øetìzec		      prázdný øetìzec ("")	  øetìzec nula ("0")
    soubor		      stdin (klávesnice)	  soubor jménem "0"
-   ladìná oblast	      žádná			  žádná
+   ladìná oblast	      ¾ádná			  ¾ádná
    jednotka (slabika atd.)     (bìhová chyba)		   (bìhová chyba)
    výstupní formát	       (bìhová chyba)		   (bìhová chyba)
 
@@ -102,5 +106,5 @@ v tomto poøadí (klesající priority):
 	default		(vestavìné hodnoty v src/options.cc)
 
 Pokud se v nìkterém souboru nebo na pøíkazové øádce objeví nìkterý parametr
-víckrát s rùznými hodnotami, použije se poslední z nich.
+víckrát s rùznými hodnotami, pou¾ije se poslední z nich.
 

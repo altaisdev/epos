@@ -1,74 +1,74 @@
 
 Soubor s pravidly lze urèit v inicializaèních souborech, implicitnì
-se pouije cfg/default.rul (kdo ví jestli)
+se pou¾ije cfg/default.rul (kdo ví jestli)
 
 
 Syntax øádku s pravidlem:
 -------------------------
 
-Vyskytuje-li se na øádku znak '#' nebo ';', veškerı text od nìj
-a do konce øádku se ignoruje jakoto komentáø. Pokud u nic
-jiného na øádku nezbıvá, øádek se povauje za prázdnı a ignoruje se.
+Vyskytuje-li se na øádku znak '#' nebo ';', ve¹kerı text od nìj
+a¾ do konce øádku se ignoruje jako¾to komentáø. Pokud u¾ nic
+jiného na øádku nezbıvá, øádek se pova¾uje za prázdnı a ignoruje se.
 
-Kadı neprázdnı øádek musí obsahovat 2-4 slova oddìlená mezerami
+Ka¾dı neprázdnı øádek musí obsahovat 2-4 slova oddìlená mezerami
 (anebo definici skupiny, viz Skupiny):
 
-Typ_pravidla  Parametr  Rozsah  Zasaená_jednotka
+Typ_pravidla  Parametr  Rozsah  Zasa¾ená_jednotka
 
-Není-li uveden rozsah, pouije se WORD, není-li uvedena zasaená
-jednotka, pouije se PHONE. Typ_pravidla, Rozsah a Zasaená_jednotka
+Není-li uveden rozsah, pou¾ije se WORD, není-li uvedena zasa¾ená
+jednotka, pou¾ije se PHONE. Typ_pravidla, Rozsah a Zasa¾ená_jednotka
 mohou bıt zapsány jak velkımi, tak malımi písmeny, ale Parametr
-je vìtšinou na velikost písmen citlivı.
+je vìt¹inou na velikost písmen citlivı.
 
-Rozsah (napø. WORD):  jednotka, pøes její hranice pravidlo nepùsobí
-Zasaená jednotka:    manipulovaná jednotka, typicky hláska (PHONE)
-                      Musí bıt menší ne rozsah tého pravidla.
+Rozsah (napø. WORD):  jednotka, pøes její¾ hranice pravidlo nepùsobí
+Zasa¾ená jednotka:    manipulovaná jednotka, typicky hláska (PHONE)
+                      Musí bıt men¹í ne¾ rozsah tého¾ pravidla.
 
-Typ_pravidla SUBST:   parametr obsahuje jméno slovníku, v nìm se budou
-                      vyhledávat ekvivalenty. Zasaená jednotka musí bıt
-                      hláska. Zkoušejí se všechny podøetìzce (nejdelší
+Typ_pravidla SUBST:   parametr obsahuje jméno slovníku, v nìm¾ se budou
+                      vyhledávat ekvivalenty. Zasa¾ená jednotka musí bıt
+                      hláska. Zkou¹ejí se v¹echny podøetìzce (nejdel¹í
                       napøed), dokud není ekvivalent nalezen. 
-                      Ten by mìl nahradit pøíslušnou èást slova.
-                      Další informace viz doc/dict.doc
+                      Ten by mìl nahradit pøíslu¹nou èást slova.
+                      Dal¹í informace viz doc/dict.doc
                       
 Typ_pravidla REGEX:   substituce za regulární vıraz. Vysvìtlení, proè
-                      ho nezkoumat a nepouívat, je v anglické dokumentaci.
+                      ho nezkoumat a nepou¾ívat, je v anglické dokumentaci.
 
-Typ_pravidla PREP:    toté, jako SUBST, ale místo metody M_SUBSTR
-                      se pouívá M_EXACT (slovník musí obsahovat
+Typ_pravidla PREP:    toté¾, jako SUBST, ale místo metody M_SUBSTR
+                      se pou¾ívá M_EXACT (slovník musí obsahovat
                       nikoli libovolnı podøetìzec, ale pøímo hledanou
                       jednotku) a dojde-li k nalezení a pøípadnému 
                       nahrazení danému hashovací tabulkou pojmenovanou
-                      parametrem, pøipojí se obsah zasaené jednotky 
+                      parametrem, pøipojí se obsah zasa¾ené jednotky 
                       na zaèátek jejího pravého souseda a ona sama
                       je vyøazena. (Nemá-li souseda, nic se nestane.)
                       
-Typ_pravidla POSTP:   analogickı s PREP, ale obsah zasaenıch jednotek
+Typ_pravidla POSTP:   analogickı s PREP, ale obsah zasa¾enıch jednotek
                       se pøipojuje na konec souseda zleva.                      
                       
-                      PREP a POSTP nejsou toté, co pøedloky
+                      PREP a POSTP nejsou toté¾, co pøedlo¾ky
                       a nepøízvuèné pøíklonky, ale je praktické 
                       si to myslet.
 
 Typ_pravidla RAISE:   Pøesun hlásky (resp. jejího symbolu) nebo jiné
-                      jednotky do vyšší úrovnì. Uívá se zejména,
+                      jednotky do vy¹¹í úrovnì. U¾ívá se zejména,
                       pokud segmentální jednotky pøímo ovlivòují
                       suprasegmentalia, jako tøeba rozdìlení otázek
-                      na zjišovací a doplòovací.
+                      na zji¹»ovací a doplòovací.
                       
                       Parametr je tvaru co-cestuje:kdy_cestuje
-                      (tedy napø. "q:?!" znamená, e znak q
-                      nahradí otazník nebo vykøièník ve všech
+                      (tedy napø. "q:?!" znamená, ¾e znak q
+                      nahradí otazník nebo vykøièník ve v¹ech
                       otazníkovıch a vykøièníkovıch vìtách, které
                       obsahují "q". (Kopie "q" na hláskové rovinì
                       ale zùstává. Pozor na rozsah pravidla.)
                       co-cestuje i kdy-cestuje nemusí bıt jednotlivé
-                      znaky, mohou to bıt napø. øetìzce pouívající
-                      operátor "vyjma" (viz níe).
+                      znaky, mohou to bıt napø. øetìzce pou¾ívající
+                      operátor "vyjma" (viz ní¾e).
                       
-                      Rozsah pravidla je úroveò, kde mùe dojít
+                      Rozsah pravidla je úroveò, kde mù¾e dojít
                       ke zmìnì (ponìkud nelogické), v uvedeném
-                      pøípadì vìta; zasaená jednotka je úroveò,
+                      pøípadì vìta; zasa¾ená jednotka je úroveò,
                       ze které mohou znaky vyjít, v uvedeném pøípadì
                       hláska.
                       
@@ -82,55 +82,55 @@ Typ_pravidla REGRESS  Zmìna hlásek èi jinıch jednotek podle jejich
                       Zmìna se vyhodnocuje zprava doleva.
 
                       Zmìní-li se jednotka na hodnotu DELETE_ME
-                      (momentálnì '0'), sama se ihned zruší;
-                      obsahuje-li jiné jednotky, zaniknou rovnì.
+                      (momentálnì '0'), sama se ihned zru¹í;
+                      obsahuje-li jiné jednotky, zaniknou rovnì¾.
                       
-                      Seznam "na co" mùe bıt tvoøen jedinım znakem.
-                      V tom pøípadì se pøedpokládá, e se v daném 
-                      okolí mìní všechny jednotky "co se mìní" 
+                      Seznam "na co" mù¾e bıt tvoøen jedinım znakem.
+                      V tom pøípadì se pøedpokládá, ¾e se v daném 
+                      okolí mìní v¹echny jednotky "co se mìní" 
                       na tento znak. Jinak musí bıt poèet znakù
                       na obou stranách '>' stejnı a znaky se mìní
                       na znaky s odpovídajícím poøadím v "na co".
                       
-                      Seznam "co se mìní" mùe té obsahovat znak
+                      Seznam "co se mìní" mù¾e té¾ obsahovat znak
                       JUNCTURE (nyní '0'). V takovém pøípadì mezi
                       jednotkami danımi levım a pravım okolím
                       vznikne jedna nová jednotka s obsahem danım
-                      pøíslušnou polokou seznamu "na co".
+                      pøíslu¹nou polo¾kou seznamu "na co".
                       
-                      Levé i pravé okolí mohou té obsahovat symbol
+                      Levé i pravé okolí mohou té¾ obsahovat symbol
                       JUNCTURE (nyní '0') pro oznaèení pøedìlu úrovnì,
-                      je tvoøí rozsah pravidla. V literatuøe se 
-                      k tìmto úèelùm èasto pouívá symbol '#'.
+                      je¾ tvoøí rozsah pravidla. V literatuøe se 
+                      k tìmto úèelùm èasto pou¾ívá symbol '#'.
 
 Typ_pravidla PROGRESS Jako REGRESS, ale zmìna se vyhodnocuje zleva.
 
-                      REGRESS a PROGRESS nejsou toté, co regresívní
+                      REGRESS a PROGRESS nejsou toté¾, co regresívní
                       a progresívní fonetická zmìna, ale je praktické
                       si to myslet.
                       
-Typ_pravidla SYLL     Zjednodušenì øeèeno, stanoví slabièné hranice 
+Typ_pravidla SYLL     Zjednodu¹enì øeèeno, stanoví slabièné hranice 
                       podle teorie sonority. Parametr je tvaru
-                      nejménì-sonorní<více-sonorní<ještì-více...
-                      (tedy napø. "0<pkt<bdïg<mnòN<lr<iu<aeo"),
-                      neuvedené hlásky se povaují za nejménì sonorní
-                      a v rámci kadé skupiny na poøadí nezáleí.
+                      nejménì-sonorní<více-sonorní<je¹tì-více...
+                      (tedy napø. "0<pk»t<bdïg<mnòN<lr<iu<aeo"),
+                      neuvedené hlásky se pova¾ují za nejménì sonorní
+                      a v rámci ka¾dé skupiny na poøadí nezále¾í.
 
                       Pøíklady pro parametr "0<c<n<r<v" (znakem '|'
-                      vyznaèuji novì vloenou slabiènou hranici):
+                      vyznaèuji novì vlo¾enou slabiènou hranici):
                       v|cv  vc|cv  vc|ccccv  vrc|c  vr|crv  v|cn|cv  
                       
                       Podrobnosti viz unit::syllablify ve zdrojáku.
                       
-                      Poznámka: vıše uvedené platí, je-li jako rozsah
-                      pravidla uvedena slabika, co je v tomto pøípadì
-                      implicitní hodnota. Zasaená jednotka je samozøejmì
+                      Poznámka: vı¹e uvedené platí, je-li jako rozsah
+                      pravidla uvedena slabika, co¾ je v tomto pøípadì
+                      implicitní hodnota. Zasa¾ená jednotka je samozøejmì
                       hláska. Pro jiné kombinace jsem to neladil, ale
                       principielnì to jde zobecnit.
                       
 Typ_pravidla PROSODY  Mìní hodnoty velièin F,I,T pro jednotlivé jednotky.
                       Parametr obsahuje jméno slovníku obsahujícího 
-                      pøíslušná pravidla. Jejich formát viz doc/prosody.doc
+                      pøíslu¹ná pravidla. Jejich formát viz doc/prosody.doc
                       
 Typ_pravidla SMOOTH   Vyhlazuje stanovenou velièinu F,I nebo T. Parametr
 		      je tvaru velièina/levé_váhy/váha_pùvodního\pravé_váhy
@@ -138,65 +138,76 @@ Typ_pravidla SMOOTH   Vyhlazuje stanovenou velièinu F,I nebo T. Parametr
 		      mezi sebou oddìlují lomítkem, pravé váhy obrácenım
 		      lomítkem, první písmeno urèuje velièinu).
 		      
-		      Nová hodnota velièiny pro kadou zasaenou jednotku
-		      se poèítá jako váenı prùmìr hodnot velièin okolních
+		      Nová hodnota velièiny pro ka¾dou zasa¾enou jednotku
+		      se poèítá jako vá¾enı prùmìr hodnot velièin okolních
 		      jednotek: v uvedeném pøípadu jsou váha pùvodní
 		      hodnoty velièiny 40%, sousedi mají váhu po 20%, 
-		      sousedi ob jednoho mají váhu 10%, vzdálenìjší nic.
+		      sousedi ob jednoho mají váhu 10%, vzdálenìj¹í nic.
 		      
-		      Pokud je jednotka pøíliš blízko okraje rozsahu,
-		      take pøíslušnì vzdáleného souseda nìkterım smìrem
-		      ani nemá, uvauje se místo nìj hodnota velièiny
-		      v krajní jednotce v rozsahu pøíslušnım smìrem.
+		      Pokud je jednotka pøíli¹ blízko okraje rozsahu,
+		      tak¾e pøíslu¹nì vzdáleného souseda nìkterım smìrem
+		      ani nemá, uva¾uje se místo nìj hodnota velièiny
+		      v krajní jednotce v rozsahu pøíslu¹nım smìrem.
 		      
 		      Syntax je benevolentní. Váha nemusí bıt pouze
-		      pevné èíslo, mùe bıt té rozepsána jako souèet
-		      èi rozdíl více èísel a mùe bıt záporná.
+		      pevné èíslo, mù¾e bıt té¾ rozepsána jako souèet
+		      èi rozdíl více èísel a mù¾e bıt záporná.
 		      
 		      Pøi aplikaci tohoto pravidla se projektují
-		      všechny velièiny do roviny hlásek (snad).
+		      v¹echny velièiny do roviny hlásek (snad).
 		      Co to znamená, bych mìl tady nìkdy vysvìtlit.
 
 Typ_pravidla DIPHONES Vytvoøí pod vrstvou hlásek vrstvu difonù.
                       Parametr je jméno souboru s èísly difonù,
                       hrubı popis lze nalézt v doc/difony.doc
                       
-                      Zasaená jednotka je to, co hraje roli hlásek,
-                      nikoli difonù; vytváøené jednotky jsou vdy
+                      Zasa¾ená jednotka je to, co hraje roli hlásek,
+                      nikoli difonù; vytváøené jednotky jsou v¾dy
                       úrovnì difon (v paranoidní kompilaci tedy
-                      nelze mìnit zasaenou jednotku).
+                      nelze mìnit zasa¾enou jednotku).
                       
                       Mìnit rozsah je naopak vhodné (default je WORD).
                       
 Typ_pravidla DEBUG    Poskytuje ladící tisky bìhem aplikace pravidel,
                       hodí se tedy pro ladìní souboru s pravidly.  
                       Tento typ pravidel je mnohem ménì blbovzdornı,
-                      ne vìtšina jinıch èástí programu. Rozsah
-                      a zasaená jednotka se ignorují.
+                      ne¾ vìt¹ina jinıch èástí programu. Rozsah
+                      a zasa¾ená jednotka se ignorují.
 
-                      Obsahuje-li parametr podøetìzec "elem", vypíše se 
+                      Obsahuje-li parametr podøetìzec "elem", vypí¹e se 
                       momentální stav zpracovávaného textu. 
                       
                       Obsahuje-li parametr podøetìzec "rule" resp. 
-                      "rules", vypíše se následující pravidlo, které 
-                      se bude aplikovat, resp. všechna pravidla vùbec.
+                      "rules", vypí¹e se následující pravidlo, které 
+                      se bude aplikovat, resp. v¹echna pravidla vùbec.
                       Od verze 1.4 nefunguje.
                       
                       Obsahuje-li parametr podøetìzec "pause", vyèká
                       program stisku klávesy.
                       
 Typ_pravidla INSIDE   Provede následující pravidlo nebo blok pravidel
-                      (viz níe) jen pro ty èásti textu, které mají
+                      (viz ní¾e) jen pro ty èásti textu, které mají
                       na úrovni odpovídající rozsahu jednotku s obsahem
                       vyskytujícím se v parametru.
                       
                       Parametrem je tedy seznam hodnot, pøi kterıch
                       se následující pravidlo (obvykle blok) provádí.
                       
-                      Kadá jednotka (napøíklad vìta), která splní
-                      podmínku, je dále zpracována zvláš, take
+                      Ka¾dá jednotka (napøíklad vìta), která splní
+                      podmínku, je dále zpracována zvlá¹», tak¾e
                       pravidlo následující po INSIDE smí mít rozsah
-                      nanejvıš stejnı jako pravidlo INSIDE.
+                      nanejvı¹ stejnı jako pravidlo INSIDE.
+                      
+Typ_pravidla WITH     Provede následující pravidlo nebo blok pravidel
+                      jen pro ty èásti textu, které jsou shodné
+                      s nìkterou polo¾kou slovníku urèenou parametrem.
+                      
+                      Parametrem je tedy slovník (napøíklad vıèet
+                      urèitıch slovních tvarù, je-li rozsahem slovo).
+
+                      Stejnì jako u pravidla INSIDE nesmí bıt rozsah
+                      podøízeného pravidla vìt¹í ne¾ rozsah pravidla IF.
+
                       
 Typ_pravidla IF       Provede následující pravidlo nebo blok pravidel
                       tehdy, je-li splnìna podmínka daná parametrem.
@@ -207,88 +218,88 @@ Typ_pravidla IF       Provede následující pravidlo nebo blok pravidel
                       za identifikátory skupin.
                       
                       Stejnì jako u pravidla INSIDE nesmí bıt rozsah
-                      podøízeného pravidla vìtší ne rozsah pravidla IF.
+                      podøízeného pravidla vìt¹í ne¾ rozsah pravidla IF.
                       
 
 
 Skupiny
 -------
 
-Øádek mùe mít té formát    "$identifikátor=skupina", kde
+Øádek mù¾e mít té¾ formát    "$identifikátor=skupina", kde
     znak '$' musí stát v prvním sloupci øádku
     rovnítko mohou doprovázet mezery èi tabelátory
     skupina nesmí obsahovat mezeru èi tabelátor
-Tím se zavede identifikátor, kterım je nadále mono skupinu oznaèovat.
-Máme-li tedy napøíklad definováno, e
+Tím se zavede identifikátor, kterım je nadále mo¾no skupinu oznaèovat.
+Máme-li tedy napøíklad definováno, ¾e
 
 $bum  =  ptk
 
-mùeme psát ekvivalentnì 
+mù¾eme psát ekvivalentnì 
 
-Kaurská_asimilace   progress  ptk>sss(aei_s)   word  phone
-Kaurská_asimilace   progress  $bum>sss(aei_s)  word  phone
+Ka¾urská_asimilace   progress  ptk>sss(aei_s)   word  phone
+Ka¾urská_asimilace   progress  $bum>sss(aei_s)  word  phone
 
-Je té mono definice skupin vnoøovat, tedy napø.
+Je té¾ mo¾no definice skupin vnoøovat, tedy napø.
 $voiceless = sf$bum
 definuje skupinu obsahující hlásky s,f,p,t,k. Je pøípustné mìnit døíve 
 pøiøazené nebo vestavìné hodnoty.
 
 Mohou-li vzniknout pochybnosti o ukonèení identifikátoru skupiny, 
-lze pouít oddìlovaè '&' nebo ':' nebo umístit identifikátor do sloenıch
+lze pou¾ít oddìlovaè '&' nebo ':' nebo umístit identifikátor do slo¾enıch
 závorek, tedy napø.
 
 Spodoba_znìlosti  regress  $voiced>${voiceless}($all_$voiceless&0)  word phone
 
-Mimoto je mono importovat definici skupiny z konfiguraèních parametrù,
-a to pomocí "$identifikátor external", pøièem znak '$' musí opìt stát
+Mimoto je mo¾no importovat definici skupiny z konfiguraèních parametrù,
+a to pomocí "$identifikátor external", pøièem¾ znak '$' musí opìt stát
 v prvním sloupci øádku:
 
 $language  external
 
 kde "language" musí bıt konfiguraèní parametr, jeho hodnota bude stanovena
-podle .ini souborù. Pozdìjší redefinice $language se ale nepromítne zpìt do
+podle .ini souborù. Pozdìj¹í redefinice $language se ale nepromítne zpìt do
 konfigurace.
 
-Definice skupiny platí vdy do konce bloku, v nìm se vyskytuje (obvykle
+Definice skupiny platí v¾dy do konce bloku, v nìm¾ se vyskytuje (obvykle
 se uvádí na zaèátku pravidel a platí tedy v celém textu pravidel), anebo
-do následující definice skupiny s tímté identifikátorem
+do následující definice skupiny s tímté¾ identifikátorem
 
 
 Operátor "vyjma"
 ----------------
 
-Pøi udávání levého a pravého okolí, kde nastává zmìna, lze pouít 
-operátor "vyjma", reprezentovanı vykøièníkem. Take napø. v pravidle
+Pøi udávání levého a pravého okolí, kde nastává zmìna, lze pou¾ít 
+operátor "vyjma", reprezentovanı vykøièníkem. Tak¾e napø. v pravidle
 
 Asimilace_znìlosti   regress  $voiceless>$voiced($all_$voiced!v)
 
 nedojde ke spodobì ve slovì "kvùli". Pokud navíc vykøièníku nic
-nepøedchází, jde o skupinu obsahující všechny znaky kromì znakù
-za vykøièníkem; samotnı vykøièník tudí znamená "vdy":
+nepøedchází, jde o skupinu obsahující v¹echny znaky kromì znakù
+za vykøièníkem; samotnı vykøièník tudí¾ znamená "v¾dy":
 
 Asimilace_znìlosti   regress  $voiceless>$voiced(!_$voiced!v)
 
-Vykøièníky je té moné støídat. Chceme-li tedy zapsat "Souhlásky, vyjma 
+Vykøièníky je té¾ mo¾né støídat. Chceme-li tedy zapsat "Souhlásky, vyjma 
 tøenıch, ale znìlé i neznìlé ø zase ano", mìlo by fungovat "$cons!$fric!øØ".
 
-Vykøièníky ovšem nemají tento speciální vıznam v první èásti pravidla
+Vykøièníky ov¹em nemají tento speciální vıznam v první èásti pravidla
 "co se mìní na co".
 
 
-Zvláštní znaky chápané doslova
+Zvlá¹tní znaky chápané doslova
 ------------------------------
 
-Je-li potøeba pouít vykøièník jako znak, lze si jeho doslovné chápání
+Je-li potøeba pou¾ít vykøièník jako znak, lze si jeho doslovné chápání
 vynutit zpìtnım lomítkem, jako v "inside  ?\!." (otazník, vykøièník,
-teèka). Je-li potøeba pouít zpìtné lomítko jako znak, musí bıt zdvojeno.
+teèka). Je-li potøeba pou¾ít zpìtné lomítko jako znak, musí bıt zdvojeno.
 
-Podobnım zpùsobem je mono pouívat jako znaky i mezeru (jindy ukonèuje
+Podobnım zpùsobem je mo¾no pou¾ívat jako znaky i mezeru (jindy ukonèuje
 parametr pravidla), støedník (jinak zaèátek komentáøe) a podobnì, tj.
-napøíklad "regress   \ >~(!_!)   colon" zmìní v rámci kadého promluvového
-úseku všechny mezery na vlnovky. Kdyby nìkdo potøeboval znak nového øádku
-èi tabelátor, mùe pouít "\n", "\t".
+napøíklad "regress   \ >~(!_!)   colon" zmìní v rámci ka¾dého promluvového
+úseku v¹echny mezery na vlnovky. Kdyby nìkdo potøeboval znak nového øádku
+èi tabelátor, mù¾e pou¾ít "\n", "\t".
 
-Jinımi slovy, zpìtné lomítko ruší zvláštní funkci následujícího znaku.
+Jinımi slovy, zpìtné lomítko ru¹í zvlá¹tní funkci následujícího znaku.
 
 
 Preprocessor
@@ -299,25 +310,25 @@ Preprocessor
 #include "soubor.rul"
 
 (zaèínající skuteènì v krajním levém sloupci) se pøi naèítání souboru
-s pravidly nahradí textem ze souboru soubor.rul. Ten mùe opìt obsahovat
-další vnoøené direktivy #include, prakticky do neomezené hloubky.
+s pravidly nahradí textem ze souboru soubor.rul. Ten mù¾e opìt obsahovat
+dal¹í vnoøené direktivy #include, prakticky do neomezené hloubky.
 Direktiva
 
 #warn nìjakı text
 
-vypíše "nìjakı text" pøi naèítání pravidel. Zatím není k uitku.
+vypí¹e "nìjakı text" pøi naèítání pravidel. Zatím není k u¾itku.
 
 Jiné direktivy (øádky zaèínající znakem '#') se ignorují, vzhledem 
-k tomu, e zároveò vypadají jako øádek obsahující jen komentáø.
+k tomu, ¾e zároveò vypadají jako øádek obsahující jen komentáø.
 Proto se napø. mezera pøed nebo za znakem '#' projeví tichım
-ignorováním postiené direktivy.
+ignorováním posti¾ené direktivy.
 
 
 Bloky pravidel
 --------------
 
-Blok pravidel zaèíná levou sloenou závorkou na samostatném øádku,
-konèí pravou sloenou závorkou na samostatném øádku. Pouívá se
+Blok pravidel zaèíná levou slo¾enou závorkou na samostatném øádku,
+konèí pravou slo¾enou závorkou na samostatném øádku. Pou¾ívá se
 obvykle v kombinaci s podmínìnım pravidlem:
 
 IF  .:  sent
@@ -326,12 +337,12 @@ IF  .:  sent
 	...
 }
 
-Protoe pravidlo IF podmiòuje následující pravidlo, a následující
-pravidlo je blok, provedou se postupnì všechna pravidla v bloku,
-a to pro kadou oznamovací vìtu zvláš. (Jiné ne oznamovací vìty
+Proto¾e pravidlo IF podmiòuje následující pravidlo, a následující
+pravidlo je blok, provedou se postupnì v¹echna pravidla v bloku,
+a to pro ka¾dou oznamovací vìtu zvlá¹». (Jiné ne¾ oznamovací vìty
 nesplní tuto konkrétní podmínku.)
 
-Blok mùe mít té uveden rozsah, implicitnì ho však dìdí od svého
+Blok mù¾e mít té¾ uveden rozsah, implicitnì ho v¹ak dìdí od svého
 nadøazeného pravidla (napøíklad podmínky nebo jiného bloku).
 Rozsah urèuje, na jak velké jednotky se pøi aplikaci rozdìlí
 zpracovávanı text, analogicky s jinımi pravidly.
@@ -346,13 +357,13 @@ se má opakovat:
 	2x  smooth  f/30/40\30	phone
 }
 Poèet opakování musí bıt pøirozené èíslo bezprostøednì následované
-znakem "x". Tuto pasá dokumentace nemáme rádi.
+znakem "x". Tuto pasá¾ dokumentace nemáme rádi.
 
 
 Náhodné volby
 -------------
 
-Mezi hranaté závorky je mono zapsat nìkolik pravidel:
+Mezi hranaté závorky je mo¾no zapsat nìkolik pravidel:
 
 [
 	prosody		typical.dic
@@ -360,14 +371,14 @@ Mezi hranaté závorky je mono zapsat nìkolik pravidel:
 ]
 
 Pøi provádìní tìchto pravidel se náhodnì vybere jedno z nich
-a provede se. Všechno se chová stejnì jako u blokù, a na to,
-e se neprovádìjí všechna pravidla, ale jen jedno, náhodnì
+a provede se. V¹echno se chová stejnì jako u blokù, a¾ na to,
+¾e se neprovádìjí v¹echna pravidla, ale jen jedno, náhodnì
 zvolené.
 
-Náhodná volba se koná zvláš pro kadou zpracovávanou jednotku
-(její úroveò popisu je shodná s rozsahem hranatıch závorek).
+Náhodná volba se koná zvlá¹» pro ka¾dou zpracovávanou jednotku
+(její¾ úroveò popisu je shodná s rozsahem hranatıch závorek).
 
-Je-li potøeba pouívat rùzné monosti rùznì èasto, je mono
+Je-li potøeba pou¾ívat rùzné mo¾nosti rùznì èasto, je mo¾no
 uvést váhy takto:
 
 [
@@ -375,8 +386,8 @@ uvést váhy takto:
 	   prosody		variant.dic
 ]
 
-V tomto pøíkladu se v 75% pøípadù pouije první monost,
+V tomto pøíkladu se v 75% pøípadù pou¾ije první mo¾nost,
 v 25% pøípadù druhá. Váha musí bıt kladné pøirozené èíslo.
 
-(Je-li váha analogicky pouita v bloku, pravidlo se bude
+(Je-li váha analogicky pou¾ita v bloku, pravidlo se bude
 tolikrát opakovat.)

@@ -387,3 +387,18 @@
 	- Czech voiced affricates now respect traditnl.dph
 
 
+2.-2.0 from 1.5.1	22.4.98
+	- ss now requires ssd and talks to it via TCP; ss is a mere stub now.
+	- "make monolith" makes the old non-networking ss
+	- new conditional rule type WITH
+	- preliminary support for multiple concurrent voices (inventories),
+		languages, syntheses, configurations.
+	- class lang, class voice; options.cc accordingly messified
+	- ss.cc, monolith.cc start to reflect language dependencies
+	- started to prefer egcs to gcc
+	- synth.cc, ktdsyn.cc reshaped as well as the respective headers
+	- halfway support for flexible stereo output
+	- moved upper/lowercase issues from parser.cc to the rules
+	- everything may have got broken this time, sorry
+	- this is not meant to be a functional version
+

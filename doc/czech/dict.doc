@@ -2,54 +2,54 @@
 Formát substituèního slovníku
 -----------------------------
 
-Kadá neprázdná øádka slovníku je slovníková poloka. Ta sestává ze dvou slov,
-která jsou oddìlena mezerami. První slouí jako vyhledávací klíè, druhé se
-uívá k nahrazení. Tedy napøíklad
+Ka¾dá neprázdná øádka slovníku je slovníková polo¾ka. Ta sestává ze dvou slov,
+která jsou oddìlena mezerami. První slou¾í jako vyhledávací klíè, druhé se
+u¾ívá k nahrazení. Tedy napøíklad
 
 máma táta
 
-nahradí všechny vıskyty slova máma slovem táta. Je-li na øádce uvedeno jen
-jedno slovo, uije se zároveò jako klíè i nahrazující poloka, pokud jde
+nahradí v¹echny vıskyty slova máma slovem táta. Je-li na øádce uvedeno jen
+jedno slovo, u¾ije se zároveò jako klíè i nahrazující polo¾ka, pokud jde
 o pravidla PREP nebo POSTP. V pøípadì pravidla SUBST, PROSODY nebo DIPH 
-se hlásí chyba, nebo taková náhrada pravdìpodobnì nedává rozumnı smysl. 
-Je-li na øádce tøi nebo více slov, vdy se hlásí chyba (neplatí pro
+se hlásí chyba, nebo» taková náhrada pravdìpodobnì nedává rozumnı smysl. 
+Je-li na øádce tøi nebo více slov, v¾dy se hlásí chyba (neplatí pro
 konfiguraèní soubor).
 
-Metody, z nich lze nìkterou zvolit zatím pouze zásahem do rules.cc
+Metody, z nich¾ lze nìkterou zvolit zatím pouze zásahem do rules.cc
 (unit::apply_subst()):
 
 M_EXACT           nahrazuje doslova
 M_BEGIN           uznává i sufixy (formální)
 M_END             uznává i prefixy
-M_BEGIN_OR_END    uznává prefixy nebo sufixy, ne však najednou
-M_SUBSTR          uznává najednou prefixy i sufixy (momentálnì pouitá)
+M_BEGIN_OR_END    uznává prefixy nebo sufixy, ne v¹ak najednou
+M_SUBSTR          uznává najednou prefixy i sufixy (momentálnì pou¾itá)
 
-Pøi pouití jiné metody ne M_EXACT lze nìkteré poloky omezit pomocí 
+Pøi pou¾ití jiné metody ne¾ M_EXACT lze nìkteré polo¾ky omezit pomocí 
 znaku '^' na zaèátku nebo '$' na konci, tady napø.
 
-^máma$ táta                neuzná ádné prefixy ani sufixy pøi ádné metodì, zatímco
-^máma  táta                mùe, dovolí-li to metoda, uznat sufixy, ale ne prefixy.
+^máma$ táta                neuzná ¾ádné prefixy ani sufixy pøi ¾ádné metodì, zatímco
+^máma  táta                mù¾e, dovolí-li to metoda, uznat sufixy, ale ne prefixy.
 ^máma$ ^táta$              zpùsobí chybu pøi parsingu vısledného slova
 
-Nedoporuèuje se, aby byl nahrazující vıraz o moc vìtší, ne nahrazovanı,
-nanejvıš asi o pìt znakù; jinak je vhodné odpovídajícím zpùsobem zvıšit 
+Nedoporuèuje se, aby byl nahrazující vıraz o moc vìt¹í, ne¾ nahrazovanı,
+nanejvı¹ asi o pìt znakù; jinak je vhodné odpovídajícím zpùsobem zvı¹it 
 safe_grow v options.cc a rekompilovat. (Pøi pøekroèení v meznì dlouhıch
-slovech mùe dojít k pøeteèení pole unit::subst::result). Zvıšení defaultu
-by nemìlo mít ádnı nepøíznivı vliv.
+slovech mù¾e dojít k pøeteèení pole unit::subst::result). Zvı¹ení defaultu
+by nemìlo mít ¾ádnı nepøíznivı vliv.
 
-Nahrazující vıraz by nemìl obsahovat symboly pøíliš vysoké úrovnì,
-jako napøíklad oddìlovaèe slabiky, je-li "scope" pøíslušného substituèního
+Nahrazující vıraz by nemìl obsahovat symboly pøíli¹ vysoké úrovnì,
+jako napøíklad oddìlovaèe slabiky, je-li "scope" pøíslu¹ného substituèního
 pravidla pouze slabika. Pokud by je obsahoval, usekne se pøi substituci
 text následující za prvním takovım znakem. Je-li nastaven konfiguraèní parametr
 "paranoid" a dojde-li skuteènì k pokusu o takovouto nedokonèenou substituci,
-program skonèí s chybovım hlášením.
+program skonèí s chybovım hlá¹ením.
 
 Substituce se provádìjí, dokud se daøí nìjakou najít. Dojde-li k zacyklení,
 napøíklad skrze dvojici øádkù "tam zpátky" a "zpátky tam", provede se
 náhrada tolikrát, kolik udává konfiguraèní parametr "multi_subst".
 
-Øádek mùe rovnì obsahovat komentáø, a u spolu s polokou, nebo samostatnì.
+Øádek mù¾e rovnì¾ obsahovat komentáø, a» u¾ spolu s polo¾kou, nebo samostatnì.
 Komentáø zaèíná znakem '#' nebo ';', konèí koncem øádky; podrobnosti se lze
 doèíst na zaèátku souboru src/hash.cc. Úplnì prázdnı øádek je dovolen a ignorován.
 
-V jakémkoli slovníku záleí na velikosti písmen.
+V jakémkoli slovníku zále¾í na velikosti písmen.
