@@ -97,10 +97,11 @@ block_rule::block_rule() : rule(NULL)
 
 block_rule::~block_rule()
 {
-	for(current_rule = 0; current_rule < n_rules; current_rule++) {
+	for(current_rule = 0; current_rule < n_rules - 1; current_rule++) {
 		if (rulist[current_rule] != rulist[current_rule + 1])
 			delete rulist[current_rule];
 	}
+	if (n_rules) delete rulist[n_rules - 1];
 	if (rulist) free(rulist);
 }
 
@@ -379,7 +380,7 @@ resolve_vars(char *line, hash *vars, text *file)
 			if (!eov) diatax("Missing right brace");
 			takeout=*eov;
 			*eov=0;
-			DEBUG(1,1,fprintf(STDDBG,"Cycling in resolve_vars. Resolving \"%s\"\n",src);)
+			DEBUG(0,1,fprintf(STDDBG,"Resolving \"%s\"\n",src);)
 			value = vars->translate(src);
 			if (!value) diatax("Undefined identifier");
 			strcpy(dest, value);
@@ -422,7 +423,7 @@ next_rule(text *file, hash *vars, int *count)
 	
 	if(!file->getline(str)) return END_OF_RULES;
 	
-	DEBUG(1,1,fprintf(STDDBG,"str2rule should parse: %s\n",str);)
+	DEBUG(0,1,fprintf(STDDBG,"str2rule should parse: %s\n",str);)
 	if(!str[strspn(str,WHITESPACE)]) goto next_line;
 	if (*str && strchr(str+1,DOLLAR))
 		resolve_vars(str, vars, file);			   //Var reference found?

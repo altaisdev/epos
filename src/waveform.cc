@@ -15,8 +15,6 @@
  *
  */
 
-// #define  OLD_9BIT_TO_ULAW
-
 #include "common.h"
 #include "client.h"
 
@@ -147,6 +145,11 @@ wavefm::wavefm(voice *v)
 //	samp_size_bytes = sizeof(SAMPLE);
 	channel = v->channel;
 	int stereo = channel==CT_MONO ? 0 : 1;
+	if (this_voice->samp_size <= 0 || (this_voice->samp_size >> 3) > (signed)sizeof(int))
+		shriek(447, fmt("Invalid sample size %d", this_voice->samp_size));
+	if (cfg->ulaw && !cfg->wav_hdr)
+		this_voice->samp_size = 8, this_voice->out_rate = 8000;
+//	cfg->samp_size = cfg->samp_size + 7 & ~7;	// Petr had this
 	downsamp = downsample_factor(samp_rate, v->out_rate);
 	translated = false;
 
@@ -471,41 +474,6 @@ static const int exp_lut[256] = {0,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4
                            7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
                            7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7};
 
-static unsigned char ulaw_dsp[] = {
-     3,    7,   11,   15,   19,   23,   27,   31,
-    35,   39,   43,   47,   51,   55,   59,   63,
-    66,   68,   70,   72,   74,   76,   78,   80,
-    82,   84,   86,   88,   90,   92,   94,   96,
-    98,   99,  100,  101,  102,  103,  104,  105,
-   106,  107,  108,  109,  110,  111,  112,  113,
-   113,  114,  114,  115,  115,  116,  116,  117,
-   117,  118,  118,  119,  119,  120,  120,  121,
-   121,  121,  122,  122,  122,  122,  123,  123,
-   123,  123,  124,  124,  124,  124,  125,  125,
-   125,  125,  125,  125,  126,  126,  126,  126,
-   126,  126,  126,  126,  127,  127,  127,  127,
-   127,  127,  127,  127,  127,  127,  127,  127,
-   128,  128,  128,  128,  128,  128,  128,  128,
-   128,  128,  128,  128,  128,  128,  128,  128,
-   128,  128,  128,  128,  128,  128,  128,  128,
-   253,  249,  245,  241,  237,  233,  229,  225,
-   221,  217,  213,  209,  205,  201,  197,  193,
-   190,  188,  186,  184,  182,  180,  178,  176,
-   174,  172,  170,  168,  166,  164,  162,  160,
-   158,  157,  156,  155,  154,  153,  152,  151,
-   150,  149,  148,  147,  146,  145,  144,  143,
-   143,  142,  142,  141,  141,  140,  140,  139,
-   139,  138,  138,  137,  137,  136,  136,  135,
-   135,  135,  134,  134,  134,  134,  133,  133,
-   133,  133,  132,  132,  132,  132,  131,  131,
-   131,  131,  131,  131,  130,  130,  130,  130,
-   130,  130,  130,  130,  129,  129,  129,  129,
-   129,  129,  129,  129,  129,  129,  129,  129,
-   128,  128,  128,  128,  128,  128,  128,  128,
-   128,  128,  128,  128,  128,  128,  128,  128,
-   128,  128,  128,  128,  128,  128,  128,  128,
-};
-
 
 /* The following is a fixed (FIXME: generalize) low-pass band filter, 0 to 4 kHz */
 
@@ -526,7 +494,7 @@ wavefm::band_filter()
 		for (j=1;j<9;filt[0]=filt[0]-a[j]*filt[j++]);
 		double outsamp = 0;
 		for (j=0;j<9;outsamp=outsamp+b[j]*filt[j++]);
-		printf("%d %f        ", buffer[i], (float)outsamp);
+//		printf("%d %f        ", buffer[i], (float)outsamp);
 		buffer[i] = (SAMPLE)(SIGNED_SAMPLE)outsamp;
 		for (j=8;j>0;j--) filt[j]=filt[j-1];		//FIXME: speed up
 	}
@@ -534,32 +502,34 @@ wavefm::band_filter()
 
 
 
-#define put_sample_8(sample)  *newbuff++ = (char)sample
-#define put_sample_16(sample) *(unsigned short *)newbuff = sample, newbuff += 2
-#define put_sample(sample) if (eight_bit) put_sample_8(sample); else put_sample_16(sample)
+// #define put_sample_8(sample)  *newbuff++ = (char)sample
+// #define put_sample_16(sample) *(unsigned short *)newbuff = sample, newbuff += 2
+// #define put_sample(sample) if (eight_bit) put_sample_8(sample); else put_sample_16(sample)
 
-void
+#define put_sample(sample) *(int *)newbuff = sample, newbuff += ssbytes;
+
+inline void
 wavefm::translate_data(char *newbuff)
 {
 	DEBUG(1,9,fprintf(STDDBG,"(translating the data, too)");)
-	bool eight_bit = (this_voice->samp_size >> 3) == 1;
-	if (this_voice->samp_size != 8 && this_voice->samp_size != 16)
-		shriek(462, fmt("Cannot support %d-bit samples", this_voice->samp_size));
+//	if (cfg->ulaw && this_voice->samp_size != 8) shriek(462, "Mu law implies 8 bit");
+	int ssbytes  = (this_voice->samp_size + 7) >> 3;  // sample size in bytes
+	int shift1 = (sizeof(int) - sizeof(SAMPLE)) << 3;
+	int shift2 = cfg->big_endian ? 0 : (sizeof(int) - ssbytes) << 3;
+	int unsign = ssbytes == 1 ? 0x80 : 0;
 	for (int i = 0; i < hdr.buffer_idx; i += downsamp) {
-		SAMPLE sample = buffer[i];
+		int sample = buffer[i];
 		if (cfg->ulaw) {		// Convert from 16 bit linear to ulaw. 
-#ifdef  OLD_9BIT_TO_ULAW
-			if (eight_bit) sample <<= 8;
 			int sign = (sample >> 8) & 0x80;          
 	                if (sign) sample = -sample;              
 	                int exponent = exp_lut[(sample >> 7) & 0xFF];
 	                int mantissa = (sample >> (exponent + 3)) & 0x0F;
 	                sample = ~(sign | (exponent << 4) | mantissa);
-#else
-			if (!eight_bit) sample >>= 8;
-			sample = (signed char)ulaw_dsp[(unsigned char)sample];
-#endif
-	        }
+	        } else {
+			sample <<= shift1;
+			sample >>= shift2;
+			sample += unsign;
+		}
 		switch(channel)
 		{
 			case CT_MONO:	put_sample(sample); break;
@@ -595,14 +565,14 @@ wavefm::translate()
 		translate_data((char *)buffer);		// strange semantics
 	}
 	
-	samp_rate = this_voice->out_rate;
+	if (this_voice->out_rate) samp_rate = this_voice->out_rate;
 	hdr.sf1 = samp_rate;		if (hdr.sf2) hdr.sf2 = hdr.sf1;
-	hdr.avr1 = samp_rate << 1;	if (hdr.avr2) hdr.avr2 = hdr.avr1;
+	hdr.avr1 = samp_rate * target_size;	if (hdr.avr2) hdr.avr2 = hdr.avr1;
 	hdr.alignment = target_size;	hdr.samplesize = this_voice->samp_size;
 	if (cfg->ulaw) hdr.datform = IBM_FORMAT_MULAW;
    finis:
 	translated = true;
-	hdr.buffer_idx *= target_size / downsamp;
+	hdr.buffer_idx = hdr.buffer_idx * target_size / downsamp;
 }
 
 /*
@@ -748,6 +718,29 @@ wavefm::write_header()
 }
 
 void
+wavefm::put_chunk(labl *chunk_template, const char *string)
+{
+	int varlen = strlen(string) + 2 & ~1;
+
+	if (!adtl_buff) {
+		adtl_max = ADTL_INITIAL_BUFF;
+		adtl_buff = (char *)xmalloc(adtl_max);
+	}
+	while (adtlhdr.len + sizeof(labl) + varlen >= (unsigned int)adtl_max) {
+		adtl_max <<= 1;
+		adtl_buff = (char *)xrealloc(adtl_buff, adtl_max);
+	}
+
+	labl *la = (labl *)(adtl_buff + adtlhdr.len);
+	*la = *chunk_template;
+	la->len = sizeof(labl) + varlen - RIFF_HEADER_SIZE;
+	la->cp_name = current_cp;
+	strcpy((char *)(la+1), string);
+	((char *)(la+1))[varlen - 1] = 0;	// padding if odd
+	adtlhdr.len += sizeof(labl) + varlen;
+}
+
+void
 wavefm::label(int pos, char *label, const char *note)
 {
 	if (current_cp) {
@@ -764,29 +757,8 @@ wavefm::label(int pos, char *label, const char *note)
 
 	if (!label) return;
 
-	if (adtl_buff) {
-		if (adtlhdr.len + strlen(label) + strlen(note) + 4 + 2 * sizeof(labl) >= (unsigned int)adtl_max) {
-			adtl_max <<= 1;
-			adtl_buff = (char *)xrealloc(adtl_buff, adtl_max);
-		}
-	} else {
-		adtl_max = ADTL_INITIAL_BUFF;
-		adtl_buff = (char *)xmalloc(adtl_max);
-	}
-
-	labl *la = (labl *)(adtl_buff + adtlhdr.len);
-	*la = labl_template;
-	la->len = sizeof(labl) + strlen(label) + 1 - RIFF_HEADER_SIZE;
-	la->cp_name = current_cp;
-	strcpy((char *)(la+1), label);
-	adtlhdr.len += sizeof(labl) + strlen(label) + 1;
-
-	labl *n = (labl *)(adtl_buff + adtlhdr.len);
-	*n = note_template;
-	n->len = sizeof(labl) + strlen(note) + 1 - RIFF_HEADER_SIZE;
-	n->cp_name = current_cp;
-	strcpy((char *)(n+1), note);
-	adtlhdr.len += sizeof(labl) + strlen(note) + 1;
+	put_chunk(&labl_template, label);
+	put_chunk(&note_template, note);
 }
 
 #ifdef SIMPLE_WFM
@@ -816,9 +788,9 @@ wavefm::become(void *b, int size)
 void pchu(char *p, int size)
 {
 	int l = *((int *)p+1);
-	printf("pchu %p+%d, %.4s len %d\n", p, size, p, *((int *)p+1));
+//	printf("pchu %p+%d, %.4s len %d\n", p, size, p, *((int *)p+1));
 	if (FOURCC_ID(p) == FOURCC_ID("RIFF")) {
-		printf("RIFF here\n");
+//		printf("RIFF here\n");
 		if (FOURCC_ID(p + RIFF_HEADER_SIZE) != FOURCC_ID("WAVE")) shriek(471, "Other RIFF than WAVE received");
 		for (char *q = p+12; l>0; ) {
 			int chunksize = ((int *)q)[1];

@@ -589,7 +589,7 @@ r_regress::r_regress(char *param) : rule(param)
 	*right++=0;
 	fn=strchr(right,ASSIM_DELIM4);if(!fn) shriek(811, fmt("Bad param%s", debug_tag()));
 	*fn++=0;if(*fn) shriek(811, fmt("Strange appendix to param%s", debug_tag()));
-	DEBUG(1,4,fprintf(STDDBG,"Parsed assim param \"%s>%s(%s_%s)\"\n",aff,eff,left,right);)
+	DEBUG(0,4,fprintf(STDDBG,"Parsed assim param \"%s>%s(%s_%s)\"\n",aff,eff,left,right);)
 	fn=fntab(aff,eff);ltab=booltab(left);rtab=booltab(right);
 	free(aff);
 	
@@ -655,7 +655,7 @@ r_syll::r_syll(char *param) : rule(param)
 		else son[(unsigned char)(*tmp)]=lv;
 		DEBUG(0,1,fprintf(STDDBG,"Giving to %c sonority %d\n", *tmp, lv);)
 	}
-	DEBUG(1,1,fprintf(STDDBG,"rules::parse_syll going to call syllabify()\n");)
+	DEBUG(0,1,fprintf(STDDBG,"rules::parse_syll going to call syllabify()\n");)
 }
 
 r_syll::~r_syll()
@@ -770,9 +770,8 @@ r_regex::r_regex(char *param) : rule(param)
 	param = strdup(scratch);
 
 	matchbuff = (regmatch_t *)xmalloc((parens+2)*sizeof(regmatch_t));
-	DEBUG(1,1,fprintf(STDDBG, "Compiling regex %s\n", param);)
+	DEBUG(0,1,fprintf(STDDBG, "Compiling regex %s\n", param);)
 	result = regcomp(&regex, param, 0);
-	DEBUG(0,1,fprintf(STDDBG, "...hm...\n");)
 	switch (result) {
 		case 0: break;
 		case REG_BADBR:
@@ -805,7 +804,7 @@ r_regex::r_regex(char *param) : rule(param)
 	if (tmp[1]) shriek(811, fmt("garbage follows replacement%s", debug_tag()));
 	*tmp=0;
 	repl=strdup(repl);
-	DEBUG(1,1,fprintf(STDDBG,"regex%s is okay\n", debug_tag());)
+	DEBUG(0,1,fprintf(STDDBG,"regex%s is okay\n", debug_tag());)
 }
 
 #undef rshr

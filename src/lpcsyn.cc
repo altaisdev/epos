@@ -171,7 +171,7 @@ void lpcsyn::synseg(voice *v, segment d, wavefm *w)	// voice not used
 	lincr=0;
 	numodel=(int)seg_len->data[d.code];	// cast to unsigned char * before [] if problems
 	if(!numodel) {
-		DEBUG(4,9,fprintf(STDDBG, "Unknown segment %d, %3s\n", d.code, d.code < v->n_segs ? "in range" : "out of range"));
+		DEBUG(3,9,fprintf(STDDBG, "Unknown segment %d, %3s\n", d.code, d.code < v->n_segs ? "in range" : "out of range"));
 		return;
 	}
 	/* nacti_mem_popis(code,numodel) */

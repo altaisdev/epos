@@ -3,8 +3,7 @@ Bugs
 - with windows sokec, files as stream input modules crash the server
 - with windows sokec, files as output modules with disk full crash the server
 - fix regress behavior wrt literal zero characters
-
-- fix total_length with -w
+- what if make install fails to create /usr/lib/epos
 
 Features
 - pause hierarchy rules

@@ -12,17 +12,17 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License in doc/COPYING for more details.
  *
- *	In Epos, waveforms are both externally (as required by TTSCP) and
+ *	In Epos, waveforms are externally (as required by TTSCP) and
  *	also internally represented by the RIFF waveform pseudostandard
  *	format.  As generating the waveform is likely to become
  *	a performance bottleneck, and quite a few aspects of this process
- *	have been made configurable, the sample() method has been made inline
- *	in this header file.
+ *	have been gradually made configurable, the sample() method
+ *	has been made inline in this header file.
  *
  *	The design is that the synthesizer calls a wavefm object's sample()
  *	method every time it outputs a sample.  In theory, the sample
  *	should be processed using configuration parameters.  This is
- *	however rather slow for a lightning-fast synthesizer, as loop
+ *	however rather slow for a lightning-fast synthesizer: loop
  *	optimization won't probably work here, because the optimizer is afraid
  *	of configuration parameters and/or any internal wavefm structure
  *	members being pointed to by the buffer being filled, and thus it
@@ -73,6 +73,8 @@ struct adtl_header
 	char string2[4];
 };
 
+struct labl;
+
 struct w_ophase;
 
 class wavefm
@@ -110,6 +112,8 @@ class wavefm
 	void band_filter();	/* low band filter applied if downsampling */
 	bool translated;
 	int downsamp;
+	
+	void put_chunk(labl *chunk_template, const char *label);
 
    public:
 	wavefm(voice *);

@@ -388,7 +388,11 @@ a_synth::run()
 	if (!this_voice) shriek(861, "No current voice");
 	if (!this_voice->syn) {
 		try {
-			this_voice->syn = setup_synth(this_voice);
+			synth *sy = setup_synth(this_voice);
+			this_voice->syn = sy;
+//			c->leave();
+//			this_voice->syn = sy;
+//			c->enter();
 		} catch (command_failed *e) {
 			if (e->code / 10 == 47 && this_lang->fallback_voice && *this_lang->fallback_voice) {
 								// 47x codes are network errors

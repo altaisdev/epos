@@ -59,20 +59,6 @@ regress  ${upper_case}>${lower_case}($everywhere)			colon
 
  subst	   main.dic		   ;Rùzné výjimky
 
-; regex    /^(.*)b(.*)\$/\1\Z\2\Y\1\Z\Z\2/    word
-; syll    \Y<xchobotu\Z   word phone
-; raise   \Y   syll  phone
-; ;syll    \Y<xchobotu\ \Z   word phone
-; subst   "\Y,\ "  colon
-; progress \Y\Z>0b(!_!)
-; ;progress \Y>\X(!_!)  syll syll
-; regex    /([^\Y]*)o([^\Y]*)/\1\Z\2\Y\1u\2/    word
-; ;syll    \Y<xchobotu\Z   colon phone
-; subst   "\Y \ "  colon
-; progress \Y\Z>0i(!_!)
-
-; regex /([^,]*)o([^,]*)/\1u\2,\1a\2/	sent
-
  progress  ù>ú($everywhere)
 
  progress  0>s(x_!)

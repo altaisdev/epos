@@ -94,8 +94,8 @@ unit::~unit()
  
  Note:	iucache,ifcache and ocache is a primitive one-line cache of
  	where to start dumping the segments.  If could speed up
- 	the dumping of a very very long utterance (it is not trivial
- 	to find the "first" segment in general, but it should be the
+ 	the dumping of a very very long utterance (it can be slow
+ 	to find the "first" segment in general, but it is likely to be the
  	one following the last one dumped in the previous run).
  	So the cache hits if we just want to continue the dump.
  	
@@ -1108,7 +1108,7 @@ unit::unlink(REPARENT rmethod)
 	_unit_just_unlinked=this;
 
 	if (father && !father->firstborn) {
-		DEBUG(4,2,fprintf(STDDBG, "Unsafe unlink - may need more fixing\n"););	// as above
+		DEBUG(3,2,fprintf(STDDBG, "Unsafe unlink - may need more fixing\n"););	// as above
 		father->unlink(M_DELETE);
 	}
 	DEBUG(0,2,fprintf(STDDBG,"unit deleted, farewell\n");)

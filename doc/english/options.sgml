@@ -1405,7 +1405,6 @@ level | debugging messages | comment @
 1 | verbose  | too verbose @
 2 | normal   | informative @
 3 | rare     | warnings, and such @
-4 | none     | should not exist @
 <hline>
 </tabular>
 <caption>

@@ -127,17 +127,8 @@
 /* Define if you have the <wait.h> header file.  */
 #undef HAVE_WAIT_H
 
-/* Define if you have the c library (-lc).  */
-#undef HAVE_LIBC
-
 /* Define if you have the lnsl library (-llnsl).  */
 #undef HAVE_LIBLNSL
-
-/* Define if you have the regex library (-lregex).  */
-#undef HAVE_LIBREGEX
-
-/* Define if you have the rx library (-lrx).  */
-#undef HAVE_LIBRX
 
 /* Define if you have the socket library (-lsocket).  */
 #undef HAVE_LIBSOCKET

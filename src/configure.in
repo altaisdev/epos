@@ -23,9 +23,10 @@ AC_LANG_CPLUSPLUS
 
 AC_CHECK_PROGS(LNK, ld wlink, linker)
 AC_CHECK_LIB(stdc++, main)
-AC_CHECK_LIB(c, regcomp)
-AC_CHECK_LIB(rx, regcomp)
-AC_CHECK_LIB(regex, regcomp)
+dnl AC_CHECK_LIB(c, regcomp)
+dnl AC_CHECK_LIB(rx, regcomp)
+dnl AC_CHECK_LIB(regex, regcomp)
+AC_SEARCH_LIBS(regcomp, c rx regex)
 AC_CHECK_LIB(socket, main)
 AC_CHECK_LIB(lnsl, main)
 AC_LANG_CPLUSPLUS

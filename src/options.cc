@@ -110,6 +110,13 @@ static inline void cow_free(cowabilium *p, option *opts, void *extra)
 			free(*(char **)((char *)p + o->offset));
 		}
 	}
+	if (opts == voiceoptlist) {
+		voice *v = (voice *)p;
+		voice *par = (voice *)v->parent;
+		if (v->syn != par->syn) delete v->syn;
+		if (v->segment_names != par->segment_names) unclaim(v->segment_names);
+		if (v->sl != par->sl) free(v->sl);
+	}
 	free(p);
 	if (extra) free(extra);
 }
@@ -224,7 +231,7 @@ void restrict_options()
 	text *t = new text(cfg->restr_file, cfg->ini_dir, "", NULL, true);
 	if (!t->exists()) {
 		delete t;
-		return;		/* if no restictions file, ignore it */
+		return;		/* if no restrictions file, ignore it */
 	}
 	char *line = (char *)xmalloc(cfg->max_line);
 	while (t->getline(line)) {
@@ -347,13 +354,22 @@ void post_set_unit_levels(const char *)
 	}
 }
 
+const char *pre_init_f(const char *value)
+{
+	int v;
+	if (!sscanf(value,"%d",&v)) return value;
+	if (v < 1) return NULL;
+	else return value;
+}
+
 /*
  *	invoke_set_action gets invoked twice for options whose action bit
  *		is set.  The pre-set call receives and returns a value,
- *		the post-set call receives a NULL and returns anything.
+ *		the post-set call receives a NULL and returns NULL.
  *
  *		If a pre-set call returns a NULL, the option will not
- *		be changed and no post-set call occurs.
+ *		be changed and no post-set call occurs.  Otherwise the
+ *		value returned is used instead of the suggested one.
  *
  *		All options have initially the action bit set, and
  *		invoke_set_action shall disable the action bit for
@@ -362,12 +378,17 @@ void post_set_unit_levels(const char *)
 
 const char *invoke_set_action(option *o, const char *value)
 {
-	if (!strcmp(o->optname, "unit_levels") || !strcmp(o->optname, "C:unit_levels")) {
+	const char *on = strchr(o->optname, ':') ? strchr(o->optname, ':') + 1 : o->optname;
+	if (!strcmp(on, "init_f")) {
+		if (value) return pre_init_f(value);
+		else return NULL;
+	}
+	if (!strcmp(on, "unit_levels")) {
 		if (value) {
 			return pre_set_unit_levels(value);
 		} else {
-			post_set_unit_levels(value);
-			return value;
+			post_set_unit_levels(NULL);
+			return NULL;
 		}
 	}
 	o->action = false;
@@ -416,7 +437,7 @@ template<class T> inline void set_enum_option(option *o, const char *val, char *
 bool set_option(option *o, const char *val, void *base)
 {
 	if (!o) return false;
-	if (o->action && !invoke_set_action(o, val)) return false;
+	if (o->action && !(val = invoke_set_action(o, val))) return false;
 	char *locus = (char *)base + o->offset;
 	switch(o->opttype) {
 		case O_BOOL:
@@ -743,7 +764,7 @@ static inline void add_language(const char *lng_name)
 	if (*lng_name) {
 		if (!cfg->langs) cfg->langs = (lang **)xmalloc(8 * sizeof (void *));
 		else if (!(cfg->n_langs-1 & cfg->n_langs) && cfg->n_langs > 4)	    // n_langs == 8, 16, 32...
-			cfg->langs = (lang **)xrealloc(cfg->langs, cfg->n_langs << 1);
+			cfg->langs = (lang **)xrealloc(cfg->langs, (cfg->n_langs << 1) * sizeof(void *));
 		cfg->langs[cfg->n_langs++] = new lang(filename, dirname);
 	}
 	free(filename);

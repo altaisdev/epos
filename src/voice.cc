@@ -151,7 +151,7 @@ lang::add_voice(const char *voice_name)
 	if (*voice_name) {
 		if (!voices) voices = (voice **)xmalloc(8*sizeof (void *));
 		else if (!(n_voices-1 & n_voices) && n_voices > 4)  // if n_voices==8,16,32...
-			voices = (voice **)xrealloc(voices, n_voices << 1);
+			voices = (voice **)xrealloc(voices, (n_voices << 1) * sizeof (void *));
 		voices[n_voices++] = new(this) voice(filename, dirname, this);
 	}
 	free(filename);
@@ -310,7 +310,7 @@ voice::claim_all()
 				if (sl[a].pos != -1) shriek(861, "Multilabelled units unimplmd");
 				sl[a].pos = b;
 				sl[a].labl = c;
-			};
+			}
 		}
 	}
 }
@@ -320,7 +320,7 @@ voice::~voice()
 	if (segment_names) unclaim(segment_names);
 	if (sl) free(sl);
 //	if (buffer) detach();
-	delete syn;
+	if (syn) delete syn;
 }
 
 void *

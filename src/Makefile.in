@@ -232,7 +232,7 @@ lpcsyn.o: lpcsyn.h waveform.h synth.h lpcsyn.cc interf.h options.lst $(MAKEFILE)
 	$(CC) $(FLAGS) -c -o $@ lpcsyn.cc
 
 #lpcsyn.cc lpcsyn.h:
-#	@if [ ! -f $@ ]; then if [ -f ../../$@ ]; then ln ../../$@ .; else echo "">$@; fi; else touch $@; fi
+#	@if [ -f ../../$@ ]; then ln ../../$@ .; else touch $@; fi
 
 tcpsyn.o: tcpsyn.h tcpsyn.cc client.h waveform.h interf.h options.lst $(MAKEFILE)
 	$(CC) $(FLAGS) -c -o $@ tcpsyn.cc

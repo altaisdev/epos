@@ -1042,3 +1042,30 @@ for an exciting story, just skip it.
 	- adapted some option defaults and .ini file comments
 	- optimized away use_segs pseudooption
 
+2.4.54 from 2.4.53	12.4.01
+	- line-final backslash now makes the line continue with the next physical line
+	- retreat to the old ulaw code
+
+2.4.55 from 2.4.54	15.4.01
+	- odd chunk size bug fixed in wavefm::label()
+	- nine langs/voices bug fixed
+	- no waveform-initial cue point
+	- touched the NT service code a little bit
+	- wavefm.cc cleanup
+
+2.4.56 from 2.4.55	25.4.01
+	- wavefm code support for non-16-bit samples etc. fixed
+
+2.4.57 from 2.4.56	21.5.01
+	- minor fixes in wavefm code
+	- autoconf now avoids an unnecessary perverse librx.so
+	- made \n a word level character (for Czech)
+	- fixed the "daemon_log file cannot be created" scenario behavior
+	- declared the server shutdown flag volatile
+	- changed all debugging level 4 messages to level 3
+	- fixed parser aliasing for \r  (from space to newline)
+	- some read-only off-by-one bugs efenced off
+	- pre-set hooks allowed to return a new value, pre_init_f added
+	- memory leak in cow_free fixed (not freeing voice->syn etc.)
+	- wavefm::translate_data() fixed (zeroed data bug)
+

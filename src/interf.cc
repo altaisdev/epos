@@ -492,7 +492,7 @@ inline bool reclaim(file *ff, const char *flags, const char *description, void o
 	rewind(f);
 	len = fread(ff->data, 1, tmp, f);
 	if (len < 0) {
-		if (!description) return NULL;
+		if (!description) description = "an unspecified stuff";
 		shriek(445, fmt("Failed to read %s from %s", description, ff->filename));
 	}
 	ff->data[len] = 0;
@@ -641,9 +641,10 @@ void epos_init()	 //Some global sanity checks made here
 	if (sizeof(int) > sizeof(void *)) shriek(862, "Your integers are longer than pointers!\n"
 				"Turn hash_table::forall() fns in hash.h the other way round.");
 	if ((unsigned char)-1 != 255) shriek(862, "Your chars are not 8-bit? Funny.");
+	if (sizeof(unsigned short int) != 2) shriek(862, "Short ints not short enough");
 	if (*(short int *)"wxyz" == 256 * 'w' + 'x') cfg->big_endian = true;
 	if (*(short int *)"wxyz" != 256 * 'x' + 'w' && !cfg->big_endian) shriek(862,
-				"Endianness detection failed");		// FIXME
+				"Not little-endian nor big-endian. Whew!");
 
 	srand(time(NULL));	// randomize
 
