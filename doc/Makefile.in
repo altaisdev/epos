@@ -94,7 +94,7 @@ MAINTAINERCLEANFILES = epos.html epos-?.html
 
 CONTENTS = intro.sgml arch.sgml rules.sgml options.sgml ttscp.sgml security.sgml devel.sgml 
 
-EXTRA_DIST = $(CONTENTS) header.sgml footer.sgml
+EXTRA_DIST = $(CONTENTS) header.sgml footer.sgml Todo Intro Files FAQ FORMATS
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../config.h
 CONFIG_CLEAN_FILES = 
