@@ -1,5 +1,7 @@
-
-# Prozatímní pravidla pro pøepis èeštiny
+#
+#	(c) Jirka Hanika <geo@ff.cuni.cz>
+#
+# Pravidla pro zpracování èeštiny
 
 $colloquial	external
 $irony		external
@@ -15,122 +17,12 @@ $base_dir	external
 $prosody   = ${base_dir}/${prosody_dir}
 #$dph_file  = ${base_dir}/${invent_dir}/${inv_dph}
 
-$voiced    = bdïgvzïZhø
-$voiceless = ptkfsšcèxØ
-$fric      = szšfvhx
-$afric     = cZè
-$stop      = ptkbdïg
-$nasal     = mnòN
-$sonant    = jlr$nasal
-$short     = aeiouyì
-$long      = áéíóúıì
-$diphtong  = OAE
-$vowel     = $short$long$diphtong
-$consonant=$voiced$voiceless$sonant
-$everywhere= !_!
-$numbers   = 1234567890
-$sonority  = 0'<$fric$afric${stop}øØ$nasal<l<rjJ<$vowel   ;l<r because of "umrlec" etc. Not outright systematic nor safe.
+#include "trans.rul"
 
-$lower_case = aábcèdïeéìfghiíjklmnòoópqrøsštuúùvwxyız
-$upper_case = AÁBCÈDÏEÉÌFGHIÍJKLMNÒOÓPQRØSŠTUÚÙVWXYİZ
-
-regress  ${upper_case}>${lower_case}($everywhere)
-
-
-##include "numerals.rul"
-
- subst	   main.dic		   ;Rùzné vıjimky
-
- progress  ù>ú($everywhere)
-
- progress  0>s(x_!)
- progress  u0>0v(q_!)              ; Rozloení x,q na ks, kv
- regress   xq>k($everywhere)
- regress   h>x(c_!)                ; Spøeka ch > x
- regress   z>Z(d_!)              ; Spøeky dz,d > Z,
- progress  cd>0(!_xZ)
- progress  h>x(s_!)                ; Praské sh
-
-# Následující pravidla jednak zmìní vìty vydìlené dvojteèkou
-#   na vìty vydìlené teèkou (to je spíše špatnì ne dobøe),
-#   dále pak oznaèí dvojteèkou (místo otazníku) ty vìty, které
-#   obsahovaly ve své první klausi nìkteré ze slov uvedenıch
-#   ve slovníku wh.dic, nemìly tuto klausi zvláš vydìlenou
-#   ádnou interpunkcí, a byly samy vydìleny otazníkem.
-#
-# Fonetik vidí, e jsem právì "definoval" doplòovací otázky.
-
- progress  :>.($everywhere)	text	sent
- subst     wh.dic				; Doplòovací otázky
- raise     q:_			colon	phone
- progress  q>_(!0_!)		sent	colon	;  jen v první klausi
- raise     q:?			sent	colon
- progress  q>0($everywhere)			;  úklid všech úrovní
- progress  q>_($everywhere)	sent	colon
- progress  q>:($everywhere)	text	sent
-
- if        $colloquial
+ inside  .?:!	sent		; Pochybné - nemá zasáhnout vìty bez interpunkce
  {
-	regress j>J(0_ds)	; fixme: random environment
+	 prosody	$prosody/accent.dic      word	syll
  }
-
-
- subst     syll.dic		; Rozsadit vokály
- regress   0>'(0_$vowel)	; Rázy
- progress  0>q(!q_szš)	 colon  
- progress  q>0(!_!0)     word   ; "q" jen pøed hranicí slov, za ní je sykavka
- prep	   seq.dic
- progress  q>0($everywhere)
- prep      preps.dic 	     ; Fúze pøedloek, postpozic
- prep      nonsyl.dic    syll
- postp     postps.dic
-
- regress   h>0(t_!)		; pathologie, plethora, thanatos. Pochybné.
-
- progress  ø>Ø($voiceless_!0)
- regress   $voiced>${voiceless}(!_$voiceless&0')       	; Asimilace znìlosti
- regress   $voiceless>$voiced(!_$voiced!v)       colon
-
- if	   $colloquial
- {
-	subst	casual.dic
-	regress J>0(!_!)
-	regress '>v(!_o)	; "okno" [vokno]
- }
-
- regress   0>n(m_ì)
- regress   dtn>ïò(!_iíì)
- regress   ì>e(ïò_!)
- regress   0>j(!_ì)
- regress   ì>e($everywhere)
-
- progress  yı>ií($everywhere)
- progress  i>j($vowel_!) syll   ; slabièné èlenìní? Leda vıjimeènì 
- progress  w>u($vowel_$consonant&0)
- progress  w>v($everywhere)     ; vìtšinou ale "w" odstraní vıjimky, øeknìme
- progress  n>N(!_kg)
-
- regress   b>0(!_b)	syll	; pochybnı heuristickı odstaveèek
- regress   n>0(!_nò)	syll	; namíøenı proti geminátám
- regress   s>0(!_s)	syll
- regress   t>0(!_t)	syll
- regress   f>0(!_f)	syll
-
- syll      $sonority	syll	; Rozklad_na_slabiky
-
- progress  oae>OAE(!_u)	syll	; Dvojhlásky
- regress   u>0(OAE_!)	syll
-
- regress   Z>DÏ(!_$vowel)	; toto by mìlo pøijít do inventáøe (traditnl.dph);
- regress   0>d(!_DÏ)		; rozkládá se zde dz, d (representované Z,)
- regress   DÏ>z(!_!)		; na d-z, d-, pokud následuje vokál.
-
- progress  0>~($vowel_0) syll	; Oznaèení otevøenıch vokalickıch slabik tildou
- raise     ~:!		 syll
- progress  ~>0($vowel_0) syll
-
-
- prosody	$prosody/accent.dic      word	syll
 
  inside  ,    colon
  {

@@ -1,4 +1,7 @@
-pøidat èárku pøed "a":
+#
+#	prosodická pravidla Fonetického ústavu FF UK pro èeštinu
+#
+# pøidat èárku pøed "a":
 
 with	a.dic		word
 {
@@ -6,9 +9,11 @@ with	a.dic		word
 }
 syll	!A		colon	word
 
-with	preps.dic	word
+#include "trans.rul"
+
+with	preps.dic	colon	word	# word word by bylo lepsi
 {
-	regress   !>P(!_!P)   word   word
+	regress   !>P(!_!P)   colon   word
 }
 
 regress  !>F(!_0)	colon	word
@@ -25,9 +30,9 @@ regress	 M>I(0_!)	colon	word
 regress  !>F(!_0)	colon	word
 regress  F>T(!_0)	sent	word
 
-with	postp2.dic	word
+with	postp2.dic	colon   word
 {
-	regress FT>M	word	word
+	regress   FT>M(!_!)	colon	word
 }
 
-a jsme na zaèátku str. 4
+# a jsme na zaèátku str. 4

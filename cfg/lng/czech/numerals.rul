@@ -1,11 +1,14 @@
 
 # These rules should eventually convert numbers to their
-# corresponding numerals.
+# corresponding Czech numerals.
 #
 # This file is full of uglish hacks. Capital X is used
 # for marking the end of the number throughout. We should
 # not use regress and progress rules, as these eradicate
 # zeroes.
+
+$colloquial	external
+$colloquial	external
 
 regex	/([0-9])\ ([0-9][0-9][0-9])/\1\2/	colon
 
