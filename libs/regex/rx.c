@@ -4,25 +4,20 @@
  *   (Implements POSIX draft P1003.2/D11.2, except for some of the
  *   internationalization features.)
  *
- *   This file was without functional modification taken out of the GNU C Library,
- *   where it has been distributed under the LGPL version 2 license as regex.c.
- *   Then this file was placed under the GNU General Public License using
- *   Section 3 of the GNU Library Public License and incorporated into Epos.
- *
  *   This code will be used by Epos only if the operating system offers
  *   no regular expressions as a standard library.
  *
  *   rx.c is (C) 1993, 1994, 1995, 1996, 1997 Free Software Foundation, Inc.
  *
  *   This file is free software; you can redistribute it and/or
- *   modify it under the terms of the GNU General Public License as
+ *   modify it under the terms of the GNU Library General Public License as
  *   published by the Free Software Foundation; either version 2 of the
  *   License, or (at your option) any later version.
  *
  *   The GNU C Library is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *   Library General Public License in doc/COPYING for more details.
+ *   Library General Public License in libs/regex/COPYING for more details.
  *
  */
 

@@ -2,22 +2,18 @@
  *   Definitions for data structures and routines for the regular
  *     expression library, version 0.12.
  *
- *   This file was without any modification taken out of the GNU C Library,
- *   where it has been distributed under the LGPL version 2 license as regex.h.
- *   Then this file was placed under the GNU General Public License using
- *   Section 3 of the GNU Library Public License and incorporated into Epos.
- *
  *   rx.h is (C) 1985,89,90,91,92,93,95,96,97 Free Software Foundation, Inc.
  *
  *   This file is free software; you can redistribute it and/or
- *   modify it under the terms of the GNU General Public License as
+ *   modify it under the terms of the GNU Library General Public License as
  *   published by the Free Software Foundation; either version 2 of the
  *   License, or (at your option) any later version.
  *
  *   The GNU C Library is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *   General Public License in doc/COPYING for more details.
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Library General Public License in libs/regex/COPYING.LIB
+ *   for more details.
  *
  */
 

@@ -1,7 +1,7 @@
 /*
  *	(c) 1998-01 Jirka Hanika <geo@cuni.cz>
  *
- *	This single source file src/say.cc, but NOT THE REST OF THIS PACKAGE,
+ *	This single source file src/gauge-epos.cc, but NOT THE REST OF THIS PACKAGE,
  *	is considered to be in Public Domain. Parts of this single source file may be
  *	freely incorporated into any commercial or other software.
  *
@@ -37,6 +37,12 @@ void terminate(void)
 
 #endif
 
+#ifdef HAVE_ERRNO_H
+	#include <errno.h>
+#endif
+
+#define   TTSCP_PORT	8778
+
 const char *COMMENT_LINES = "#;\r\n";
 const char *WHITESPACE = " \t\r";
 
@@ -48,7 +54,6 @@ bool chunking = false;
 bool show_segments = false;
 bool wavfile = false;
 bool wavstdout = false;
-bool traditional = true;  
 
 #define STDIN_BUFF_SIZE  550000
 
@@ -61,6 +66,7 @@ char *dh;
 void shriek(char *txt)
 {
 	fprintf(stderr, "Client side error: %s\n", txt);
+//	system("killall gauge-epos");
 	exit(1);
 }
 
@@ -70,7 +76,6 @@ void shriek(int, char *txt)
 }
 
 
-// #include "exc.h"
 #include "client.cc"
 
 int get_result(int sd)
@@ -97,19 +102,23 @@ int get_result(int sd)
 			default : ;
 		}
 		char *o = scratch+strspn(scratch, "0123456789 ");
-		if (*scratch && *o) printf("%s\n", o);
+		if (*scratch && *o) printf("Instead of result #%s#\n", o);
 	}
 	return 8;	/* guessing */
 }
 
 int size;
 
-char *get_data()
+char *get_line()
 {
-	char *b = NULL;
+	#undef SCRATCH_SPACE
+	#define SCRATCH_SPACE	200
+	char scratch[SCRATCH_SPACE + 2];
+
+	char *b;
 	size = 0;
-	while (sgets(scratch, scfg->scratch_size, ctrld)) {
-		scratch[scfg->scratch_size] = 0;
+	while (sgets(scratch, SCRATCH_SPACE, ctrld)) {
+		scratch[SCRATCH_SPACE] = 0;
 		if (strchr("2468", *scratch)) { 	/* all done, write result */
 			if (*scratch != '2') shriek(scratch);
 			if (!size) shriek("No processed data received");
@@ -118,13 +127,21 @@ char *get_data()
 		}
 		if (!strncmp(scratch, "123 ", 4)) {
 			int count;
-			sgets(scratch, scfg->scratch_size, ctrld);
-			scratch[scfg->scratch_size] = 0;
-			sscanf(scratch, "%d", &count);
+			sgets(scratch, SCRATCH_SPACE, ctrld);
+			scratch[SCRATCH_SPACE] = 0;
+			if (!sscanf(scratch, "%d", &count)) shriek("Matchfail!");
 			b = size ? (char *)realloc(b, size + count + 1) : (char *)malloc(count + 1);
+			if (!b) shriek("No buffer");
+			if (size && count) printf("size %d, count %d, buffer %s", size, count, b);
 			int limit = size + count;
-			while (size < limit)
-				size += yread(datad, b + size, limit - size);
+			while (size < limit) {
+				int res = yread(datad, b + size, limit - size);
+				if (res == -1) {
+					printf("size=%d, limit=%d, errno=%d\n", size, limit, errno);
+					shriek("Wow!\n");
+				}
+				size += res;
+			}
 		}
 	}
 	if (size) shriek("Disconnect during transmit");
@@ -132,63 +149,131 @@ char *get_data()
 	return NULL;
 }
 
-void say_data()
+char *line = (char *)calloc(1,1);
+char *demux = (char *)calloc(1,1);
+
+char *get_word()
 {
-	if (!data) data = strdup("No.");
-	sputs("strm $", ctrld);
-	sputs(dh, ctrld);
-	if (chunking) sputs(":chunk", ctrld);
-	if (traditional) sputs(":raw:rules:diphs:synth:", ctrld);
-	else sputs(":raw:rules:dump:syn:", ctrld);
-	if (wavfile || wavstdout) sputs("$", ctrld), sputs(dh, ctrld);
-	else sputs("#localsound", ctrld);
-	sputs("\r\n", ctrld);
-	sputs("appl ", ctrld);
-	sprintf(scratch, "%d", (int)strlen(data));
-	sputs(scratch, ctrld);
-	sputs("\r\n", ctrld);
-	sputs(data, datad);
-	if (get_result(ctrld) > 2) shriek("Could not set up a stream");
-	char *b;
-	if (wavfile || wavstdout) {
-		b = get_data();
-		FILE *f = wavstdout ? stdout : fopen(output_file, "wb");
-		if (!f || !fwrite(b, size, 1, f)) shriek("Could not write waveform");
-		if (!wavstdout) fclose(f);
-		free(b);
-		return;
+	if (!*demux) {
+		free(line);
+		line = get_line();
+		demux = line;
 	}
-	if (get_result(ctrld) > 2) shriek("Could not apply a stream");
+
+	char *ret = demux;
+	demux = strchr(demux, ',');
+	*demux++ = 0;
+	return ret;
 }
 
-void trans_data()
+void send_line(char *line)
 {
-	if (!data) data = strdup("No.");
-	sputs("strm $", ctrld);
-	sputs(dh, ctrld);
-	if (chunking) sputs(":chunk", ctrld);
-	if (show_segments) sputs(traditional ? ":raw:rules:diphs:$"
-					     : ":raw:rules:dump:$", ctrld);
-	else sputs(":raw:rules:print:$", ctrld);
-	sputs(dh, ctrld);
-	sputs("\r\n", ctrld);
 	sputs("appl ", ctrld);
-	sprintf(scratch, "%d", (int)strlen(data));
+	sprintf(scratch, "%d", (int)strlen(line));
 	sputs(scratch, ctrld);
 	sputs("\r\n", ctrld);
-	sputs(data, datad);
-	get_result(ctrld);
-	
-	if (show_segments) {
-		segment *b = (segment *)get_data();
-		if (traditional)
-			for (int i=1; i<b[0].code; i++)
-				printf("%4d - %3d %3d %3d\n", b[i].code, b[i].f, b[i].e, b[i].t);
-		else printf("%s\n", (char *)b);
-	} else {
-		char *b = get_data();
-		printf("%s\n", b);
+	sputs(line, datad);
+}
+
+char multiplex[512] = { 0, };
+
+void send_word(char *word)
+{
+	strcat (multiplex, word);
+	strcat (multiplex, ",");
+	if (strlen(multiplex) < 400) return;
+
+	send_line(multiplex);
+	multiplex[0] = 0;
+}
+
+int sent_count = 0;
+int received_count = 0;
+
+char *in = "gauge.in";
+char *nw = "gauge.new";
+char *lst = "gauge.lst";
+char *lst_format = "%-24s %-24s %-24s\n";
+
+void send_requests()
+{
+	FILE *f = fopen(in, "r");
+	char buffer[1024];
+	char *result;
+	while (f && !feof(f)) {
+		fgets(buffer, 1023, f);
+		if (data && !strstr(buffer, data))
+			continue;
+		result = strchr(buffer, ' ');
+		if (!result) continue;
+		*result++ = 0;
+		send_word(buffer);
+		printf("\r%d %s                                   ", sent_count, buffer);
+		sent_count++;
 	}
+	fclose(f);
+	if (*multiplex) send_line(multiplex);
+	printf("\nThe last sent line was: \"%s\"\n", multiplex);
+	printf("Sent word count: %d\n", sent_count);
+	multiplex[0] = 0;
+}
+
+void gather_results()
+{
+	FILE *f;
+	FILE *g = NULL;
+	FILE *h;
+	char buffer[1024];
+	char *old;
+	f = fopen(in, "r");
+	if (data) remove(nw);
+	else g = fopen(nw, "w");
+	h = fopen(lst, "w");
+	if (!f) shriek("Could not open the dictionary");
+	if (!h) shriek("Could not create the output files");
+	while (1) {
+		fgets(buffer, 1023, f);
+		if (feof(f))
+			break;
+		if (data && !strstr(buffer, data))
+			continue;
+		old = strchr(buffer, ' ');
+		if (!old) shriek("Need two space-separated items");
+		*old++ = 0;
+		old += strspn(old, " ");
+		char *received = get_word();
+		if (strchr(received, '#')) *strchr(received, '#') = 0;
+		if (strchr(old, '\n')) *strchr(old, '\n') = 0;
+//		printf("rules: %s, thesaurus: %s\n", received, old);
+		if (!data) fprintf(g, "%s %s\n", buffer, received);
+		if (strcmp(received, old))
+			fprintf(h, lst_format, buffer, old, received);
+		received_count++;
+	}
+	fclose(f);
+	if (!data) fclose(g);
+	fclose(h);
+	printf("Received word count: %d\n", received_count);
+}
+
+void gauge()
+{
+	sputs("strm $", ctrld);
+	sputs(dh, ctrld);
+	sputs(":raw:rules:print:$", ctrld);
+	sputs(dh, ctrld);
+	sputs("\r\n", ctrld);
+	get_result(ctrld);
+
+	if (!fork()) {
+		send_requests();
+//		sleep(5);
+		sputs("done\r\n", ctrld);
+		exit(0);
+	}
+	else gather_results();
+
+
 }
 
 void send_option(const char *name, const char *value)
@@ -197,27 +282,33 @@ void send_option(const char *name, const char *value)
 	get_result(ctrld);
 }
 
+void use_trusted()
+{
+	in = "gauge-trusted.in";
+	nw = "gauge-trusted.new";
+	lst = "gauge-trusted.lst";
+}
+
+void use_bad()
+{
+	in = "gauge-bad.in";
+	nw = "gauge-bad.new";
+	lst = "gauge-bad.lst";
+}
+
 #define CMD_LINE_OPT "-"
 #define CMD_LINE_VAL '='
 
 void dump_help()
 {
-	printf("usage: say [options] ['Text to be processed.']\n");
-	printf(" -b  bare format (no frills)\n");
-	printf(" -c  casual pronunciation\n");
-	printf(" -d  show segments\n");
-	printf(" -k  shutdown Epos\n");
-	printf(" -l  list available languages and voices\n");
-	printf(" -m  write the waveform in mu law format to ./said.vox\n");
-	printf(" -o  write the waveform to the standard output\n");
-#ifdef HAVE_UNISTD_H
-	printf(" -r  reread Epos configuration\n");
-#endif
-	printf(" -s  use the SAMPA-based (MBROLA compatible) synthesizer interface\n");
-	printf(" -t  use the traditional lower level synthesizer interface\n");
-	printf(" -u  use utterance chunking\n");
-	printf(" -w  write the waveform to ./said.wav\n");
-	printf(" --some_long_option     ...as documented (or listed by 'epos -H')\n");
+	printf("usage: gauge-epos [options] ['substring']\n");
+	printf(" -t  Use gauge-trusted.* instead of gauge.*\n");
+	printf(" -b  Use gauge-bad.* instead of gauge.*\n");
+	printf("\n");
+	printf(" * gauge.in is used as the input\n");
+	printf(" * gauge.new will be created unless you specify a substring\n");
+	printf(" * gauge.lst will be created always and shows differences\n");
+	printf("Any long options will be passed to the server.\n");
 }
 
 void send_cmd_line(int argc, char **argv)
@@ -248,74 +339,25 @@ void send_cmd_line(int argc, char **argv)
 			break;
 		case 1:
 			for (j=ar+1; *j; j++) switch (*j) {
-				case 'b': send_option("out_verbose", "false"); break;
-				case 'c': send_option("colloquial", "true"); break;
-				case 'd': show_segments = true; break;
-//				case 'd': send_option("show_segments", "true"); break;
 				case 'H': send_option("long_help", "true");	/* fall through */
 				case 'h': dump_help(); exit(0);
-				case 'k': FILE *f;
-					  f = fopen("/var/run/epos.pwd", "r");
-					  if (!f) {
-					  	stop_service();
-					  	shriek("Cannot open /var/run/epos.pwd");
-					  }
-					  sputs("pass ", ctrld);
-					  scratch[fread(scratch, 1, 1024, f)] = 0;
-					  sputs(scratch, ctrld);
-					  sputs("down\r\n", ctrld);
-					  get_result(ctrld);
-					  get_result(ctrld);
-					  exit(0);
-				case 'l': sputs("show languages\r\nshow voices\r\n", ctrld);
-					  printf("Languages available:\n");
-					  get_result(ctrld);
-					  printf("Voices available for the current language:\n");
-					  get_result(ctrld);
-					  exit(0);
-				case 'm': send_option("ulaw", "true");
-					  send_option("wave_header", "false");
-					  wavfile = true;
-					  output_file = "said.vox"; break;
-				case 'o': wavstdout = true; break;
 				case 'p': send_option("pausing", "true"); break;
-#ifdef HAVE_UNISTD_H
-				case 'r': system("killall -HUP epos");
-					  int timeout;
-					  timeout = 10;
-					  do sleep(1); while(just_connect_socket(0, 8778) != -1 && timeout--);
-					  if (timeout == -1) shriek("Restart not attempted");
-					  do sleep(1); while(just_connect_socket(0, 8778) == -1 && timeout--);
-					  if (timeout == -1) shriek("Restart attempted, but timed out");
-					  exit(0);
-#endif
-				case 's': traditional = false; break;
-				case 't': traditional = true; break;
-				case 'u': chunking = true; break;
+				case 't': use_trusted(); break;
+				case 'b': use_bad(); break;
 				case 'v': send_option("version", "true"); break;
-				case 'w': send_option("wave_header", "true");
-					  wavfile = true;
-					  output_file = "said.wav"; break;
 				case 'D':
 					send_option("debug", "true");
-			//		if (!scfg->debug) scfg->debug=true;
-			//		else if (scfg->warnings)
-			//			scfg->always_dbg--;
 					break;
 				default : shriek("Unknown short option");
 			}
 			if (j==ar+1) {			//dash only
-				goto join;
+				if (data) free(data);
+				data = (char *)malloc(STDIN_BUFF_SIZE);
+				fread(data,1,STDIN_BUFF_SIZE,stdin);
 			}
 			break;
 		case 0:
-		join:
 			if (data) {
-				int needed = strlen(data) + strlen(ar) + 2;
-				if (needed > scfg->scratch_size) {
-					scratch = (char *)realloc(scratch, needed + 2);
-					scfg->scratch_size = needed;
-				}
 				sprintf(scratch, "%s %s", data, ar);
 				free(data);
 				data = strdup(scratch);
@@ -326,21 +368,31 @@ void send_cmd_line(int argc, char **argv)
 			shriek("Too many dashes ");
 		}
 	}
-	if (data && !strcmp("-", data)) {
-		free(data);
-		data = (char *)malloc(STDIN_BUFF_SIZE + 2);
-		data[fread(data, 1, STDIN_BUFF_SIZE, stdin)] = 0;
-	}
-	if (data) for(char *p=data; *p; p++) if (*p == '\n' || *p == '\r') *p=' ';
-	if (data && strspn(data, ",.!?:;+=-*/&^%#$_<>{}()[]|\\~`' \04\t\"") == strlen(data))
-		shriek("Input text too funny");
+	if (data) for(char *p=data; *p; p++) if (*p=='\n') *p=' ';
+}
+
+void send_options()
+{
+	send_option("generate_segs", "false");
+	send_option("diphtongs", "false");
+	send_option("phr_break", "false");
+	send_option("roman", "false");
+	send_option("degeminate", "true");
+	send_option("handle_vocalic_groups", "false");
+	send_option("handle_prepositions", "false");
+	send_option("form_syllables", "false");
+	send_option("prosody", "false");
+	send_option("a_joins_sents", "false");
+
+	send_option("syslog", "false");
+	send_option("trusted", "true");
 }
 
 /*
  *	main() implements what most TTSCP clients do: it opens two TTSCP connections,
  *	converts one of them to a data connection dependent on the other one.
  *	Then, commands in a file found using the TTSCP_USER environment variable
- *	are transmitted and synthesis and transcription procedures invoked.
+ *	are transmitted and synthesis and gauge procedures invoked.
  *	Last, general cleanup is done (the connections are gracefully closed.)
  *
  *	Note that the connection establishment code is less intuitive than
@@ -349,11 +401,6 @@ void send_cmd_line(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	if (argc > 1 && !strcmp(argv[1], "--help")) {
-		dump_help();
-		exit(0);
-	}
-
 #ifdef HAVE_WINSOCK
 	if (WSAStartup(MAKEWORD(2,0), (LPWSADATA)scratch)) shriek(464, "No winsock");
 	charset = "cp1250";
@@ -371,6 +418,7 @@ int main(int argc, char **argv)
 	sputs(charset, ctrld);
 	sputs("\r\n", ctrld);
 	get_result(ctrld);
+	send_options();
 	send_cmd_line(argc, argv);
 	dh = get_handle(datad);
 	get_result(datad);
@@ -382,7 +430,7 @@ int main(int argc, char **argv)
 	if (f) {
 		while (!feof(f)) {
 			*scratch = 0;
-			fgets(scratch, scfg->scratch_size, f);
+			fgets(scratch, SCRATCH_SPACE, f);
 			if (*scratch && !strchr(COMMENT_LINES, scratch[strspn(scratch, WHITESPACE)])) {
 				sputs(scratch, ctrld);
 				get_result(ctrld);
@@ -392,9 +440,8 @@ int main(int argc, char **argv)
 	}
 /// #endif
 
-	if (!wavstdout) trans_data();
-	say_data();
-//	printf("\n");
+	gauge();
+
 	sputs("delh ", ctrld);
 	sputs(dh, ctrld);
 	sputs("\r\ndone\r\n", ctrld);
@@ -404,5 +451,6 @@ int main(int argc, char **argv)
 	close(ctrld);
 	return 0;
 }
+
 
 
