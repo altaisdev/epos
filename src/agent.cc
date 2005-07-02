@@ -314,7 +314,7 @@ a_print::run()
 
 	delete (unit *) inb;
 	inb = NULL;
-	pass(strdup(b));
+	pass(get_text_buffer(b));
 }
 
 
@@ -452,11 +452,11 @@ void a_chunk::run()
 	if (bm && *bm) {
 		char h = bm[0];
 		bm[0] = 0;
-		pass(strdup(tmp));
+		pass(get_text_buffer(tmp));
 		bm[0] = h;
 		schedule();
 	} else {
-		pass(strdup(tmp));
+		pass(get_text_buffer(tmp));
 		free(inb);
 		inb = NULL;
 		bm = NULL;
@@ -486,7 +486,9 @@ a_join::run()
 	} else b = last;
 
 	if (*utt_break(b)) {
-		pass(b);
+		char *decodable = get_text_buffer(b);
+		free(b);
+		pass(decodable);
 	} else heldout = b;
 }
 
@@ -697,7 +699,7 @@ void a_input::run()
 		c->leave();
 		delete data_conns->remove(dc->handle);
 		c->enter();
-		shriek(436, "data conn %d lost", socket);
+		shriek(436, "data conn %d lost reading", socket);
 	}
 	offset += res;
 	if (offset == toread) {
@@ -736,7 +738,7 @@ a_input::mktask(int size)
 	if (inb) return false;	// busy
 	toread = size;
 	D_PRINT(0, "Alloc in a_input:\n");
-	inb = xmalloc(size + 1);
+	inb = get_text_buffer(size);
 	offset = 0;
 	block(socket);
 	D_PRINT(1, "Apply task has been scheduled\n");
@@ -774,11 +776,25 @@ a_output::run()
 	
 	if (written) {
 		int now_written = ywrite(socket, (char *)inb + written, size - written);
+		if (now_written == -1) {
+			if (errno == EAGAIN) {
+				push(socket);
+				return;
+			}
+			shriek(436, "data connection %d lost during writing", socket);
+		}
 		report(false, now_written);
 		written += now_written;
 	} else {
 		written = ywrite(socket, (char *)inb, size);
 		if (written) {
+			if (written == -1) {
+				if (errno == EAGAIN) {
+					push(socket);
+					return;
+				}
+				shriek(436, "data connection %d lost before writing", socket);
+			}
 			report(true, size);
 			report(false, written);
 		}
@@ -858,13 +874,16 @@ oa_wavefm::run()
 		attached = true;
 	}
 	bool to_do;
-	while ((to_do = w->flush()) && w->written) {
+	while ((to_do = w->flush()) && w->written > 0) {
 		report(false, w->written);
 	}
 
-	if (to_do) push(socket);
+	if (to_do && w->written >= 0) push(socket);
 	else {
-		if (w->written) report(false, w->written);
+		if (w->written == -1) {
+			shriek(436, "data conn %d lost writing", socket);
+		}
+		if (w->written > 0) report(false, w->written);
 		report(true, w->written_bytes());
 		w->detach(socket);
 		D_PRINT(1, "oa_wavefm wrote %d bytes\n", w->written_bytes());
@@ -1094,9 +1113,9 @@ a_disconnector disconnector;
 
 a_protocol::a_protocol() : agent(T_NONE, T_NONE)
 {
-	sgets_buff = (char *)xmalloc(cfg->max_net_cmd + 2);
+	sgets_buff = get_text_cmd_buffer();
 	*sgets_buff = 0;
-	buffer = (char *)xmalloc(cfg->max_net_cmd + 2);
+	buffer = get_text_cmd_buffer();
 }
 
 a_protocol::~a_protocol()
@@ -1114,12 +1133,10 @@ void a_protocol::run()
 		return;
 	}
 
-//	encode_string(buffer, this_lang->charset, false);	// FIXME (alloc->true)
-
 	encode_string(buffer, this_lang->charset, false);	// FIXME (alloc->true)
 
 	if ((int)strlen(buffer) >= cfg->max_net_cmd)
-		shriek(413, "Received command is too looong");
+		shriek(413, "Received command is too long");
 	if (res > 0 && *buffer) switch (run_command(buffer)) {
 		case PA_NEXT:
 			D_PRINT(0, "PA_NEXT\n");

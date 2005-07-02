@@ -165,8 +165,10 @@ wavefm::wavefm(voice *v)
 	int stereo = channel == CT_MONO ? 0 : 1;
 	if (this_voice->sample_size <= 0 || (this_voice->sample_size >> 3) > (signed)sizeof(int))
 		shriek(447, "Invalid sample size %d", this_voice->sample_size);
-	if (cfg->ulaw && !cfg->wave_header)
-		this_voice->sample_size = 8, this_voice->out_sampling_rate = 8000;
+	if (cfg->ulaw && !cfg->wave_header) {
+		set_option("sample_size", "8");
+		set_option("out_sampling_rate", "8000");
+	}
 //	cfg->sample_size = cfg->sample_size + 7 & ~7;	// Petr had this
 	downsamp = downsample_factor(samp_rate, v->out_sampling_rate);
 	translated = false;
@@ -425,7 +427,7 @@ PaSampleFormat deduce_sample_format(int samplesize)
 		case 8: return paInt8;
 		case 16: return paInt16;
 		case 32: return paInt32;
-		default: shriek(862, "Unsupported samplesize (%d) for Portaudio output.", samplesize);
+		default: shriek(862, "Unsupported samplesize (%d) for Portaudio output.", from_le16s(samplesize));
 	}
 }
 
@@ -688,14 +690,16 @@ inline void
 wavefm::translate_data(char *newbuff)
 {
 	D_PRINT(1, "(translating the data, too)");
-//	if (cfg->ulaw && this_voice->sample_size != 8) shriek(462, "Mu law implies 8 bit");
-	int ssbytes  = (this_voice->sample_size + 7) >> 3;  // sample size in bytes
-	int shift1 = (sizeof(int) - sizeof(SAMPLE)) << 3;
-	int shift2 = scfg->_big_endian ? 0 : (sizeof(int) - ssbytes) << 3;
-	int unsign = ssbytes == 1 ? 0x80 : 0;
 
 	bool ulaw = cfg->ulaw;
 	bool native_byte_order = (fd == localsound);
+
+//	if (ulaw && this_voice->sample_size != 8) shriek(462, "Mu law implies 8 bit");
+	int ssbytes  = (this_voice->sample_size + 7) >> 3;  // sample size in bytes
+	int shift1 = (sizeof(int) - sizeof(SAMPLE)) << 3;
+	int shift2 = (scfg->_big_endian && native_byte_order) ? 0 : (sizeof(int) - ssbytes) << 3;
+	int unsign = ssbytes == 1 ? 0x80 : 0;
+
 
 	for (int i = 0; i < hdr.buffer_idx; i += downsamp) {
 		int sample = buffer[i];
@@ -725,7 +729,13 @@ void
 wavefm::translate()
 {
 	D_PRINT(1, "Translating waveform, buffer_idx=%d\n", hdr.buffer_idx);
-	if (translated || !hdr.buffer_idx) return;
+	if (!hdr.buffer_idx) {
+		force_little_endian_header();
+		translated = true;
+	}
+	if (translated) {
+		return;
+	}
 
 #ifdef WANT_PORTAUDIO_PABLIO
 	/*
@@ -856,7 +866,7 @@ wavefm::get_ophase_len(const w_ophase *p)
 		tmp = (long int)p->len;
 	} else {
 		tmp = *(int *)((char *)this + (long int)p->len);
-		if (translated) {
+		if (translated && p == &ophases[1]) {	// FIXME - remove the 2nd clause after labels work on big-endians, too
 			tmp = from_le32s(tmp);
 		}
 	}
@@ -927,7 +937,15 @@ wavefm::flush_deferred()
 {
 //	D_PRINT(2, "Flushing the signal (deferred)\n");
 	D_PRINT(1, "adtlhdr.len is %d\n", adtlhdr.len);
-	written = 0;
+	if (written == -1 && errno == EAGAIN) {
+		written = 0;
+	}
+	if (written == -1 && errno == EINTR) {
+		written = 0;
+	}
+	if (written == -1) {
+		return false;
+	}
 
 	int used = translated ? from_le32s(hdr.buffer_idx) : hdr.buffer_idx;
 	if (used + 4 > buff_size) {
@@ -973,8 +991,11 @@ wavefm::put_chunk(labl *chunk_template, const char *string)
 }
 
 void
-wavefm::label(int pos, char *label, const char *note)	// FIXME: does not work on big-endians
+wavefm::label(int pos, char *label_arg, const char *note_arg)	// FIXME: does not work on big-endians
 {
+	char *label = get_text_buffer(label_arg);
+	char *note = get_text_buffer(note_arg);
+
 	if (current_cp) {
 		if (!(current_cp & (current_cp - 1)))
 			cp_buff = (cue_point *)xrealloc(cp_buff, sizeof(cue_point) * current_cp * 2);
@@ -999,6 +1020,9 @@ wavefm::label(int pos, char *label, const char *note)	// FIXME: does not work on
 	
 	put_chunk(&labl_template, label);
 	put_chunk(&note_template, note);
+
+	free(label);
+	free(note);
 }
 
 #ifdef SIMPLE_WFM

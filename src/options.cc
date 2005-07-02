@@ -295,7 +295,7 @@ void restrict_options()
 		delete t;
 		return;		/* if no restrictions file, ignore it */
 	}
-	char *line = (char *)xmalloc(scfg->max_line_len);
+	char *line = get_text_line_buffer();
 	while (t->get_line(line)) {
 		char *status = split_string(line);
 		o = option_set->translate(line);
@@ -488,7 +488,7 @@ static inline char *get_startup_cwd(char *buff, size_t size)
 
 static inline const char *pre_base_dir(const char *value)
 {
-	if (value && value[0] != SLASH) {
+	if (value && value[0] && value[0] != SLASH) {
 		size_t size = scfg->scratch_size ? scfg->scratch_size : 64;
 		char *abs = (char *)xmalloc(size);
 		while (!get_startup_cwd(abs, size - 1))
@@ -673,7 +673,7 @@ bool set_option(epos_option *o, const char *val, void *base)
 			D_PRINT(1, "Configuration option \"%s\" adds \"%s\"%s to \"%s\"%s\n", o->optname,
 					val, strchr(val, '\033') && scfg->normal_color ? scfg->normal_color : "",
 					old ? old : "empty string", strchr(val, '\033') && scfg->normal_color ? scfg->normal_color : "");
-			if (!old) {
+			if (!old || !*old) {
 				*(char **)locus = strdup(val);
 				break;
 			}
@@ -700,10 +700,15 @@ bool set_option(epos_option *o, const char *val, void *base)
 			break;
 		case O_CHARSET:
 			parse_cfg_str(const_cast<char *>(val));
-			if ((tmp = load_charset(val)) == CHARSET_NOT_AVAILABLE)
+			if (!strncmp(val, "sampa-", 6)) {
+				tmp = load_named_sampa(val);
+			} else {
+				tmp = load_charset(val);
+			}
+			if (tmp == CHARSET_NOT_AVAILABLE)
 				shriek(447, "Unknown charset %s", val);
 			*(int *)locus = tmp;
-			D_PRINT(1, "Charset set to %i\n",*(int*)locus);
+			D_PRINT(2, "Charset set to %i\n",*(int*)locus);
 			break;
 		default: shriek(462, "Bad option type %d", (int)o->opttype);
 	}
@@ -820,7 +825,7 @@ bool voice_switch(const char *value)
 	return false;
 }
 
-const char *format_option(epos_option *o, void *base)
+static const char *format_option(epos_option *o, void *base)
 {
 	char *locus = (char *)base + o->offset;
 	switch(o->opttype) {
@@ -851,7 +856,7 @@ const char *format_option(epos_option *o, void *base)
 		case O_VOICE:
 			return (char *)this_voice->name;
 		case O_CHARSET:
-			return enum2str(*(int *)locus, charset_list);
+			return get_charset_name(*(int *)locus);
 		default: shriek(462, "Bad option type %d", (int)o->opttype);
 	}
 	return NULL; /* unreachable */
@@ -922,6 +927,26 @@ void reinitialize_configuration()
 
 int argc_copy = 0;		// these get filled by the args to main()
 char **argv_copy = NULL;
+
+void set_cmd_line(int argc, char **argv)
+{
+	argc_copy = argc;
+	char **args = (char **)xmalloc(argc * (sizeof(char *) + 1));
+	for (int i = 0; i < argc; i++) {
+		args[i] = get_text_buffer(strlen(argv[i]));
+		strcpy(args[i], argv[i]);
+	}
+	args[argc] = NULL;
+	argv_copy = args;
+}
+
+void free_cmd_line()
+{
+	for (int i = 0; i < argc_copy; i++) {
+		free(argv_copy[i]);
+	}
+	free(argv_copy);
+}
 
 void parse_cmd_line()
 {
@@ -1026,7 +1051,7 @@ void load_config(const char *filename, const char *dirname, const char *what,
 
 	if (!filename || !*filename) return;
 	D_PRINT(3, "Loading %s from %s\n", what, filename);
-	char *line = (char *)xmalloc(scfg->max_line_len + 2) + 2;
+	char *line = get_text_line_buffer() + 2;
 	line[-2] = OPT_STRUCT_PREFIX[type];
 	line[-1] = ':';
 	text *t = new text(filename, dirname, "", what, true);
@@ -1177,9 +1202,7 @@ void config_init()
 {
 	const char *mlinis[] = {"","ansi.ini","rtf.ini", NULL};
 
-//	if (option_set) shriek(862, "config_init() too late");
 	make_option_set();
-//	restrict_options();
 //	if (privileged_exec())	/* parse restr.ini before command line */
 //		restrict_options(); 
 	parse_cmd_line();
@@ -1203,8 +1226,6 @@ void config_init()
 	parse_cmd_line();
 	scfg->_loaded=true;
 	
-// 	hash_max_line = scfg->max_line_len;
-
 	if (scfg->version) version();
 	if (scfg->help || scfg->long_help) dump_help();
 }

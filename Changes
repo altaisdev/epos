@@ -6,8 +6,8 @@ as an exciting story, just skip it.
 [ Note: some items mention who reported a bug or even did the
 described modification.  The absence of such attribution
 doesn't imply that the work did itself spontaneously.
-Notably Pavel Machek, Daniel Sobe, Mirek Trmac and Milan Zamazal contributed
-in this way much more often than explicitly indicated here.     ]
+Notably Pavel Machek, Adam Nohejl, Daniel Sobe, Mirek Trmac and Milan Zamazal
+contributed in this way much more often than explicitly indicated here.     ]
 
 
 1.1.1 from earlier releases (incomplete):
@@ -1468,4 +1468,37 @@ in this way much more often than explicitly indicated here.     ]
 	- Vogon language (unit testing infrastructure)
 	- FAQ: report bugs by writing the tests
 	- say-epos option -x to turn off the synthesis (transcribe only)
-	
+2.5.30 from 2.5.29	24.5.05
+	- Win fix: #define FORGET_PORTAUDIO 1
+	- doc fixes (wrt default install path, PortAudio, Mac OS X)
+	- r_absol reshaped as a hashing_rule
+	- average phone length databases based on two corpora
+		(affects mbrsyn voices for better or for worse)
+
+2.5.31 from 2.5.30	25.5.05
+	- Mac OS X (big endian) fixes
+
+2.5.32 from 2.5.31	30.5.05
+	- SAMPA (including alternates) supported as a regular encoding
+	- all natural text buffers are now allocated with extra space for decoding
+	- more refactoring towards UTF-8 support, needs just the routines now
+	- fix: previously did not properly decode option values in TTSCP show
+	- fix: uninitialized SAMPA decoder tables
+	- doc fixes
+
+2.5.33 from 2.5.32	20.6.05
+	- fixed several TTSCP show command related bugs: segfaults, leading colons, omitted spaces
+	- fixed unassigned external variables: segfaults
+	- fix: settings associated with a headerless ulaw used to be permanent
+	- fixed the behavior after some data connection writing errors (used to deadlock)
+	- reinit fix when being started from root (all bugs reported by Adam Nohejl)
+
+2.5.34 from 2.5.33	30.6.05
+	- fix: one more deadlock (on errors while detaching waveform)
+	- fix: response to some pseudoempty inputs
+	- fix: appl 0 is now forbidden
+
+2.5.35 from 2.5.34	 2.7.05
+	- adjusted n_segs and betty.dph for tdi-based voices to cover recent segment additions
+		(in machac.tdi and violka.tdi - upgrade those to the GPL'd versions)
+	- fix: response to some pseudoempty inputs on big-endians

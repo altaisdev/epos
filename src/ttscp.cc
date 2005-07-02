@@ -272,8 +272,11 @@ int do_show(char *param)
 	if (o) {
 		if (access_level(this_context->uid) >= o->readable) {
 			sputs(SHOW_SPACE, cfg->get__sd_out());
-			sendstring(format_option(o));
+			char *value = get_text_buffer(never_null(format_option(o)));
+			decode_string(value, this_lang->charset);
+			sendstring(value);
 			reply("200 OK");
+			free(value);
 		} else reply("451 Access denied");
 	} else {
 //		if (!strcmp("language", param)) {
@@ -287,6 +290,7 @@ int do_show(char *param)
 //			return PA_NEXT;
 //		}
 		if (!strcmp("languages", param)) {
+			sputs(SHOW_SPACE, cfg->get__sd_out());
 			int bufflen = 0;
 			for (i=0; i < cfg->n_langs; i++) bufflen += strlen(cfg->langs[i]->name) + strlen(scfg->comma);
 			char *result = (char *)xmalloc(bufflen + 1);
@@ -301,6 +305,7 @@ int do_show(char *param)
 			return PA_NEXT;
 		}
 		if (!strcmp("voices", param)) {
+			sputs(SHOW_SPACE, cfg->get__sd_out());
 			int bufflen = 0;
 			for (i=0; i < this_lang->n_voices; i++)
 				bufflen += strlen(this_lang->voicetab[i]->name) + strlen(scfg->comma);
@@ -348,7 +353,7 @@ int cmd_stream(char *param, a_ttscp *a)
 int cmd_apply(char *param, a_ttscp *a)
 {
 	int n;
-	if (!sscanf(param, "%d", &n) || n < 0) {
+	if (!sscanf(param, "%d", &n) || n <= 0) {
 		reply("414 Bad size");
 		return PA_NEXT;
 	}
