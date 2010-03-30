@@ -33,13 +33,13 @@ AC_DEFUN([AC_DEST_DF],
 		epos_cv_$2="empty"
 		outdir=''
 		outfil=''
-		sedscript="'s:./$2::; s:/::; /^$/d; s:$:\t/:'"
-		dirs=`find ./$2 -type d`
+		sedscript="'s:./$2::; s:/::; s:$:\t\\\:; \$s:\\\\$::; '"
+		dirs=`find ./$2 -type d | sed '1i\\t'`
 		outdir=`find ./$2 -type d | eval sed -r $sedscript`
 		
-		sedscript="'/^.\/$2$/d'"
+		sedscript="'s:^./$2$::'"
 		dirs=`find ./$2 -type d | eval sed -r $sedscript`
-		sedscript="'s:^./$2/::; s:$:\t/:'"
+		sedscript="'s:^./$2/::; s:$:\t\\\:; \$s:\\\\$::'"
 		for d in $dirs; do
 			fls=`find $d -type f | eval sed -r $sedscript`
 			if test -n "$fls"; then
@@ -64,3 +64,9 @@ $fls"
 	 fi
 ])
 
+syscmd(`rm ./cfg/data_dirs.am`)
+syscmd(`rm ./cfg/data_files.am`)
+syscmd(`rm ./arch/data_dirs.am`)
+syscmd(`rm ./arch/data_files.am`)
+
+syscmd(`./dirs.sh cfg arch`)

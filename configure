@@ -15373,24 +15373,25 @@ fi
 
 done
 
-for ac_header in pulse/simple.h
-do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "pulse/simple.h" "ac_cv_header_pulse_simple_h" "$ac_includes_default"
-if test "x$ac_cv_header_pulse_simple_h" = x""yes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_PULSE_SIMPLE_H 1
-_ACEOF
-
-fi
-
-done
-
+#AC_CHECK_HEADERS(pulse/simple.h)
 for ac_header in pulse/error.h
 do :
   ac_fn_cxx_check_header_mongrel "$LINENO" "pulse/error.h" "ac_cv_header_pulse_error_h" "$ac_includes_default"
 if test "x$ac_cv_header_pulse_error_h" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_PULSE_ERROR_H 1
+_ACEOF
+
+fi
+
+done
+
+for ac_header in pulse/pulseaudio.h
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "pulse/pulseaudio.h" "ac_cv_header_pulse_pulseaudio_h" "$ac_includes_default"
+if test "x$ac_cv_header_pulse_pulseaudio_h" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_PULSE_PULSEAUDIO_H 1
 _ACEOF
 
 fi
@@ -15410,6 +15411,75 @@ _ACEOF
 fi
 done
 
+
+if test "x$ac_cv_header_pulse_error_h" = "xyes"; then
+	if test "x$ac_cv_header_pulse_pulseaudio_h" = "xyes"; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing pa_mainloop_new" >&5
+$as_echo_n "checking for library containing pa_mainloop_new... " >&6; }
+if test "${ac_cv_search_pa_mainloop_new+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char pa_mainloop_new ();
+int
+main ()
+{
+return pa_mainloop_new ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' pulse; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_search_pa_mainloop_new=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if test "${ac_cv_search_pa_mainloop_new+set}" = set; then :
+  break
+fi
+done
+if test "${ac_cv_search_pa_mainloop_new+set}" = set; then :
+
+else
+  ac_cv_search_pa_mainloop_new=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_pa_mainloop_new" >&5
+$as_echo "$ac_cv_search_pa_mainloop_new" >&6; }
+ac_res=$ac_cv_search_pa_mainloop_new
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  as_fn_error "unable to locate PulseAudio libraries" "$LINENO" 5
+fi
+
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: PulseAudio will not be used" >&5
+$as_echo "$as_me: PulseAudio will not be used" >&6;}
+	fi
+else
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: PulseAudio will not be used" >&5
+$as_echo "$as_me: PulseAudio will not be used" >&6;}
+fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for glibc regex error codes" >&5
 $as_echo_n "checking for glibc regex error codes... " >&6; }
@@ -15688,90 +15758,8 @@ ac_config_headers="$ac_config_headers config.h"
 #AC_CONFIG_SUBDIRS(libs/portaudio)
 #AC_CONFIG_FILES([scrpt], [chmod +x scrpt])
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for config destination dirs and files" >&5
-$as_echo_n "checking for config destination dirs and files... " >&6; }
-	 if test "${epos_cv_cfg+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-
-		epos_cv_cfg="empty"
-		outdir=''
-		outfil=''
-		sedscript="'s:./cfg::; s:/::; /^$/d; s:$:\t/:'"
-		dirs=`find ./cfg -type d`
-		outdir=`find ./cfg -type d | eval sed -r $sedscript`
-
-		sedscript="'/^.\/cfg$/d'"
-		dirs=`find ./cfg -type d | eval sed -r $sedscript`
-		sedscript="'s:^./cfg/::; s:$:\t/:'"
-		for d in $dirs; do
-			fls=`find $d -type f | eval sed -r $sedscript`
-			if test -n "$fls"; then
-				if test -z "$outfil"; then
-					outfil=$fls
-				else
-					outfil="$outfil
-$fls"
-				fi
-	 		fi
-		done
-		if test -n "$outdir"; then
-			if test -n "$outfil"; then
-				epos_cv_cfg="checked"
-			fi
-		fi
-
-fi
-
-	 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${epos_cv_cfg}" >&5
-$as_echo "${epos_cv_cfg}" >&6; }
-	 if test "x${epos_cv_cfg}" = "xchecked"; then
-		echo "DATA_DIRS=$outdir" > cfg/data_dirs.am
-		echo "DATA_FILES=$outfil" > cfg/data_files.am
-	 fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for architecture destination dirs and files" >&5
-$as_echo_n "checking for architecture destination dirs and files... " >&6; }
-	 if test "${epos_cv_arch+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-
-		epos_cv_arch="empty"
-		outdir=''
-		outfil=''
-		sedscript="'s:./arch::; s:/::; /^$/d; s:$:\t/:'"
-		dirs=`find ./arch -type d`
-		outdir=`find ./arch -type d | eval sed -r $sedscript`
-
-		sedscript="'/^.\/arch$/d'"
-		dirs=`find ./arch -type d | eval sed -r $sedscript`
-		sedscript="'s:^./arch/::; s:$:\t/:'"
-		for d in $dirs; do
-			fls=`find $d -type f | eval sed -r $sedscript`
-			if test -n "$fls"; then
-				if test -z "$outfil"; then
-					outfil=$fls
-				else
-					outfil="$outfil
-$fls"
-				fi
-	 		fi
-		done
-		if test -n "$outdir"; then
-			if test -n "$outfil"; then
-				epos_cv_arch="checked"
-			fi
-		fi
-
-fi
-
-	 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${epos_cv_arch}" >&5
-$as_echo "${epos_cv_arch}" >&6; }
-	 if test "x${epos_cv_arch}" = "xchecked"; then
-		echo "DATA_DIRS=$outdir" > arch/data_dirs.am
-		echo "DATA_FILES=$outfil" > arch/data_files.am
-	 fi
-
+#AC_DEST_DF([config destination dirs and files], cfg)
+#AC_DEST_DF([architecture destination dirs and files], arch)
 
 ac_config_files="$ac_config_files Makefile src/Makefile cfg/Makefile arch/Makefile"
 

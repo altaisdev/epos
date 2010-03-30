@@ -72,8 +72,8 @@
 /* Define to 1 if you have the <pulse/error.h> header file. */
 #undef HAVE_PULSE_ERROR_H
 
-/* Define to 1 if you have the <pulse/simple.h> header file. */
-#undef HAVE_PULSE_SIMPLE_H
+/* Define to 1 if you have the <pulse/pulseaudio.h> header file. */
+#undef HAVE_PULSE_PULSEAUDIO_H
 
 /* Define to 1 if you have the `qnx_name_attach' function. */
 #undef HAVE_QNX_NAME_ATTACH

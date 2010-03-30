@@ -48,6 +48,7 @@ int yread(int, void *, int size);
 
 //chaloupka
 #ifdef HAVE_PULSE_ERROR_H && HAVE_PULSE_SIMPLE_H
+	#include "pa_asyn.h"
 	#include <pulse/error.h>
 	#include <pulse/simple.h>
 #else
@@ -155,6 +156,7 @@ class wavefm
 //	void skip_header();	// see waveform.cc for comments
 	void write_header();
 	void write_pa();	//chaloupka pulseaudio output
+	void quit_pa();
 	
 	inline void sample(unsigned int sample)
 	{
