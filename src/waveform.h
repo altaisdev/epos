@@ -58,19 +58,32 @@ int yread(int, void *, int size);
 //#include <pulse/gccmacro.h>
 
 
+//struct wave_header
+//{
+//    char string1[4];
+//    int  total_length;
+//    char string2[8];
+//    //int  fmt_length;
+//    //short int  datform, numchan, sf1, sf2, avr1, avr2, alignment, samplesize;
+//    //chaloupka
+//    int  fmt_length,sf1, avr1;
+//    short int datform, numchan,alignment, samplesize;
+//    char string3[4];
+//    int  buffer_idx;
+//};            // .wav file header
+
 struct wave_header
 {
-	char string1[4];
-	int  total_length;
-	char string2[8];
-	//int  fmt_length;
-	//short int  datform, numchan, sf1, sf2, avr1, avr2, alignment, samplesize;
-	//chaloupka
-	int  fmt_length,sf1, avr1;
-	short int datform, numchan,alignment, samplesize;
-	char string3[4];
-	int  buffer_idx;
-};			// .wav file header
+    char string1[4];
+    int  total_length;
+    char string2[8];
+    int  fmt_length;
+    short int datform, numchan;
+    int  sf1, avr1;
+    short int alignment, samplesize;
+    char string3[4];
+    int  buffer_idx;
+};            // .wav file header
 
 struct cue_point;
 
