@@ -22,9 +22,3 @@ extern int hash_max_line;		     //maximum line length in i/o files
 #define HASH_CAN_READ_FILES      // just to make clear that we've included this file
 #endif
 
-#ifndef HAVE_BOOL
-#define HAVE_BOOL
-#define bool int
-#define false  0
-#define true   1
-#endif

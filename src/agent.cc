@@ -122,19 +122,19 @@ agent::unquench()
 void
 agent::timeslice()
 {
-	c->enter();
+	context::enter(c);
 	DEBUG(1,11,fprintf(STDDBG, "Timeslice for %s\n", name());)
 	DEBUG(0,11,fprintf(STDDBG, "pendcount %d, next->pendcount %d, pend_max %d\n", pendcount, next ? next->pendcount : -42, cfg->pend_max);)
 	if (next && next->pendcount > cfg->pend_max) {
 		DEBUG(1,11,fprintf(STDDBG, "(satiated)\n");)
-		c->leave();
+		context::leave(c);
 		return;
 	}
 	if (!inb && in != T_NONE) {
 		if (!pendin) {
 			/* We may take this path legally after an intr command */
 			DEBUG(2,11,fprintf(STDDBG, "No input of type %i; shrugging off\n", in);)
-			c->leave();
+			context::leave(c);
 			return;
 		}
 		DEBUG(2,11,fprintf(STDDBG, "Getting pending task, type %i\n", in);)
@@ -160,7 +160,7 @@ agent::timeslice()
 		finis(true);
 	}
 	if (pendcount && !inb) schedule();
-	c->leave();
+	context::leave(c);
 
 	agent *tmp;
 	for (agent *a = dep; a; a = tmp) {
@@ -445,17 +445,17 @@ a_synth::run()
 		try {
 			synth *sy = setup_synth(this_voice);
 			this_voice->syn = sy;
-//			c->leave();
+//			context::leave(c);
 //			this_voice->syn = sy;
-//			c->enter();
+//			context::enter(c);
 		} catch (command_failed *e) {
 			if (e->code / 10 == 47 && this_lang->fallback_voice && *this_lang->fallback_voice) {
 								// 47x codes are network errors
 				voice_switch(this_lang->fallback_voice);
 				if (this_lang->permanent_fallbacks) {
-					c->leave();
+					context::leave(c);
 					voice_switch(this_lang->fallback_voice);
-					c->enter();
+					context::enter(c);
 				} 
 				delete e;
 				run();
@@ -595,9 +595,9 @@ void a_input::run()
 			else shriek(437, "read error");
 		}
 		if (dc->ctrl) dc->ctrl->deps->remove(dc->handle);
-		c->leave();
+		context::leave(c);
 		delete data_conns->remove(dc->handle);
-		c->enter();
+		context::enter(c);
 		shriek(436, fmt("data conn %d lost", socket));
 	}
 	offset += res;
@@ -1050,7 +1050,7 @@ void a_protocol::run()
 a_ttscp::a_ttscp(int sd_in, int sd_out) : a_protocol()
 {
 	c = new context(sd_in, sd_out);
-	c->enter();
+	context::enter(c);
 	
 	handle = (char *)malloc(cfg->handle_size + 1);
 	do make_rnd_passwd(handle, cfg->handle_size);
@@ -1069,7 +1069,7 @@ a_ttscp::a_ttscp(int sd_in, int sd_out) : a_protocol()
 	ctrl = NULL;
 	deps = new hash_table<char, a_ttscp>(4);
 	deps->dupdata = deps->dupkey = false;
-	c->leave();
+	context::leave(c);
 	block(sd_in);
 }
 
@@ -1080,18 +1080,18 @@ a_ttscp::a_ttscp(int sd_in, int sd_out) : a_protocol()
 
 a_ttscp::~a_ttscp()
 {
-	c->enter();
+	context::enter(c);
 	if (cfg->current_stream) delete cfg->current_stream;
 	cfg->current_stream = NULL;
 	DEBUG(2,11,fprintf(STDDBG, "deleted context closes fd %d and %d\n", cfg->sd_in, cfg->sd_out);)
-	c->leave();
+	context::leave(c);
 	while (deps->items) {
 		a_ttscp *tmp = deps->translate(deps->get_random());
 		deps->remove(tmp->handle);
 		delete data_conns->remove(tmp->handle);
 	}
 	delete deps;
-	c->enter();
+	context::enter(c);
 	if (cfg->sd_in != -1)
 		close_and_invalidate(cfg->sd_in);
 	if (cfg->sd_out != -1 && cfg->sd_out != cfg->sd_in)
@@ -1100,7 +1100,7 @@ a_ttscp::~a_ttscp()
 		shriek(862, "Forgot to forget a_ttscp");
 
 	free(handle);
-	c->leave();
+	context::leave(c);
 	delete c;
 	// close the descriptor? no, the ~context does that
 }
@@ -1198,7 +1198,7 @@ a_accept::a_accept() : agent(T_NONE, T_NONE)
 	char one = 1;
 
 	c = new context(-1, /*** dark errors ***/ DARK_ERRLOG);	//FIXME
-	c->enter();
+	context::enter(c);
 
 	cfg->sd_in = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	memset(&sa, 0, sizeof(sa));
@@ -1217,7 +1217,7 @@ a_accept::a_accept() : agent(T_NONE, T_NONE)
 	ia.sin_port = 0;
 
 	block(cfg->sd_in);
-	c->leave();
+	context::leave(c);
 }
 
 a_accept::~a_accept()
@@ -1239,9 +1239,9 @@ a_accept::run()
 	}
 	make_nonblocking(f);
 	DEBUG(2,11,fprintf(STDDBG, "[core] Accepted %d (on %d).\n", f, cfg->sd_in);)
-	c->leave();
+	context::leave(c);
 	unuse(new a_ttscp(f, f));
-	c->enter();
+	context::enter(c);
 	block(cfg->sd_in);
 }
 

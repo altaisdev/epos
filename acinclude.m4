@@ -64,9 +64,9 @@ $fls"
 	 fi
 ])
 
-syscmd(`rm ./cfg/data_dirs.am`)
-syscmd(`rm ./cfg/data_files.am`)
-syscmd(`rm ./arch/data_dirs.am`)
-syscmd(`rm ./arch/data_files.am`)
+syscmd(`rm -f ./cfg/data_dirs.am`)
+syscmd(`rm -f ./cfg/data_files.am`)
+syscmd(`rm -f ./arch/data_dirs.am`)
+syscmd(`rm -f ./arch/data_files.am`)
 
 syscmd(`./dirs.sh cfg arch`)

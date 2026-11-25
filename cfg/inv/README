@@ -1,0 +1,10 @@
+Speech segment inventories go here (inv/tdp/*.tdi, inv/lpc/*, ...).
+
+They are not part of the source tree; they are distributed separately and
+some of them have their own licence terms (see COPYING.DB in the inventory
+packages).  The time domain inventories for the Czech voices "machac" and
+"violka" are available as epos-tdp.tgz from
+https://sourceforge.net/projects/epos/files/voices/
+
+Without inventories Epos still starts and can transcribe text; it only
+cannot produce sound for the voices whose inventory is missing.

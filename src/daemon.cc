@@ -167,11 +167,6 @@ void
 context::enter()
 {
 	DEBUG(1,11,fprintf(STDDBG, "enter_context(%p)\n", this);)
-	if (!this) {
-		DEBUG(2,11,fprintf(STDDBG, "(nothing to enter!)\n");)
-		return;
-	}
-
 	if (this_context != master_context) shriek(462, "nesting contexts");
 
 	master_context->config = cfg;
@@ -186,10 +181,6 @@ void
 context::leave()
 {
 //	context *c = context_table[index];
-	if (!this) {
-		DEBUG(2,11,fprintf(STDDBG, "(nothing to leave!)\n");)
-		return;
-	}
 	if (this_context != this) shriek(462, "leaving unentered context");
 
 //	this_voice = ::this_voice;

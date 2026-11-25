@@ -68,9 +68,9 @@ void reply(int code, const char *text)
 
 static inline void reply(const char *text, context *real_context)
 {
-	if (real_context) real_context->enter();
+	if (real_context) context::enter(real_context);
 	reply(text);
-	if (real_context) real_context->leave();
+	if (real_context) context::leave(real_context);
 }
 
 inline ACCESS access_level(int uid)
@@ -127,11 +127,11 @@ int cmd_intr(char *param, a_ttscp *a)
 	a_ttscp *ctrl = ctrl_conns->translate(param);
 	if (!ctrl) shriek(444, "ctrl connection handle bad");
 
-	a->c->leave();
-	ctrl->c->enter();
+	context::leave(a->c);
+	context::enter(ctrl->c);
 	bool result = ctrl->brk();
-	ctrl->c->leave();
-	a->c->enter();
+	context::leave(ctrl->c);
+	context::enter(a->c);
 
 	if (result) reply("200 OK");
 	else reply("423 nothing to interrupt");
@@ -172,7 +172,7 @@ int cmd_setg(char *param, a_ttscp *a)
 	int result = PA_NEXT;
 
 	if (this_context->uid != UID_SERVER) shriek(451,  "Access denied.");
-	a->c->leave();
+	context::leave(a->c);
 	try {
 		result = do_set(param, a->c);
 	} catch (any_exception *e) {
@@ -180,7 +180,7 @@ int cmd_setg(char *param, a_ttscp *a)
 		msg = e->msg;
 		delete e;
 	}
-	a->c->enter();
+	context::enter(a->c);
 	if (failed) shriek(failed, msg);
 	return result;
 }
@@ -227,7 +227,7 @@ int cmd_shutdown(char *, a_ttscp *a)
 {
 	if (this_context->uid != UID_SERVER) shriek(451,  "Access denied.");
 	reply("800 shutdown OK");
-	a->c->leave();
+	context::leave(a->c);
 	ctrl_conns->remove(a->handle);
 	delete a;		/* I'm not sure this is OK */
 	server_shutdown();
@@ -312,11 +312,11 @@ int cmd_show(char *param, a_ttscp *a)
 {
 	stream *cs = cfg->current_stream;
 	if (cs) {
-		a->c->leave();
-		cs->c->enter();
+		context::leave(a->c);
+		context::enter(cs->c);
 		int result = do_show(param);
-		cs->c->leave();
-		a->c->enter();
+		context::leave(cs->c);
+		context::enter(a->c);
 		return result;
 	}
 	return do_show(param);
@@ -375,9 +375,9 @@ int cmd_delhandle(char *param, a_ttscp *a)
 	a_ttscp *da = data_conns->remove(param);
 	if (!da) shriek(444, "invalid data connection handle");
 	else if (da->ctrl) da->ctrl->deps->remove(param);
-	a->c->leave();
+	context::leave(a->c);
 	delete da;
-	a->c->enter();
+	context::enter(a->c);
 	reply("200 OK");
 	return PA_NEXT;
 }

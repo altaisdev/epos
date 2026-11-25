@@ -1244,3 +1244,22 @@ for an exciting story, just skip it.
 		(agent.cc, waveform.cc, waveform.h) 	- oa_wavefm::run(),
 							- wavefm::write_pa()
 	
+
+2.4.86
+	(waveform.h) - fixed the field order in wave_header
+
+2.4.87 from 2.4.86	25.11.26
+	- builds with current compilers again (tested with g++ 15 on Ubuntu 26.04),
+		still as a 32-bit program; configure refuses a 64-bit build
+	- dropped "#define bool int", which collides with the C++ library headers
+	- context::enter() and leave() no longer rely on being called with
+		a NULL this pointer
+	- the compiler is asked not to exploit undefined behavior the code
+		relies on (-fno-strict-aliasing -fwrapv etc., where supported)
+	- hash.cc is no longer linked twice into eposd (used to need -zmuldefs)
+	- PulseAudio support is optional (--disable-pulseaudio) and is detected
+		properly; the old "#ifdef A && B" tests looked at A only
+	- the version is 2.4.87 everywhere (the server used to say 2.5.37)
+	- generated autotools files removed from the tree, see autogen.sh
+	- tests/regress.sh compares transcription and segments with a reference
+		made by the 2012 production binary

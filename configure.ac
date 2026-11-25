@@ -4,8 +4,8 @@ dnl Process this file with autoconf to produce a configure script
 dnl AC_INIT(src/unit.cc)
 dnl 
 
-AC_INIT([epos], 2.4-85)
-AM_INIT_AUTOMAKE(epos, 2.5.37)
+AC_INIT([epos], [2.4.87])
+AM_INIT_AUTOMAKE([foreign])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/unit.cc)
@@ -16,30 +16,21 @@ dnl AC_PROG_CC
 
 AC_PROG_CXX(g++ gcc cc c++)
 
-if test $GXX = yes; then 
-	if $CXX -v 2>&1 | grep -q egcs
-		then AM_CXXFLAGS="-Wall -Wunused -pipe -gstabs+ -fdefer-pop -O"
-		else AM_CXXFLAGS="-Wall -Wunused -gstabs+ -O"
-	fi
-	else AM_CXXFLAGS=-O
-fi
-
 AC_SUBST(LIBTOOL_DEPS)
 AC_SUBST(CONFIGURED_CXXFLAGS)
-AC_SUBST(AM_CXXFLAGS)
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 
 AC_ARG_WITH(dmalloc, AC_HELP_STRING([--with-dmalloc], [dmalloc debugging library (developers only)]),
 	if test $withval = yes; then
-		AM_CXXFLAGS="${AM_CXXFLAGS} -DWANT_DMALLOC"
+		CONFIGURED_CXXFLAGS="${CONFIGURED_CXXFLAGS} -DWANT_DMALLOC"
 		LIBS="$LIBS -ldmalloc -L/usr/local/lib"
 	fi
 )
 dnl AC_ARG_WITH(regex, --with-regex       regular expression substitution, , )
 AC_ARG_ENABLE(charsets, AC_HELP_STRING([--enable-charsets], [allow automatic conversions between character sets]),
 	if test x$enableval = xno; then
-		AM_CXXFLAGS="${AM_CXXFLAGS} -DFORGET_CHARSETS"
+		CONFIGURED_CXXFLAGS="${CONFIGURED_CXXFLAGS} -DFORGET_CHARSETS"
 	fi,
 )
 dnl AC_ARG_ENABLE(portaudio, AC_HELP_STRING([--enable-portaudio], [alternative sound output method]),
@@ -59,7 +50,33 @@ dnl	 EXTRA_PORTAUDIO_DEFS="-DFORGET_PORTAUDIO"]
 dnl)
 dnl AM_CONDITIONAL(PORTAUDIO, test "${EXTRA_PORTAUDIO_DEFS}" = "")
 
+AC_ARG_ENABLE(pulseaudio, AC_HELP_STRING([--disable-pulseaudio], [do not use PulseAudio for local sound output]),
+	[want_pulseaudio=$enableval], [want_pulseaudio=auto])
+
 AC_LANG_CPLUSPLUS
+
+dnl The code base dates from 1996 and relies on a few idioms which current
+dnl compilers are entitled to "optimize" into something else (null this
+dnl checks, type punning, signed overflow, objects zeroed by operator new).
+dnl Ask for the traditional behavior wherever the compiler knows how.
+for opt in -fno-strict-aliasing -fwrapv -fno-delete-null-pointer-checks -fno-lifetime-dse; do
+	AC_MSG_CHECKING([whether $CXX accepts $opt])
+	epos_save_CXXFLAGS="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS $opt -Werror"
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])],
+		[AC_MSG_RESULT(yes); CONFIGURED_CXXFLAGS="$CONFIGURED_CXXFLAGS $opt"],
+		[AC_MSG_RESULT(no)])
+	CXXFLAGS="$epos_save_CXXFLAGS"
+done
+
+dnl Pointers are still stored in ints all over the place (see src/options.lst).
+AC_MSG_CHECKING([whether pointers fit into an int])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [typedef char fits@<:@sizeof(void *) <= sizeof(int) ? 1 : -1@:>@;])],
+	[AC_MSG_RESULT(yes)],
+	[AC_MSG_RESULT(no)
+	 AC_MSG_ERROR([Epos $PACKAGE_VERSION is not 64-bit clean yet.
+Please build a 32-bit binary, e.g.  ./configure CXX="g++ -m32" CC="gcc -m32"
+(on Debian/Ubuntu this needs the g++-multilib package).])])
 
 AC_CHECK_PROGS(LNK, ld wlink, linker)
 AC_CHECK_LIB(stdc++, main)
@@ -104,19 +121,21 @@ AC_CHECK_HEADERS(sys/kernel.h)
 AC_CHECK_HEADERS(sys/name.h)
 AC_CHECK_HEADERS(fcntl.h)
 AC_CHECK_HEADERS(direct.h)
-#AC_CHECK_HEADERS(pulse/simple.h)
-AC_CHECK_HEADERS(pulse/error.h)
-AC_CHECK_HEADERS(pulse/pulseaudio.h)
 AC_CHECK_FUNCS(strerror vsnprintf strdup fork getegid strcasecmp stricmp getcwd gethostname gettimeofday qnx_name_attach abort kill pipe _pipe)
 
-if test "x$ac_cv_header_pulse_error_h" = "xyes"; then
-	if test "x$ac_cv_header_pulse_pulseaudio_h" = "xyes"; then
-		AC_SEARCH_LIBS(pa_mainloop_new, pulse, [], AC_MSG_ERROR([unable to locate PulseAudio libraries]))
+if test "x$want_pulseaudio" != "xno"; then
+	have_pulseaudio=yes
+	AC_CHECK_HEADERS([pulse/error.h pulse/pulseaudio.h], [], [have_pulseaudio=no])
+	if test "x$have_pulseaudio" = "xyes"; then
+		AC_SEARCH_LIBS(pa_mainloop_new, pulse, [], [have_pulseaudio=no])
+	fi
+	if test "x$have_pulseaudio" = "xyes"; then
+		AC_DEFINE([HAVE_PULSEAUDIO], [1], [ Define to use PulseAudio for local sound output ])
+	elif test "x$want_pulseaudio" = "xyes"; then
+		AC_MSG_ERROR([PulseAudio requested but its headers or library were not found])
 	else
 		AC_MSG_NOTICE([PulseAudio will not be used])
 	fi
-else
-	AC_MSG_NOTICE([PulseAudio will not be used])
 fi
 
 AC_CACHE_CHECK([for glibc regex error codes],

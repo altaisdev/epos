@@ -1,0 +1,3 @@
+# Sources, rules and dictionaries are ISO 8859-2 (some Windows files CP1250);
+# never let git convert line endings or treat them as UTF-8 text.
+* -text

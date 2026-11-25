@@ -64,6 +64,10 @@ class context
 	~context();
 	void enter();
 	void leave();
+
+	/* Null-tolerant variants; calling a method on a null pointer is undefined. */
+	static void enter(context *c) { if (c) c->enter(); }
+	static void leave(context *c) { if (c) c->leave(); }
 };
 
 

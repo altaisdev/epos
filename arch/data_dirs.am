@@ -1,6 +1,0 @@
-DATA_DIRS=unix	\
-unix/upload	\
-dos	\
-win-ce	\
-win	\
-win/service	

@@ -5,7 +5,7 @@ export VERSION
 
 # Minimum automake version:
 
-AUTOMAKE_OPTIONS=1.11 foreign
+AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
 
