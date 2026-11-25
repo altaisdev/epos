@@ -1,0 +1,29 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  linux-32bit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends g++-multilib autoconf automake libtool
+      - name: Build
+        run: |
+          ./autogen.sh
+          ./configure CXX="g++ -m32" CC="gcc -m32" --prefix="$PWD/inst"
+          make
+          make install
+      - name: Regression test
+        run: tests/regress.sh inst/bin/eposd inst/bin/say-epos inst/share/epos
+      - name: Keep test output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output
+          path: tests/out
